@@ -4,146 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>ZeniOS</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
-
-    html, body {
-      width: 100%;
-      height: 100dvh;
-      background: #040508;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .phone-screen {
-      position: relative;
-      width: min(100vw, 50dvh);
-      height: min(100dvh, 200vw);
-      background: #05060a;
-      overflow: hidden;
-    }
-
-    .layer {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.55s ease, visibility 0.55s ease;
-    }
-
-    .layer.active {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    #still-layer {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #05060a;
-      z-index: 2;
-    }
-
-    #loading-still {
-      max-width: 55%;
-      max-height: 45%;
-      width: auto;
-      height: auto;
-      object-fit: contain;
-      display: block;
-      animation: subtleGlow 4.5s ease-in-out infinite;
-    }
-
-    @keyframes subtleGlow {
-      0%, 100% {
-        filter: brightness(0.95) drop-shadow(0 0 0 rgba(255, 255, 255, 0));
-      }
-      50% {
-        filter: brightness(1.06) drop-shadow(0 0 14px rgba(255, 255, 255, 0.2));
-      }
-    }
-
-    #wallpaper-layer {
-      background: #05060a;
-      z-index: 1;
-    }
-
-    #system-wallpaper {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .liquid-dock {
-      position: absolute;
-      left: 50%;
-      bottom: max(18px, env(safe-area-inset-bottom));
-      transform: translateX(-50%);
-      z-index: 5;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      padding: 11px 20px;
-      border-radius: 32px;
-      background: linear-gradient(
-        145deg,
-        rgba(255, 255, 255, 0.24) 0%,
-        rgba(255, 255, 255, 0.08) 48%,
-        rgba(255, 255, 255, 0.18) 100%
-      );
-      backdrop-filter: blur(28px) saturate(185%) contrast(108%);
-      -webkit-backdrop-filter: blur(28px) saturate(185%) contrast(108%);
-      border: 1px solid rgba(255, 255, 255, 0.36);
-      box-shadow:
-        0 14px 34px rgba(0, 0, 0, 0.32),
-        inset 0 1.5px 1px rgba(255, 255, 255, 0.55),
-        inset 0 -1px 2px rgba(255, 255, 255, 0.16);
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.45s ease, visibility 0.45s ease;
-    }
-
-    .liquid-dock.visible {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .dock-icon-btn {
-      width: 56px;
-      height: 56px;
-      border-radius: 15px;
-      overflow: hidden;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
-    }
-
-    .dock-icon-btn img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center;
-      display: block;
-    }
-
-    .dock-icon-btn.icon-settings img {
-      transform: scale(1.28);
-    }
-  </style>
+  <link rel="stylesheet" href="zenios.css" />
 </head>
 <body>
   <div class="phone-screen">
@@ -155,14 +16,241 @@
       <img id="system-wallpaper" alt="ZeniOS Wallpaper" />
     </section>
 
+    <section class="app-view" id="app-gallery" aria-label="Galeria ZeniOS">
+      <header class="app-header">
+        <div class="app-title-row">
+          <h1 class="app-title">Galeria</h1>
+          <button class="close-app-btn" type="button" data-close-app>Zamknij</button>
+        </div>
+        <div class="segmented-bar" role="tablist">
+          <button class="seg-btn active" type="button" data-gal-tab="all">Wszystkie</button>
+          <button class="seg-btn" type="button" data-gal-tab="photos">Obrazy</button>
+          <button class="seg-btn" type="button" data-gal-tab="videos">Klip</button>
+        </div>
+      </header>
+
+      <div class="app-scroll">
+        <div class="recent-strip">
+          <div class="recent-thumb">🖼️</div>
+          <div class="recent-info">
+            <strong>Ostatnie w ZeniOS</strong>
+            <span id="gallery-recent-count">0 obrazów, 0 klipów</span>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+
+        <div class="section-head">
+          <h2>Kolekcje</h2>
+          <span class="link-accent">Pełny widok ›</span>
+        </div>
+
+        <div class="albums-row">
+          <div class="album-tile">
+            <div class="album-box">+</div>
+            <div class="album-name">Biblioteka</div>
+            <div class="album-count">0</div>
+          </div>
+          <div class="album-tile">
+            <div class="album-box">+</div>
+            <div class="album-name">Wybrane</div>
+            <div class="album-count">0</div>
+          </div>
+          <div class="album-tile">
+            <div class="album-box">+</div>
+            <div class="album-name">Klip wideo</div>
+            <div class="album-count">0</div>
+          </div>
+          <div class="album-tile">
+            <div class="album-box">+</div>
+            <div class="album-name">Przechwyty</div>
+            <div class="album-count">0</div>
+          </div>
+        </div>
+
+        <div class="section-head">
+          <h2>Ostatnie</h2>
+          <span class="link-accent">Pełny widok ›</span>
+        </div>
+
+        <div class="empty-state">
+          <div class="empty-icon">🖼️</div>
+          <div class="empty-label" id="gallery-empty-text">Brak pozycji</div>
+        </div>
+      </div>
+
+      <div class="app-bottom-tabs">
+        <button class="bottom-tab active" type="button" data-gal-tab="all">
+          <span>🖼️</span>
+          <span>Galeria</span>
+        </button>
+        <button class="bottom-tab" type="button" data-gal-tab="videos">
+          <span>▶️</span>
+          <span>Dla Ciebie</span>
+        </button>
+        <button class="bottom-tab" type="button" data-gal-tab="albums">
+          <span>🗂️</span>
+          <span>Kolekcje</span>
+        </button>
+        <button class="bottom-tab" type="button" data-gal-tab="search">
+          <span>🔍</span>
+          <span>Szukaj</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="app-view" id="app-settings" aria-label="Ustawienia ZeniOS">
+      <header class="app-header">
+        <div class="app-title-row">
+          <h1 class="app-title">Ustawienia</h1>
+          <button class="close-app-btn" type="button" data-close-app>Zamknij</button>
+        </div>
+        <div class="search-field">
+          <span>🔍</span>
+          <input id="settings-search" type="search" placeholder="Szukaj w ZeniOS..." autocomplete="off" />
+        </div>
+      </header>
+
+      <div class="app-scroll">
+        <div class="settings-group profile-card">
+          <div class="avatar-circle">👤</div>
+          <div class="profile-meta">
+            <strong>Konto ZeniOS</strong>
+            <span>Prywatność, synchronizacja i rdzeń</span>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+
+        <div class="settings-group" data-group>
+          <div class="settings-row" data-search="wifi siec bezprzewodowa">
+            <span class="row-badge badge-blue">📶</span>
+            <span class="row-title">Wi-Fi</span>
+            <span class="row-value">Rozłączono</span>
+            <span class="chevron">›</span>
+          </div>
+          <div class="settings-row" data-search="bluetooth urzadzenia">
+            <span class="row-badge badge-blue">ᛒ</span>
+            <span class="row-title">Bluetooth</span>
+            <span class="row-value">Wyłączony</span>
+            <span class="chevron">›</span>
+          </div>
+          <div class="settings-row" data-search="siec komorkowa dane mobilne">
+            <span class="row-badge badge-green">📡</span>
+            <span class="row-title">Łączność komórkowa</span>
+            <span class="row-value"></span>
+            <span class="chevron">›</span>
+          </div>
+          <div class="settings-row" data-search="hotspot udostepnianie">
+            <span class="row-badge badge-blue">🔗</span>
+            <span class="row-title">Hotspot</span>
+            <span class="row-value"></span>
+            <span class="chevron">›</span>
+          </div>
+          <div class="settings-row" data-search="vpn prywatnosc tunel">
+            <span class="row-badge badge-blue">🛡️</span>
+            <span class="row-title">VPN</span>
+            <label class="ios-switch" onclick="event.stopPropagation()">
+              <input type="checkbox" id="vpn-toggle" />
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group" data-group>
+          <div class="settings-row" data-search="powiadomienia alerty">
+            <span class="row-badge badge-red">🔔</span>
+            <span class="row-title">Powiadomienia</span>
+            <span class="row-value"></span>
+            <span class="chevron">›</span>
+          </div>
+          <div class="settings-row" data-search="dzwieki haptyka wibracje">
+            <span class="row-badge badge-pink">🔊</span>
+            <span class="row-title">Dźwięki i haptyka</span>
+            <span class="row-value"></span>
+            <span class="chevron">›</span>
+          </div>
+          <div class="settings-row" data-search="tryb skupienia cisza">
+            <span class="row-badge badge-indigo">🌙</span>
+            <span class="row-title">Tryb skupienia</span>
+            <span class="row-value"></span>
+            <span class="chevron">›</span>
+          </div>
+          <div class="settings-row" data-search="czas ekranowy aktywnosc">
+            <span class="row-badge badge-purple">⏳</span>
+            <span class="row-title">Czas ekranowy</span>
+            <span class="row-value"></span>
+            <span class="chevron">›</span>
+          </div>
+        </div>
+
+        <div class="settings-group" data-group>
+          <div class="settings-row" data-search="ogolne system informacje">
+            <span class="row-badge badge-gray">⚙️</span>
+            <span class="row-title">Ogólne</span>
+            <span class="row-value"></span>
+            <span class="chevron">›</span>
+          </div>
+          <div class="settings-row" data-search="panel szybki skroty">
+            <span class="row-badge badge-gray">🎛️</span>
+            <span class="row-title">Szybki panel</span>
+            <span class="row-value"></span>
+            <span class="chevron">›</span>
+          </div>
+          <div class="settings-row" data-search="ekran jasnosc">
+            <span class="row-badge badge-blue">☀️</span>
+            <span class="row-title">Ekran i jasność</span>
+            <span class="row-value"></span>
+            <span class="chevron">›</span>
+          </div>
+          <div class="settings-row" data-search="pulpit siatka aplikacji">
+            <span class="row-badge badge-indigo">📱</span>
+            <span class="row-title">Pulpit i aplikacje</span>
+            <span class="row-value"></span>
+            <span class="chevron">›</span>
+          </div>
+          <div class="settings-row" data-search="dostepnosc ulatwienia">
+            <span class="row-badge badge-blue">♿</span>
+            <span class="row-title">Dostępność</span>
+            <span class="row-value"></span>
+            <span class="chevron">›</span>
+          </div>
+        </div>
+
+        <div class="settings-group" data-group>
+          <div class="settings-row" id="open-wallpaper-picker" data-search="tapeta tlo wyglad">
+            <span class="row-badge badge-teal">🎨</span>
+            <span class="row-title">Tapeta</span>
+            <span class="row-value" id="current-wp-label">default_wallpaper_7</span>
+            <span class="chevron">›</span>
+          </div>
+        </div>
+
+        <div class="wallpaper-drawer" id="wallpaper-drawer">
+          <div class="drawer-title">Tapety ZeniOS (1–7)</div>
+          <div class="wp-grid" id="wp-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="app-view" id="app-phone" aria-label="Telefon ZeniOS">
+      <header class="app-header">
+        <div class="app-title-row">
+          <h1 class="app-title">Telefon</h1>
+          <button class="close-app-btn" type="button" data-close-app>Zamknij</button>
+        </div>
+      </header>
+      <div class="app-scroll phone-placeholder">
+        <p>Moduł połączeń ZeniOS jest w przygotowaniu.</p>
+      </div>
+    </section>
+
     <nav class="liquid-dock" id="liquid-dock" aria-label="Pasek zadań">
-      <div class="dock-icon-btn icon-phone">
+      <div class="dock-icon-btn icon-phone" data-open-app="app-phone" role="button" tabindex="0" aria-label="Telefon">
         <img src="Icons/Phone_Icon.png" alt="Phone" />
       </div>
-      <div class="dock-icon-btn icon-settings">
+      <div class="dock-icon-btn icon-settings" data-open-app="app-settings" role="button" tabindex="0" aria-label="Ustawienia">
         <img src="Icons/Settings_Icon.png" alt="Settings" />
       </div>
-      <div class="dock-icon-btn icon-gallery">
+      <div class="dock-icon-btn icon-gallery" data-open-app="app-gallery" role="button" tabindex="0" aria-label="Galeria">
         <img src="Icons/gallery_icon.png" alt="Gallery" />
       </div>
     </nav>
