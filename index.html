@@ -64,13 +64,6 @@
       visibility: visible;
     }
 
-    #boot-video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
     #loading-still {
       width: 100%;
       height: 100%;
@@ -97,11 +90,7 @@
   <div class="viewport-stage">
     <div class="scale-box" id="scale-box">
       <div class="phone-surface">
-        <section class="layer active" id="video-layer">
-          <video id="boot-video" playsinline muted autoplay></video>
-        </section>
-
-        <section class="layer" id="still-layer">
+        <section class="layer active" id="still-layer">
           <img id="loading-still" src="Boot_Loading/Zenios_loading.png" alt="Zenios_loading" />
         </section>
 
