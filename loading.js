@@ -1,5 +1,4 @@
 const LOAD_DURATION_MS = 5000;
-const AUTO_HIDE_NAV_MS = 5000;
 
 const ZENIOS_WALLPAPERS = [
   'default_wallpapers/default_wallpaper_1',
@@ -14,7 +13,6 @@ const ZENIOS_WALLPAPERS = [
 const DEFAULT_WALLPAPER_INDEX = 6;
 
 let loadTimer = null;
-let navIdleTimer = null;
 let currentWallpaperIndex = DEFAULT_WALLPAPER_INDEX;
 let currentNavMode = 'gestures';
 let gestureStartY = null;
@@ -100,9 +98,24 @@ function syncNavBarDisplay() {
   const overlay = domRefs.systemNavOverlay;
   if (!overlay) return;
 
+  const appOpen = isAnyAppOpen();
   const isButtons = currentNavMode === 'buttons';
+
+  document.body.classList.toggle('zenios-in-app', appOpen);
+  overlay.classList.toggle('in-app', appOpen);
   overlay.classList.toggle('mode-gestures', !isButtons);
   overlay.classList.toggle('mode-buttons', isButtons);
+
+  if (!appOpen) {
+    overlay.style.opacity = '0';
+    overlay.style.visibility = 'hidden';
+    overlay.style.pointerEvents = 'none';
+    return;
+  }
+
+  overlay.style.opacity = '1';
+  overlay.style.visibility = 'visible';
+  overlay.style.pointerEvents = 'auto';
 
   if (domRefs.gestureHandle) {
     domRefs.gestureHandle.style.display = isButtons ? 'none' : 'inline-flex';
@@ -110,47 +123,6 @@ function syncNavBarDisplay() {
   if (domRefs.sysButtonsRow) {
     domRefs.sysButtonsRow.style.display = isButtons ? 'flex' : 'none';
   }
-}
-
-function wakeSystemNav() {
-  const overlay = domRefs.systemNavOverlay;
-  if (!overlay) return;
-
-  if (navIdleTimer) {
-    clearTimeout(navIdleTimer);
-    navIdleTimer = null;
-  }
-
-  const appOpen = isAnyAppOpen();
-  document.body.classList.toggle('zenios-in-app', appOpen);
-  overlay.classList.toggle('in-app', appOpen);
-  overlay.classList.remove('auto-hidden');
-
-  if (!appOpen) {
-    overlay.style.opacity = '0';
-    overlay.style.visibility = 'hidden';
-    return;
-  }
-
-  overlay.style.opacity = '1';
-  overlay.style.visibility = 'visible';
-
-  navIdleTimer = setTimeout(() => {
-    overlay.classList.add('auto-hidden');
-    overlay.style.opacity = '0';
-  }, AUTO_HIDE_NAV_MS);
-}
-
-function bindSystemNavAutoHide() {
-  const events = ['pointerdown', 'pointermove', 'keydown', 'scroll', 'wheel'];
-  events.forEach((evtName) => {
-    document.addEventListener(evtName, (e) => {
-      if (e.target && e.target.closest && e.target.closest('#system-nav-overlay')) {
-        return;
-      }
-      wakeSystemNav();
-    }, { passive: true });
-  });
 }
 
 function openSettingsSubscreen(screenId) {
@@ -172,7 +144,6 @@ function setSystemNavMode(mode) {
   });
 
   syncNavBarDisplay();
-  wakeSystemNav();
 }
 
 function handleBackAction() {
@@ -197,7 +168,6 @@ function openApp(appId) {
     view.classList.toggle('open', view.id === appId);
   });
   syncNavBarDisplay();
-  wakeSystemNav();
 }
 
 function closeAllApps() {
@@ -205,7 +175,7 @@ function closeAllApps() {
     view.classList.remove('open');
   });
   openSettingsSubscreen('settings-main');
-  wakeSystemNav();
+  syncNavBarDisplay();
 }
 
 function bindAppNavigation() {
@@ -416,7 +386,7 @@ function finishLoading() {
   if (domRefs.liquidDock) {
     domRefs.liquidDock.classList.add('visible');
   }
-  wakeSystemNav();
+  syncNavBarDisplay();
 }
 
 function cacheDom() {
@@ -469,7 +439,6 @@ function initSystem() {
   bindAppNavigation();
   bindGalleryFeatures();
   bindSettingsFeatures();
-  bindSystemNavAutoHide();
   setWallpaper(DEFAULT_WALLPAPER_INDEX);
   setSystemNavMode(currentNavMode);
   showLayer(domRefs.stillLayer);
