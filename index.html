@@ -8,14 +8,30 @@
 </head>
 <body>
   <div class="phone-screen">
-    <!-- Górny pasek statusu: godzina po lewej, ikona baterii po prawej (bez tekstu procentów) -->
+    <!-- Górny pasek statusu: godzina po lewej; zasięg, Wi-Fi i bateria (z liczbą) po prawej -->
     <div class="status-bar-overlay" id="status-bar-overlay" aria-hidden="true">
       <span class="status-clock" id="status-clock">16:26</span>
-      <span class="status-battery" id="status-battery" data-level="94">
-        <span class="battery-body">
-          <span class="battery-fill" id="battery-fill" style="width: 94%;"></span>
+      <span class="status-right">
+        <svg class="status-signal" viewBox="0 0 17 11" fill="currentColor" aria-label="Zasięg">
+          <rect x="0" y="7.5" width="3" height="3.5" rx="0.8"/>
+          <rect x="4.7" y="5" width="3" height="6" rx="0.8"/>
+          <rect x="9.4" y="2.5" width="3" height="8.5" rx="0.8"/>
+          <rect x="14" y="0" width="3" height="11" rx="0.8"/>
+        </svg>
+        <svg class="status-wifi" viewBox="0 0 24 17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-label="Wi-Fi">
+          <path d="M2 6.2a14.5 14.5 0 0 1 20 0"/>
+          <path d="M5.7 10.2a9.2 9.2 0 0 1 12.6 0"/>
+          <path d="M9.3 14a4 4 0 0 1 5.4 0"/>
+        </svg>
+        <span class="status-battery" id="status-battery" data-level="94" role="img" aria-label="Bateria 94%">
+          <svg class="battery-bolt" viewBox="0 0 6 10" aria-hidden="true"><path d="M3.6 0 0 5.6h2.4L2 10 6 4.2H3.5z"/></svg>
+          <span class="battery-body">
+            <span class="battery-fill" id="battery-fill"></span>
+            <span class="battery-pct p-empty" aria-hidden="true">94</span>
+            <span class="battery-pct p-fill" aria-hidden="true">94</span>
+          </span>
+          <span class="battery-cap"></span>
         </span>
-        <span class="battery-cap"></span>
       </span>
     </div>
 
@@ -699,30 +715,43 @@
       </div>
     </section>
 
-    <!-- Aplikacja Wiadomości ZeniOS -->
+    <!-- Aplikacja Wiadomości ZeniOS: lista rozmów + czat (ZeniPeek, ZeniMessageMenu) -->
     <section class="app-view" id="app-messages" aria-label="Wiadomości ZeniOS">
-      <header class="app-header">
-        <div class="app-title-row">
-          <h1 class="app-title">Wiadomości</h1>
-        </div>
-      </header>
-      <div class="app-scroll">
-        <div class="settings-group">
-          <div class="settings-row">
-            <span class="row-badge badge-green">Z</span>
-            <div class="option-text-col">
-              <span class="row-title">ZeniOS System</span>
-              <span class="option-sub">Witaj w nowej wersji pulpitu z widżetami.</span>
+      <div class="msg-screen msg-list-screen active" id="msg-list-screen">
+        <header class="app-header">
+          <div class="app-title-row">
+            <h1 class="app-title">Wiadomości</h1>
+            <div class="header-actions">
+              <button type="button" class="icon-circle-btn" id="msg-reset-btn" aria-label="Przywróć dane demo" title="Przywróć dane demo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+              </button>
             </div>
-            <span class="row-value">Teraz</span>
           </div>
-          <div class="settings-row">
-            <span class="row-badge badge-blue">W</span>
-            <div class="option-text-col">
-              <span class="row-title">Wskazówka</span>
-              <span class="option-sub">Przytrzymaj pulpit lub ikonę, aby zmieniać układ i widżety.</span>
-            </div>
-            <span class="row-value">16:20</span>
+          <p class="msg-hint">Przytrzymaj rozmowę, aby zerknąć bez oznaczania jako przeczytane.</p>
+        </header>
+        <div class="app-scroll">
+          <div class="msg-conv-list" id="msg-conv-list"></div>
+        </div>
+      </div>
+
+      <div class="msg-screen msg-chat-screen" id="msg-chat-screen">
+        <header class="app-header msg-chat-header">
+          <button type="button" class="back-btn" id="msg-back-btn">‹ Wiadomości</button>
+          <div class="msg-chat-who">
+            <div class="msg-avatar sm" id="msg-chat-avatar"></div>
+            <span class="msg-chat-name" id="msg-chat-name"></span>
+          </div>
+          <span class="header-spacer"></span>
+        </header>
+        <div class="msg-thread" id="msg-thread"></div>
+        <div class="msg-composer">
+          <div class="msg-banner" id="msg-banner" hidden>
+            <div class="msg-banner-text"><b id="msg-banner-title"></b><span id="msg-banner-text"></span></div>
+            <button type="button" id="msg-banner-close" aria-label="Anuluj">✕</button>
+          </div>
+          <div class="msg-composer-row">
+            <input id="msg-input" type="text" placeholder="Wiadomość" autocomplete="off" />
+            <button type="button" id="msg-send" aria-label="Wyślij">↑</button>
           </div>
         </div>
       </div>
@@ -1034,5 +1063,6 @@
   </div>
 
   <script src="loading.js"></script>
+  <script src="zeni-system.js"></script>
 </body>
 </html>
