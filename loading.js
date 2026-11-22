@@ -623,6 +623,7 @@ function syncStatusBarDisplay() {
 
   const stillActive = Boolean(domRefs.stillLayer?.classList.contains('active'));
   bar.classList.toggle('visible', !stillActive);
+  if (typeof updateStatusBarTone === 'function') updateStatusBarTone();
 }
 
 function syncNavBarDisplay() {
@@ -1373,7 +1374,7 @@ function initSystem() {
   bindGalleryFeatures();
   bindSettingsFeatures();
   bindHomeGesturesAndLongPress();
-  bindCalculator();
+  initZeniApps();
   renderWidgets();
   renderHomeApps();
   renderInstalledAppsSearch('');
@@ -1387,6 +1388,1028 @@ function initSystem() {
   }
 
   loadTimer = setTimeout(finishLoading, LOAD_DURATION_MS);
+}
+
+/* =====================================================================
+   ZeniOS 2.0 — motyw, kalkulator, notatki, pliki, kalendarz, zegar, centrum sterowania
+   ===================================================================== */
+
+const $z = (id) => document.getElementById(id);
+const pad2 = (n) => String(n).padStart(2, '0');
+const PL_MONTHS_SHORT = ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru'];
+const PL_MONTHS_GEN = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
+const PL_DAYS = ['niedziela', 'poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota'];
+
+let currentTheme = 'dark';
+let ccOpen = false;
+let sysVolume = 0.6;
+let zeniToastTimer = null;
+let ringBeepTimer = null;
+
+function zeniToast(msg) {
+  const t = $z('cc-toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(zeniToastTimer);
+  zeniToastTimer = setTimeout(() => t.classList.remove('show'), 1700);
+}
+
+/* ---------------- MOTYW ---------------- */
+function updateStatusBarTone() {
+  const phone = document.querySelector('.phone-screen');
+  if (!phone) return;
+  const open = document.querySelector('.app-view.open');
+  const lightApp = open && open.id !== 'app-calculator';
+  const tone = currentTheme === 'light' && !isLocked && (lightApp || ccOpen);
+  phone.classList.toggle('tone-dark', Boolean(tone));
+}
+
+function setTheme(theme, animate = true) {
+  const phone = document.querySelector('.phone-screen');
+  if (!phone) return;
+  currentTheme = theme === 'light' ? 'light' : 'dark';
+  if (animate) {
+    phone.classList.add('theme-anim');
+    setTimeout(() => phone.classList.remove('theme-anim'), 500);
+  }
+  phone.setAttribute('data-theme', currentTheme);
+  document.querySelectorAll('[data-theme-set]').forEach((b) => {
+    b.classList.toggle('active', b.getAttribute('data-theme-set') === currentTheme);
+  });
+  $z('cc-theme')?.classList.toggle('on-blue', currentTheme === 'dark');
+  updateStatusBarTone();
+}
+
+function bindTheme() {
+  document.querySelectorAll('[data-theme-set]').forEach((b) => {
+    b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setTheme(b.getAttribute('data-theme-set'));
+    });
+  });
+  setTheme('dark', false);
+}
+
+/* ---------------- KALKULATOR ---------------- */
+function initCalculator() {
+  const display = $z('calc-display');
+  const pad = $z('calc-pad');
+  const acBtn = $z('calc-ac');
+  if (!display || !pad) return;
+
+  let cur = '0';
+  let acc = null;
+  let op = null;
+  let fresh = true;
+  let lastOp = null;
+  let lastVal = null;
+  let justEq = false;
+
+  const numStr = (n) => {
+    if (!isFinite(n)) return 'Błąd';
+    const s = String(parseFloat(n.toPrecision(12)));
+    if (s.includes('e')) return n.toExponential(5);
+    return s;
+  };
+  const fmt = (s) => {
+    if (s === 'Błąd') return s;
+    if (s.includes('e')) return s.replace('.', ',');
+    const neg = s.startsWith('-');
+    const t = neg ? s.slice(1) : s;
+    const [i, f] = t.split('.');
+    const grouped = i.replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
+    return (neg ? '-' : '') + grouped + (f !== undefined ? ',' + f : '');
+  };
+  const apply = (a, b, o) => {
+    switch (o) {
+      case '+': return a + b;
+      case '-': return a - b;
+      case '*': return a * b;
+      case '/': return b === 0 ? NaN : a / b;
+      default: return b;
+    }
+  };
+  const render = () => {
+    const text = fmt(cur);
+    display.textContent = text;
+    const len = text.length;
+    const scale = len <= 6 ? 0.2 : len <= 7 ? 0.175 : len <= 8 ? 0.155 : len <= 9 ? 0.138 : len <= 11 ? 0.118 : 0.1;
+    display.style.fontSize = `calc(min(100vw, 50dvh) * ${scale})`;
+    if (acBtn) acBtn.textContent = cur !== '0' || !fresh ? 'C' : 'AC';
+    pad.querySelectorAll('.op').forEach((b) => {
+      const t = b.getAttribute('data-calc');
+      b.classList.toggle('active', Boolean(op) && fresh && t === op);
+    });
+  };
+  const press = (t) => {
+    if (cur === 'Błąd' && t !== 'C') { cur = '0'; acc = null; op = null; fresh = true; }
+    if (/^[0-9]$/.test(t)) {
+      if (justEq) { acc = null; op = null; justEq = false; }
+      if (fresh || cur === '0') { cur = t; fresh = false; }
+      else if (cur.replace(/[-.]/g, '').length < 9) cur += t;
+    } else if (t === '.') {
+      if (justEq) { acc = null; op = null; justEq = false; }
+      if (fresh) { cur = '0.'; fresh = false; }
+      else if (!cur.includes('.')) cur += '.';
+    } else if (['+', '-', '*', '/'].includes(t)) {
+      const val = parseFloat(cur);
+      if (op && !fresh && acc !== null) { acc = apply(acc, val, op); cur = numStr(acc); }
+      else if (!(op && fresh)) acc = val;
+      op = t; fresh = true; justEq = false; lastOp = null;
+    } else if (t === '=') {
+      const val = parseFloat(cur);
+      if (op) {
+        const b = fresh ? acc : val;
+        const res = apply(acc, b, op);
+        lastOp = op; lastVal = b; acc = res; cur = numStr(res);
+        op = null; fresh = true; justEq = true;
+      } else if (lastOp) {
+        const res = apply(val, lastVal, lastOp);
+        cur = numStr(res); acc = res; fresh = true; justEq = true;
+      }
+    } else if (t === '%') {
+      cur = numStr(parseFloat(cur) / 100); fresh = false;
+    } else if (t === '±') {
+      if (cur !== '0') cur = cur.startsWith('-') ? cur.slice(1) : '-' + cur;
+    } else if (t === 'C') {
+      if (acBtn && acBtn.textContent === 'C') { cur = '0'; fresh = true; }
+      else { cur = '0'; acc = null; op = null; fresh = true; lastOp = null; justEq = false; }
+    }
+    render();
+  };
+
+  pad.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-calc]');
+    if (btn) press(btn.getAttribute('data-calc'));
+  });
+  document.addEventListener('keydown', (e) => {
+    if (!$z('app-calculator')?.classList.contains('open')) return;
+    if (/^[0-9]$/.test(e.key)) press(e.key);
+    else if (e.key === ',' || e.key === '.') press('.');
+    else if (['+', '-', '*', '/'].includes(e.key)) press(e.key);
+    else if (e.key === 'Enter' || e.key === '=') press('=');
+    else if (e.key === 'Escape') { cur = '0'; acc = null; op = null; fresh = true; render(); }
+    else if (e.key === 'Backspace' && !fresh) { cur = cur.length > 1 && cur !== 'Błąd' ? cur.slice(0, -1) : '0'; if (cur === '-') cur = '0'; render(); }
+  });
+  render();
+}
+
+/* ---------------- NOTATKI ---------------- */
+function initNotes() {
+  const listScreen = $z('notes-list-screen');
+  const editScreen = $z('notes-edit-screen');
+  const listEl = $z('notes-list');
+  if (!listScreen || !editScreen || !listEl) return;
+  const titleEl = $z('note-title');
+  const bodyEl = $z('note-body');
+  const menu = $z('note-menu');
+  const now = Date.now();
+  let notes = [
+    { id: 1, title: 'Test', body: 'To jest, bez zaskoczenia, test\n\nTest 1\n\nTest\n\nTest 2', ts: now - 3600e3 * 2 },
+    { id: 2, title: 'Pomysły na pulpit ZeniOS', body: 'Widżety, siatka ikon, centrum sterowania i jasny motyw.', ts: now - 86400e3 * 3 },
+    { id: 3, title: 'Lista zakupów', body: '• mleko\n• chleb\n• kawa', ts: now - 86400e3 * 20 }
+  ];
+  let nextId = 4;
+  let currentId = null;
+
+  const timeLabel = (ts) => {
+    const d = new Date(ts);
+    const t = new Date();
+    const dayDiff = Math.floor((new Date(t.getFullYear(), t.getMonth(), t.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 86400e3);
+    if (dayDiff === 0) return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    if (dayDiff === 1) return 'Wczoraj';
+    if (dayDiff < 7) return PL_DAYS[d.getDay()].replace(/^./, (c) => c.toUpperCase());
+    return `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()}`;
+  };
+  const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const previewOf = (n) => (n.body.split('\n').find((l) => l.trim()) || 'Brak dodatkowego tekstu');
+
+  const renderList = () => {
+    const q = ($z('notes-search')?.value || '').trim().toLowerCase();
+    const sorted = notes.filter((n) => !q || (n.title + ' ' + n.body).toLowerCase().includes(q)).sort((a, b) => b.ts - a.ts);
+    const groups = { 'Dzisiaj': [], 'Poprzednie 7 dni': [], 'Starsze': [] };
+    sorted.forEach((n) => {
+      const age = (Date.now() - n.ts) / 86400e3;
+      (age < 1 ? groups['Dzisiaj'] : age < 8 ? groups['Poprzednie 7 dni'] : groups['Starsze']).push(n);
+    });
+    listEl.innerHTML = '';
+    Object.entries(groups).forEach(([name, arr]) => {
+      if (!arr.length) return;
+      const h = document.createElement('div');
+      h.className = 'notes-section-title';
+      h.textContent = name;
+      const g = document.createElement('div');
+      g.className = 'notes-group';
+      arr.forEach((n) => {
+        const r = document.createElement('div');
+        r.className = 'note-row';
+        r.innerHTML = `<div class="note-row-title">${esc(n.title || 'Nowa notatka')}</div><div class="note-row-sub"><b>${timeLabel(n.ts)}</b>${esc(previewOf(n))}</div>`;
+        r.addEventListener('click', () => openNote(n.id));
+        g.appendChild(r);
+      });
+      listEl.append(h, g);
+    });
+    const c = notes.length;
+    $z('notes-count').textContent = c === 1 ? '1 notatka' : c % 10 >= 2 && c % 10 <= 4 && (c % 100 < 10 || c % 100 >= 20) ? `${c} notatki` : `${c} notatek`;
+  };
+  const showScreen = (which) => {
+    listScreen.classList.toggle('active', which === 'list');
+    editScreen.classList.toggle('active', which === 'edit');
+    menu.classList.remove('open');
+  };
+  const openNote = (id) => {
+    const n = notes.find((x) => x.id === id);
+    if (!n) return;
+    currentId = id;
+    titleEl.value = n.title;
+    bodyEl.value = n.body;
+    const d = new Date(n.ts);
+    $z('note-date').textContent = `${d.getDate()} ${PL_MONTHS_GEN[d.getMonth()]} ${d.getFullYear()} o ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    showScreen('edit');
+  };
+  const closeNote = () => {
+    const n = notes.find((x) => x.id === currentId);
+    if (n && !n.title.trim() && !n.body.trim()) notes = notes.filter((x) => x.id !== currentId);
+    currentId = null;
+    renderList();
+    showScreen('list');
+  };
+  const save = () => {
+    const n = notes.find((x) => x.id === currentId);
+    if (!n) return;
+    n.title = titleEl.value;
+    n.body = bodyEl.value;
+    n.ts = Date.now();
+  };
+
+  $z('note-new-btn').addEventListener('click', () => {
+    const n = { id: nextId++, title: '', body: '', ts: Date.now() };
+    notes.push(n);
+    openNote(n.id);
+    setTimeout(() => titleEl.focus(), 60);
+  });
+  titleEl.addEventListener('input', save);
+  bodyEl.addEventListener('input', save);
+  titleEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); bodyEl.focus(); } });
+  $z('note-back').addEventListener('click', closeNote);
+  $z('note-done').addEventListener('click', closeNote);
+  $z('note-undo').addEventListener('click', () => { bodyEl.focus(); document.execCommand('undo'); save(); });
+  $z('note-share').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(`${titleEl.value}\n\n${bodyEl.value}`); zeniToast('Skopiowano notatkę'); }
+    catch { zeniToast('Nie można skopiować'); }
+  });
+  $z('note-more').addEventListener('click', (e) => { e.stopPropagation(); menu.classList.toggle('open'); });
+  editScreen.addEventListener('click', (e) => { if (!e.target.closest('#note-menu') && !e.target.closest('#note-more')) menu.classList.remove('open'); });
+  $z('note-delete').addEventListener('click', () => { notes = notes.filter((x) => x.id !== currentId); currentId = null; renderList(); showScreen('list'); });
+  $z('notes-search').addEventListener('input', renderList);
+
+  editScreen.querySelectorAll('[data-fmt]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const f = btn.getAttribute('data-fmt');
+      const ta = bodyEl;
+      ta.focus();
+      const ls = ta.value.lastIndexOf('\n', ta.selectionStart - 1) + 1;
+      const insertAt = (txt) => { ta.setRangeText(txt, ls, ls, 'end'); };
+      if (f === 'bullet') insertAt('• ');
+      else if (f === 'check') insertAt('○ ');
+      else if (f === 'indent') insertAt('    ');
+      else if (f === 'outdent') { const m = ta.value.slice(ls).match(/^( {1,4}|\t)/); if (m) ta.setRangeText('', ls, ls + m[0].length, 'end'); }
+      else if (f === 'top') { ta.setSelectionRange(0, 0); ta.scrollTop = 0; }
+      else if (f === 'bottom') { ta.setSelectionRange(ta.value.length, ta.value.length); ta.scrollTop = ta.scrollHeight; }
+      save();
+    });
+  });
+  renderList();
+  window.__notesReset = () => { renderList(); showScreen('list'); };
+}
+
+/* ---------------- PLIKI ---------------- */
+function initFiles() {
+  const browseBody = $z('files-browse-body');
+  const listPane = $z('files-pane-list');
+  const browsePane = $z('files-pane-browse');
+  if (!browseBody || !listPane) return;
+
+  const I = {
+    cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5 4 4 0 0 1 17.5 18z"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/><line x1="11" y1="18.5" x2="13" y2="18.5"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>',
+    folder: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h3.6c.6 0 1.2.3 1.6.8L12 6.3h6.5A2.5 2.5 0 0 1 21 8.8v8.7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/></svg>',
+    img: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5L5 20"/></svg>',
+    doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>',
+    chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
+    box: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/></svg>'
+  };
+  const f = (name, kind, meta) => ({ name, kind, meta });
+  const locations = [
+    { id: 'cloud', name: 'ZeniChmura', icon: I.cloud, items: [
+      { name: 'Dokumenty', kind: 'folder', meta: '2 elementy', items: [f('Plan_ZeniOS.docx', 'doc', '48 KB'), f('Budżet.xlsx', 'doc', '22 KB')] },
+      { name: 'Zdjęcia', kind: 'folder', meta: 'Pusty', items: [] },
+      { name: 'Pobrane', kind: 'folder', meta: '1 element', items: [f('Instrukcja.pdf', 'doc', '1,2 MB')] }
+    ] },
+    { id: 'phone', name: 'Na moim ZeniOS', icon: I.phone, items: [
+      { name: 'Icons', kind: 'folder', meta: '9 elementów', items: ['Messages_icon', 'calculator_icon', 'calendar_icon', 'clock_icons', 'files_icons', 'Phone_Icon', 'Settings_Icon', 'gallery_icon'].map((n) => f(n + '.png', 'img', 'PNG')) },
+      { name: 'default_wallpapers', kind: 'folder', meta: '7 elementów', items: [1, 2, 3, 4, 5, 6, 7].map((n) => f(`default_wallpaper_${n}.jpg`, 'img', 'JPG')) },
+      { name: 'Boot_Loading', kind: 'folder', meta: '1 element', items: [f('Zenios_loading.png', 'img', 'PNG')] }
+    ] },
+    { id: 'trash', name: 'Ostatnio usunięte', icon: I.trash, items: [] }
+  ];
+  const tags = [['Czerwony', '#ff453a'], ['Pomarańczowy', '#ff9f0a'], ['Żółty', '#ffd60a'], ['Zielony', '#30d158'], ['Niebieski', '#0a84ff'], ['Fioletowy', '#bf5af2'], ['Szary', '#8e8e93']];
+  const recents = [f('Plan_ZeniOS.docx', 'doc', 'Dzisiaj'), f('default_wallpaper_7.jpg', 'img', 'Dzisiaj'), f('Instrukcja.pdf', 'doc', 'Wczoraj'), f('Zenios_loading.png', 'img', 'Wczoraj')];
+
+  let tab = 'browse';
+  let stack = [];
+  let fwd = [];
+  const collapsed = { loc: false, tags: false };
+
+  const rowHtml = (ico, name, meta, chev) =>
+    `<div class="f-ico">${ico}</div><div class="f-name">${name}${meta ? `<span class="f-meta">${meta}</span>` : ''}</div>${chev ? '<span class="f-chev">›</span>' : ''}`;
+  const iconFor = (it) => (it.kind === 'folder' ? I.folder : it.kind === 'img' ? I.img : I.doc);
+  const emptyHtml = (txt) => `<div class="files-empty">${I.box}<div>${txt}</div></div>`;
+
+  const renderBrowse = () => {
+    const q = ($z('files-search')?.value || '').trim().toLowerCase();
+    browseBody.innerHTML = '';
+    const sec = (key, title, build) => {
+      const head = document.createElement('div');
+      head.className = 'files-sec-head' + (collapsed[key] ? ' collapsed' : '');
+      head.innerHTML = `<span>${title}</span>${I.chev}`;
+      const card = document.createElement('div');
+      card.className = 'files-card' + (collapsed[key] ? ' hidden' : '');
+      head.addEventListener('click', () => { collapsed[key] = !collapsed[key]; head.classList.toggle('collapsed'); card.classList.toggle('hidden'); });
+      build(card);
+      if (card.children.length) browseBody.append(head, card);
+    };
+    sec('loc', 'Lokalizacje', (card) => {
+      locations.filter((l) => !q || l.name.toLowerCase().includes(q)).forEach((l) => {
+        const r = document.createElement('div');
+        r.className = 'files-row';
+        r.innerHTML = rowHtml(l.icon, l.name, '', false);
+        r.addEventListener('click', () => pushFolder({ title: l.name, items: l.items }));
+        card.appendChild(r);
+      });
+    });
+    sec('tags', 'Znaczniki', (card) => {
+      tags.filter(([n]) => !q || n.toLowerCase().includes(q)).forEach(([n, c]) => {
+        const r = document.createElement('div');
+        r.className = 'files-row';
+        r.innerHTML = rowHtml(`<span class="tag-dot" style="background:${c}"></span>`, n, '', false);
+        r.addEventListener('click', () => pushFolder({ title: n, items: [] }));
+        card.appendChild(r);
+      });
+    });
+    if (!browseBody.children.length) browseBody.innerHTML = emptyHtml('Brak wyników');
+  };
+
+  const renderList = (title, items, searchable) => {
+    listPane.innerHTML = `<h1 class="files-title">${title}</h1>` +
+      (searchable ? `<div class="search-field files-search"><svg class="search-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="files-list-search" type="search" placeholder="Szukaj" autocomplete="off"/></div>` : '') +
+      '<div id="files-rows"></div>';
+    const rows = listPane.querySelector('#files-rows');
+    const fill = (q) => {
+      rows.innerHTML = '';
+      const arr = items.filter((it) => !q || it.name.toLowerCase().includes(q));
+      if (!arr.length) { rows.innerHTML = emptyHtml(items.length ? 'Brak wyników' : 'Brak plików'); return; }
+      const card = document.createElement('div');
+      card.className = 'files-card';
+      arr.forEach((it) => {
+        const r = document.createElement('div');
+        r.className = 'files-row';
+        r.innerHTML = rowHtml(iconFor(it), it.name, it.meta || '', it.kind === 'folder');
+        if (it.kind === 'folder') r.addEventListener('click', () => pushFolder({ title: it.name, items: it.items || [] }));
+        else r.addEventListener('click', () => zeniToast(`${it.name} — podgląd niedostępny`));
+        card.appendChild(r);
+      });
+      rows.appendChild(card);
+    };
+    fill('');
+    listPane.querySelector('#files-list-search')?.addEventListener('input', (e) => fill(e.target.value.trim().toLowerCase()));
+  };
+
+  const sync = () => {
+    document.querySelectorAll('[data-files-tab]').forEach((b) => b.classList.toggle('active', b.getAttribute('data-files-tab') === tab));
+    const showBrowse = tab === 'browse' && !stack.length;
+    browsePane.classList.toggle('active', showBrowse);
+    listPane.classList.toggle('active', !showBrowse);
+    if (showBrowse) renderBrowse();
+    else if (tab === 'recents') renderList('Ostatnie', recents, true);
+    else if (tab === 'shared') renderList('Udostępnione', [], false);
+    else { const top = stack[stack.length - 1]; renderList(top.title, top.items, true); }
+    $z('files-back').disabled = !(tab === 'browse' && stack.length);
+    $z('files-fwd').disabled = !(tab === 'browse' && fwd.length);
+    $z('files-scroll').scrollTop = 0;
+  };
+  const pushFolder = (entry) => { stack.push(entry); fwd = []; sync(); };
+
+  $z('files-back').addEventListener('click', () => { if (stack.length) { fwd.push(stack.pop()); sync(); } });
+  $z('files-fwd').addEventListener('click', () => { if (fwd.length) { stack.push(fwd.pop()); sync(); } });
+  $z('files-more').addEventListener('click', () => zeniToast('Pliki ZeniOS 2.0'));
+  document.querySelectorAll('[data-files-tab]').forEach((b) => b.addEventListener('click', () => { tab = b.getAttribute('data-files-tab'); sync(); }));
+  $z('files-search').addEventListener('input', renderBrowse);
+  sync();
+}
+
+/* ---------------- KALENDARZ ---------------- */
+function initCalendar() {
+  const monthsEl = $z('cal-months');
+  if (!monthsEl) return;
+  const app = $z('app-calendar');
+  const today = new Date();
+  let viewYear = today.getFullYear();
+  let selected = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const key = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+
+  const cals = [
+    { id: 'work', name: 'Praca', color: '#af52de', on: true },
+    { id: 'school', name: 'Szkoła', color: '#ff2d55', on: true },
+    { id: 'home', name: 'Dom', color: '#0a84ff', on: true },
+    { id: 'main', name: 'Kalendarz', color: '#34c759', on: true },
+    { id: 'holiday', name: 'Wakacje', color: '#ffcc00', on: true }
+  ];
+  let evId = 1;
+  const events = [
+    { id: evId++, title: 'Przegląd interfejsu ZeniOS', date: key(today), time: '18:00', cal: 'main' },
+    { id: evId++, title: 'Spotkanie projektowe', date: key(addDays(today, 1)), time: '10:30', cal: 'work' },
+    { id: evId++, title: 'Obiad z rodziną', date: key(addDays(today, 3)), time: '14:00', cal: 'home' },
+    { id: evId++, title: 'Sprawdzian z matematyki', date: key(addDays(today, 5)), time: '08:15', cal: 'school' },
+    { id: evId++, title: 'Wyjazd nad morze', date: key(addDays(today, 12)), time: '07:00', cal: 'holiday' },
+    { id: evId++, title: 'Dentysta', date: key(addDays(today, -4)), time: '16:30', cal: 'home' }
+  ];
+  const calOf = (id) => cals.find((c) => c.id === id);
+  const eventsOn = (k) => events.filter((e) => e.date === k && calOf(e.cal)?.on).sort((a, b) => a.time.localeCompare(b.time));
+
+  const monthBlock = (y, m) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'cal-month';
+    wrap.setAttribute('data-m', m);
+    const isCur = y === today.getFullYear() && m === today.getMonth();
+    wrap.innerHTML = `<div class="cal-month-name${isCur ? ' current' : ''}">${PL_MONTHS_SHORT[m]}</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'cal-grid';
+    const offset = (new Date(y, m, 1).getDay() + 6) % 7;
+    const days = new Date(y, m + 1, 0).getDate();
+    for (let i = 0; i < offset; i++) { const c = document.createElement('div'); c.className = 'cal-cell empty'; grid.appendChild(c); }
+    for (let d = 1; d <= days; d++) {
+      const dt = new Date(y, m, d);
+      const col = (offset + d - 1) % 7;
+      const k = key(dt);
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell' + (col >= 5 ? ' weekend' : '') + (k === key(today) ? ' today' : '') + (k === key(selected) ? ' selected' : '');
+      cell.setAttribute('data-date', k);
+      const has = eventsOn(k).length > 0;
+      cell.innerHTML = `<div class="cal-num">${d}</div><div class="cal-dots">${has ? '<i style="background:var(--sub)"></i>' : ''}</div>`;
+      cell.addEventListener('click', () => { selected = dt; refreshSelection(); renderDay(); });
+      grid.appendChild(cell);
+    }
+    wrap.appendChild(grid);
+    return wrap;
+  };
+  const renderMonths = () => {
+    monthsEl.innerHTML = '';
+    for (let m = 0; m < 12; m++) monthsEl.appendChild(monthBlock(viewYear, m));
+    $z('cal-year-label').textContent = viewYear;
+  };
+  const refreshSelection = () => {
+    monthsEl.querySelectorAll('.cal-cell[data-date]').forEach((c) => c.classList.toggle('selected', c.getAttribute('data-date') === key(selected)));
+  };
+  const renderDay = () => {
+    const panel = $z('cal-day-panel');
+    const list = eventsOn(key(selected));
+    let html = `<div class="cal-day-title">${PL_DAYS[selected.getDay()]}, ${selected.getDate()} ${PL_MONTHS_GEN[selected.getMonth()]}</div>`;
+    if (!list.length) html += '<div class="cal-none">Brak wydarzeń</div>';
+    list.forEach((e) => {
+      const c = calOf(e.cal);
+      html += `<div class="cal-event"><div class="cal-event-bar" style="background:${c.color}"></div><div><div class="cal-event-t">${e.title.replace(/</g, '&lt;')}</div><div class="cal-event-s">${e.time} · ${c.name}</div></div><button class="cal-event-del" data-del="${e.id}">Usuń</button></div>`;
+    });
+    panel.innerHTML = html;
+    panel.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => {
+      const i = events.findIndex((x) => x.id === Number(b.getAttribute('data-del')));
+      if (i >= 0) events.splice(i, 1);
+      renderMonths(); renderDay();
+    }));
+  };
+  const scrollToMonth = (m, smooth = false) => {
+    const target = monthsEl.querySelector(`.cal-month[data-m="${m}"]`);
+    if (!target) return;
+    monthsEl.style.scrollBehavior = smooth ? 'smooth' : 'auto';
+    monthsEl.scrollTop = target.offsetTop - monthsEl.offsetTop;
+  };
+  const renderYear = () => {
+    const yv = $z('cal-year-view');
+    let html = `<div class="year-title" style="display:flex;justify-content:space-between;align-items:center"><span>${viewYear}</span><span style="font-size:22px;font-weight:500"><button id="cal-prev-year" style="background:none;border:none;color:inherit;font-size:26px;cursor:pointer;padding:0 8px">‹</button><button id="cal-next-year" style="background:none;border:none;color:inherit;font-size:26px;cursor:pointer;padding:0 8px">›</button></span></div><div class="year-grid">`;
+    for (let m = 0; m < 12; m++) {
+      const offset = (new Date(viewYear, m, 1).getDay() + 6) % 7;
+      const days = new Date(viewYear, m + 1, 0).getDate();
+      const isCur = viewYear === today.getFullYear() && m === today.getMonth();
+      let cells = '<span></span>'.repeat(offset);
+      for (let d = 1; d <= days; d++) cells += `<span${isCur && d === today.getDate() ? ' class="today"' : ''}>${d}</span>`;
+      html += `<div class="mini-month${isCur ? ' current' : ''}" data-mm="${m}"><h4>${PL_MONTHS_SHORT[m]}</h4><div class="mini-days">${cells}</div></div>`;
+    }
+    yv.innerHTML = html + '</div>';
+    yv.querySelectorAll('[data-mm]').forEach((el) => el.addEventListener('click', () => { setMode('month'); renderMonths(); scrollToMonth(Number(el.getAttribute('data-mm'))); }));
+    $z('cal-prev-year').addEventListener('click', (e) => { e.stopPropagation(); viewYear--; renderYear(); });
+    $z('cal-next-year').addEventListener('click', (e) => { e.stopPropagation(); viewYear++; renderYear(); });
+  };
+  const setMode = (mode) => { app.classList.toggle('cal-mode-year', mode === 'year'); if (mode === 'year') renderYear(); };
+
+  /* arkusze */
+  const openSheet = (id, scrimId = 'cal-scrim') => { $z(id).classList.add('open'); $z(scrimId).classList.add('open'); };
+  const closeSheets = () => { app.querySelectorAll('.sheet').forEach((s) => s.classList.remove('open')); $z('cal-scrim').classList.remove('open'); };
+  app.querySelectorAll('[data-close-sheet]').forEach((b) => b.addEventListener('click', closeSheets));
+  $z('cal-scrim').addEventListener('click', closeSheets);
+
+  const renderCals = () => {
+    const el = $z('cal-cals-list');
+    el.innerHTML = '<div class="sheet-sec">ZeniOS</div>';
+    cals.forEach((c) => {
+      const r = document.createElement('div');
+      r.className = 'cal-list-row';
+      r.innerHTML = `<span class="cal-check" style="border-color:${c.color};background:${c.on ? c.color : 'transparent'}">${c.on ? '✓' : ''}</span><span>${c.name}</span>`;
+      r.addEventListener('click', () => { c.on = !c.on; renderCals(); renderMonths(); renderDay(); });
+      el.appendChild(r);
+    });
+  };
+  const renderUpcoming = () => {
+    const q = ($z('cal-upcoming-search').value || '').trim().toLowerCase();
+    const startK = key(today);
+    const list = events.filter((e) => e.date >= startK && calOf(e.cal)?.on && (!q || e.title.toLowerCase().includes(q))).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+    const el = $z('cal-upcoming-list');
+    el.innerHTML = list.length ? '' : '<div class="cal-none" style="padding:20px">Brak nadchodzących wydarzeń</div>';
+    list.forEach((e) => {
+      const [y, m, d] = e.date.split('-').map(Number);
+      const c = calOf(e.cal);
+      const row = document.createElement('div');
+      row.className = 'upcoming-row';
+      row.innerHTML = `<div class="cal-event-bar" style="background:${c.color}"></div><div><div class="cal-event-t">${e.title.replace(/</g, '&lt;')}</div><div class="cal-event-s">${d} ${PL_MONTHS_GEN[m - 1]} ${y}, ${e.time} · ${c.name}</div></div>`;
+      el.appendChild(row);
+    });
+  };
+  $z('cal-cals-btn').addEventListener('click', () => { renderCals(); openSheet('cal-sheet-cals'); });
+  $z('cal-upcoming-btn').addEventListener('click', () => { $z('cal-upcoming-search').value = ''; renderUpcoming(); openSheet('cal-sheet-upcoming'); });
+  $z('cal-search-btn').addEventListener('click', () => { $z('cal-upcoming-btn').click(); setTimeout(() => $z('cal-upcoming-search').focus(), 350); });
+  $z('cal-upcoming-search').addEventListener('input', renderUpcoming);
+  $z('cal-add-btn').addEventListener('click', () => {
+    $z('cal-ev-title').value = '';
+    $z('cal-ev-date').value = key(selected);
+    $z('cal-ev-cal').innerHTML = cals.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
+    openSheet('cal-sheet-add');
+  });
+  $z('cal-save-event').addEventListener('click', () => {
+    const title = $z('cal-ev-title').value.trim() || 'Nowe wydarzenie';
+    const date = $z('cal-ev-date').value || key(selected);
+    events.push({ id: evId++, title, date, time: $z('cal-ev-time').value || '12:00', cal: $z('cal-ev-cal').value });
+    const [y, m, d] = date.split('-').map(Number);
+    selected = new Date(y, m - 1, d);
+    viewYear = y;
+    closeSheets(); renderMonths(); renderDay();
+  });
+  $z('cal-year-btn').addEventListener('click', () => setMode('year'));
+  $z('cal-today-btn').addEventListener('click', () => {
+    setMode('month');
+    viewYear = today.getFullYear();
+    selected = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    renderMonths(); renderDay(); scrollToMonth(today.getMonth(), true);
+  });
+  renderMonths(); renderDay();
+  window.__calOpen = () => { setMode('month'); closeSheets(); viewYear = today.getFullYear(); renderMonths(); renderDay(); scrollToMonth(today.getMonth()); };
+}
+
+/* ---------------- ZEGAR ---------------- */
+function initClock() {
+  const app = $z('app-clock');
+  if (!app) return;
+  const ROW = 44;
+  const REPEATS = ['Nigdy', 'Codziennie', 'dni robocze', 'weekendy'];
+  const SOUNDS = ['Kręgi', 'Radar', 'Fala', 'Latarnia'];
+  let alarms = [
+    { id: 1, h: 7, m: 0, label: 'Alarm', on: false, repeat: 'Nigdy', sound: 'Kręgi', snooze: true },
+    { id: 2, h: 8, m: 29, label: 'Alarm', on: false, repeat: 'Nigdy', sound: 'Kręgi', snooze: true },
+    { id: 3, h: 13, m: 29, label: 'Alarm', on: false, repeat: 'Nigdy', sound: 'Kręgi', snooze: true },
+    { id: 4, h: 15, m: 5, label: 'Alarm', on: false, repeat: 'Nigdy', sound: 'Kręgi', snooze: true }
+  ];
+  let nextAlarmId = 5;
+  let editingList = false;
+  let editId = null;
+  let draft = null;
+  let lastFiredKey = '';
+  let activeTab = 'alarms';
+
+  /* koła wyboru */
+  const buildWheel = (container, specs) => {
+    container.innerHTML = '';
+    return specs.map(([count, unit]) => {
+      const col = document.createElement('div');
+      col.className = 'wheel-col';
+      for (let i = 0; i < count; i++) {
+        const d = document.createElement('div');
+        d.textContent = unit ? `${i} ${unit}` : pad2(i);
+        col.appendChild(d);
+      }
+      container.appendChild(col);
+      return col;
+    });
+  };
+  const setWheel = (col, v) => { col.scrollTop = v * ROW; };
+  const getWheel = (col) => Math.max(0, Math.min(col.children.length - 1, Math.round(col.scrollTop / ROW)));
+
+  const alarmWheels = buildWheel($z('alarm-wheels'), [[24], [60]]);
+  const timerWheels = buildWheel($z('timer-wheels'), [[24, 'godz.'], [60, 'min'], [60, 's']]);
+  setTimeout(() => { setWheel(timerWheels[1], 5); }, 0);
+
+  /* zakładki */
+  const showTab = (tab) => {
+    activeTab = tab;
+    app.querySelectorAll('.clock-pane').forEach((p) => p.classList.toggle('active', p.id === `clock-pane-${tab}`));
+    app.querySelectorAll('[data-clock-tab]').forEach((b) => b.classList.toggle('active', b.getAttribute('data-clock-tab') === tab));
+    if (tab === 'world') renderWorld();
+    if (tab === 'timer' && !timerRunning) requestAnimationFrame(() => { if (!timerSecsSet) { setWheel(timerWheels[1], 5); timerSecsSet = true; } });
+  };
+  let timerSecsSet = false;
+  app.querySelectorAll('[data-clock-tab]').forEach((b) => b.addEventListener('click', () => showTab(b.getAttribute('data-clock-tab'))));
+
+  /* zegary światowe */
+  const zones = [['Warszawa', 'Europe/Warsaw'], ['Londyn', 'Europe/London'], ['Nowy Jork', 'America/New_York'], ['Los Angeles', 'America/Los_Angeles'], ['Tokio', 'Asia/Tokyo'], ['Sydney', 'Australia/Sydney']];
+  const renderWorld = () => {
+    const now = new Date();
+    const local = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' }));
+    $z('world-list').innerHTML = zones.map(([name, tz]) => {
+      const zd = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+      const diff = Math.round((zd - local) / 1800000) / 2;
+      const dayDiff = zd.getDate() === local.getDate() ? 0 : zd > local ? 1 : -1;
+      const when = `${dayDiff === 0 ? 'Dzisiaj' : dayDiff > 0 ? 'Jutro' : 'Wczoraj'}, ${diff >= 0 ? '+' : ''}${String(diff).replace('.', ',')} godz.`;
+      return `<div class="world-item"><div><div class="when">${when}</div><div class="city">${name}</div></div><div class="time">${pad2(zd.getHours())}:${pad2(zd.getMinutes())}</div></div>`;
+    }).join('');
+  };
+
+  /* alarmy */
+  const repeatLabel = (a) => (a.repeat === 'Nigdy' ? '' : `, ${a.repeat}`);
+  const renderAlarms = () => {
+    const el = $z('alarm-list');
+    const sorted = [...alarms].sort((x, y) => x.h * 60 + x.m - (y.h * 60 + y.m));
+    el.innerHTML = sorted.length ? '' : '<div class="clock-empty">Brak alarmów</div>';
+    sorted.forEach((a) => {
+      const row = document.createElement('div');
+      row.className = 'alarm-item' + (a.on ? '' : ' off');
+      row.innerHTML = `<button class="alarm-del" aria-label="Usuń">−</button><div class="alarm-mid"><div class="alarm-time">${pad2(a.h)}:${pad2(a.m)}</div><div class="alarm-label">${(a.label || 'Alarm').replace(/</g, '&lt;')}<small>${repeatLabel(a)}</small></div></div><label class="ios-switch"><input type="checkbox" ${a.on ? 'checked' : ''}/><span class="ios-slider"></span></label>`;
+      row.querySelector('input').addEventListener('change', (e) => { a.on = e.target.checked; row.classList.toggle('off', !a.on); });
+      row.querySelector('.ios-switch').addEventListener('click', (e) => e.stopPropagation());
+      row.querySelector('.alarm-del').addEventListener('click', (e) => { e.stopPropagation(); alarms = alarms.filter((x) => x.id !== a.id); renderAlarms(); });
+      row.addEventListener('click', () => openAlarmSheet(a.id));
+      el.appendChild(row);
+    });
+  };
+  const sheet = $z('alarm-sheet');
+  const scrim = $z('alarm-scrim');
+  const closeAlarmSheet = () => { sheet.classList.remove('open'); scrim.classList.remove('open'); };
+  const refreshDraftUi = () => {
+    $z('alarm-repeat-val').textContent = `${draft.repeat} ›`;
+    $z('alarm-sound-val').textContent = `${draft.sound} ›`;
+  };
+  const openAlarmSheet = (id) => {
+    editId = id;
+    const src = id ? alarms.find((a) => a.id === id) : null;
+    const nowD = new Date();
+    draft = src ? { ...src } : { h: nowD.getHours(), m: nowD.getMinutes(), label: 'Alarm', on: true, repeat: 'dni robocze', sound: 'Kręgi', snooze: true };
+    $z('alarm-sheet-title').textContent = id ? 'Edytuj alarm' : 'Dodaj alarm';
+    $z('alarm-label-input').value = draft.label === 'Alarm' ? '' : draft.label;
+    $z('alarm-snooze-input').checked = draft.snooze;
+    refreshDraftUi();
+    sheet.classList.add('open');
+    scrim.classList.add('open');
+    setTimeout(() => { setWheel(alarmWheels[0], draft.h); setWheel(alarmWheels[1], draft.m); }, 40);
+  };
+  $z('alarm-repeat-row').addEventListener('click', () => { draft.repeat = REPEATS[(REPEATS.indexOf(draft.repeat) + 1) % REPEATS.length]; refreshDraftUi(); });
+  $z('alarm-sound-row').addEventListener('click', () => { draft.sound = SOUNDS[(SOUNDS.indexOf(draft.sound) + 1) % SOUNDS.length]; refreshDraftUi(); });
+  $z('alarm-cancel-btn').addEventListener('click', closeAlarmSheet);
+  scrim.addEventListener('click', closeAlarmSheet);
+  $z('alarm-save-btn').addEventListener('click', () => {
+    draft.h = getWheel(alarmWheels[0]);
+    draft.m = getWheel(alarmWheels[1]);
+    draft.label = $z('alarm-label-input').value.trim() || 'Alarm';
+    draft.snooze = $z('alarm-snooze-input').checked;
+    draft.on = true;
+    if (editId) { const i = alarms.findIndex((a) => a.id === editId); if (i >= 0) alarms[i] = { ...draft, id: editId }; }
+    else alarms.push({ ...draft, id: nextAlarmId++ });
+    closeAlarmSheet();
+    renderAlarms();
+  });
+  $z('alarm-add-btn').addEventListener('click', () => openAlarmSheet(null));
+  $z('alarm-edit-btn').addEventListener('click', () => {
+    editingList = !editingList;
+    $z('clock-pane-alarms').classList.toggle('editing-alarms', editingList);
+    $z('alarm-edit-btn').textContent = editingList ? 'Gotowe' : 'Edycja';
+  });
+  $z('sleep-change-btn').addEventListener('click', () => zeniToast('Sen | Pobudka — wkrótce'));
+
+  /* dzwonienie */
+  const ring = $z('alarm-ring');
+  document.querySelector('.phone-screen').appendChild(ring);
+  ring.style.zIndex = '120';
+  let audioCtx = null;
+  let snoozeTimeout = null;
+  let ringInfo = null;
+  const beep = () => {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.value = 880;
+      g.gain.value = 0.15 * Math.max(0.1, sysVolume);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(); o.stop(audioCtx.currentTime + 0.25);
+    } catch (e) { /* brak audio */ }
+  };
+  const startRing = (title, timeText, snoozeable) => {
+    $z('ring-time').textContent = timeText;
+    $z('ring-label').textContent = title;
+    $z('ring-snooze').style.display = snoozeable ? '' : 'none';
+    ring.classList.add('open');
+    ringInfo = { title, timeText, snoozeable };
+    clearInterval(ringBeepTimer);
+    beep();
+    ringBeepTimer = setInterval(beep, 700);
+  };
+  const stopRing = () => { ring.classList.remove('open'); clearInterval(ringBeepTimer); ringBeepTimer = null; };
+  $z('ring-stop').addEventListener('click', stopRing);
+  $z('ring-snooze').addEventListener('click', () => {
+    const info = ringInfo;
+    stopRing();
+    clearTimeout(snoozeTimeout);
+    snoozeTimeout = setTimeout(() => startRing(info.title, info.timeText, true), 9 * 60 * 1000);
+    zeniToast('Drzemka: 9 minut');
+  });
+  setInterval(() => {
+    const n = new Date();
+    if (n.getSeconds() > 2) return;
+    const k = `${n.getFullYear()}${n.getMonth()}${n.getDate()}${n.getHours()}${n.getMinutes()}`;
+    if (k === lastFiredKey) return;
+    const dow = n.getDay();
+    const due = alarms.filter((a) => a.on && a.h === n.getHours() && a.m === n.getMinutes() &&
+      (a.repeat === 'Nigdy' || a.repeat === 'Codziennie' || (a.repeat === 'dni robocze' && dow >= 1 && dow <= 5) || (a.repeat === 'weekendy' && (dow === 0 || dow === 6))));
+    if (!due.length) return;
+    lastFiredKey = k;
+    due.forEach((a) => { if (a.repeat === 'Nigdy') a.on = false; });
+    renderAlarms();
+    startRing(due[0].label || 'Alarm', `${pad2(n.getHours())}:${pad2(n.getMinutes())}`, due[0].snooze);
+  }, 1000);
+
+  /* stoper */
+  let swRunning = false, swStart = 0, swElapsed = 0, swTimer = null, swLaps = [], swLastLap = 0;
+  const fmtSw = (ms) => {
+    const c = Math.floor(ms / 10) % 100, s = Math.floor(ms / 1000) % 60, m = Math.floor(ms / 60000);
+    return `${pad2(m)}:${pad2(s)},${pad2(c)}`;
+  };
+  const swRender = () => {
+    $z('sw-display').textContent = fmtSw(swElapsed + (swRunning ? performance.now() - swStart : 0));
+    const startBtn = $z('sw-start');
+    startBtn.textContent = swRunning ? 'Stop' : 'Start';
+    startBtn.className = 'round-btn ' + (swRunning ? 'red' : 'green');
+    const lap = $z('sw-lap');
+    lap.textContent = swRunning || swElapsed === 0 ? 'Okrążenie' : 'Reset';
+    lap.disabled = !swRunning && swElapsed === 0;
+    $z('sw-laps').innerHTML = swLaps.map((l, i) => ({ n: i + 1, t: l })).reverse().map((l) => `<div class="lap-row"><span>Okrążenie ${l.n}</span><span>${fmtSw(l.t)}</span></div>`).join('');
+  };
+  $z('sw-start').addEventListener('click', () => {
+    if (swRunning) { swElapsed += performance.now() - swStart; swRunning = false; clearInterval(swTimer); }
+    else { swStart = performance.now(); swRunning = true; swTimer = setInterval(() => { $z('sw-display').textContent = fmtSw(swElapsed + performance.now() - swStart); }, 30); }
+    swRender();
+  });
+  $z('sw-lap').addEventListener('click', () => {
+    if (swRunning) { const total = swElapsed + performance.now() - swStart; swLaps.push(total - swLastLap); swLastLap = total; }
+    else { swElapsed = 0; swLaps = []; swLastLap = 0; }
+    swRender();
+  });
+  swRender();
+
+  /* minutnik */
+  let timerRunning = false, timerPaused = false, timerLeft = 0, timerInt = null;
+  const fmtTimer = (s) => `${pad2(Math.floor(s / 3600))}:${pad2(Math.floor(s / 60) % 60)}:${pad2(s % 60)}`;
+  const timerUi = () => {
+    const active = timerRunning || timerPaused;
+    $z('timer-setup').style.display = active ? 'none' : '';
+    $z('timer-run').style.display = active ? 'block' : 'none';
+    const sb = $z('timer-start');
+    sb.textContent = timerRunning ? 'Pauza' : timerPaused ? 'Wznów' : 'Start';
+    sb.className = 'round-btn ' + (timerRunning ? 'red' : 'green');
+    $z('timer-run').textContent = fmtTimer(timerLeft);
+  };
+  const timerTick = () => {
+    timerLeft -= 1;
+    if (timerLeft <= 0) {
+      timerLeft = 0; clearInterval(timerInt); timerRunning = false; timerPaused = false; timerUi();
+      startRing('Minutnik', 'Koniec czasu', false);
+      return;
+    }
+    $z('timer-run').textContent = fmtTimer(timerLeft);
+  };
+  $z('timer-start').addEventListener('click', () => {
+    if (timerRunning) { timerRunning = false; timerPaused = true; clearInterval(timerInt); }
+    else {
+      if (!timerPaused) {
+        timerLeft = getWheel(timerWheels[0]) * 3600 + getWheel(timerWheels[1]) * 60 + getWheel(timerWheels[2]);
+        if (timerLeft <= 0) { zeniToast('Ustaw czas minutnika'); return; }
+      }
+      timerRunning = true; timerPaused = false;
+      clearInterval(timerInt);
+      timerInt = setInterval(timerTick, 1000);
+    }
+    timerUi();
+  });
+  $z('timer-cancel').addEventListener('click', () => {
+    clearInterval(timerInt); timerRunning = false; timerPaused = false; timerUi();
+    requestAnimationFrame(() => setWheel(timerWheels[1], 5));
+  });
+  timerUi();
+
+  setInterval(() => { if (activeTab === 'world' && app.classList.contains('open')) renderWorld(); }, 5000);
+  renderAlarms();
+  window.__clockOpen = () => { showTab('alarms'); renderAlarms(); };
+}
+
+/* ---------------- CENTRUM STEROWANIA ---------------- */
+function openControlCenter() {
+  const layer = $z('cc-layer');
+  if (!layer || ccOpen) return;
+  const lvl = typeof currentBatteryLevel === 'number' ? currentBatteryLevel : 94;
+  $z('cc-batt-txt').textContent = `${lvl}%`;
+  const fill = $z('cc-batt-fill');
+  if (fill) fill.setAttribute('width', String(Math.max(1, 13 * lvl / 100)));
+  ccOpen = true;
+  layer.classList.add('open');
+  layer.setAttribute('aria-hidden', 'false');
+  updateStatusBarTone();
+}
+
+function closeControlCenter() {
+  const layer = $z('cc-layer');
+  if (!layer) return;
+  ccOpen = false;
+  layer.classList.remove('open', 'dragging');
+  layer.style.transform = '';
+  layer.style.opacity = '';
+  layer.style.visibility = '';
+  layer.setAttribute('aria-hidden', 'true');
+  updateStatusBarTone();
+}
+
+function initControlCenter() {
+  const layer = $z('cc-layer');
+  const hot = $z('cc-hotzone');
+  if (!layer || !hot) return;
+
+  const canOpen = () => !domRefs.stillLayer?.classList.contains('active');
+
+  /* przeciągnięcie z góry w dół */
+  let sy = null;
+  let H = 800;
+  hot.addEventListener('pointerdown', (e) => {
+    if (!canOpen() || ccOpen) return;
+    sy = e.clientY;
+    H = layer.offsetHeight || 800;
+    hot.setPointerCapture(e.pointerId);
+  });
+  hot.addEventListener('pointermove', (e) => {
+    if (sy === null) return;
+    const dy = e.clientY - sy;
+    if (dy > 6) {
+      const p = Math.min(1, (dy * 1.5) / H);
+      layer.classList.add('dragging');
+      layer.style.transform = `translateY(${-(1 - p) * 100}%)`;
+      layer.style.opacity = String(Math.min(1, p * 1.8));
+    }
+  });
+  const endDrag = (e) => {
+    if (sy === null) return;
+    const dy = e.clientY - sy;
+    sy = null;
+    layer.classList.remove('dragging');
+    layer.style.transform = '';
+    layer.style.opacity = '';
+    if (dy > 40) openControlCenter();
+  };
+  hot.addEventListener('pointerup', endDrag);
+  hot.addEventListener('pointercancel', () => { sy = null; layer.classList.remove('dragging'); layer.style.transform = ''; layer.style.opacity = ''; });
+
+  /* zamykanie: przeciągnięcie w górę lub dotknięcie tła */
+  layer.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.cc-slider')) return;
+    const startY = e.clientY;
+    const up = (ev) => {
+      document.removeEventListener('pointerup', up);
+      if (startY - ev.clientY > 60) closeControlCenter();
+    };
+    document.addEventListener('pointerup', up);
+  });
+  layer.addEventListener('click', (e) => { if (!e.target.closest('.cc-tile')) closeControlCenter(); });
+  ['gestureHandle', 'sysBtnHome', 'sysBtnRecents', 'sysBtnBack'].forEach((k) => {
+    domRefs[k]?.addEventListener('click', () => { if (ccOpen) closeControlCenter(); }, true);
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && ccOpen) closeControlCenter(); });
+
+  /* przyciski */
+  const toggle = (id, cls, on) => {
+    const el = $z(id);
+    const next = on === undefined ? !el.classList.contains(cls) : on;
+    el.classList.toggle(cls, next);
+    return next;
+  };
+  const airplane = $z('cc-airplane');
+  const setNet = (id, on, cls) => $z(id).classList.toggle(cls, on);
+  const syncWifiBt = () => {
+    const w = $z('cc-wifi').classList.contains('on-blue');
+    const b = $z('cc-bluetooth').classList.contains('on-blue');
+    if (domRefs.wifiStatusValue) domRefs.wifiStatusValue.textContent = w ? 'ZeniNet' : 'Wyłączone';
+    if (domRefs.btStatusValue) domRefs.btStatusValue.textContent = b ? 'Włączony' : 'Wyłączony';
+  };
+  const applyAirplane = (on) => {
+    airplane.classList.toggle('on-orange', on);
+    if (on) { setNet('cc-wifi', false, 'on-blue'); setNet('cc-bluetooth', false, 'on-blue'); setNet('cc-cellular', false, 'on-green'); }
+    else { setNet('cc-wifi', true, 'on-blue'); setNet('cc-bluetooth', true, 'on-blue'); setNet('cc-cellular', true, 'on-green'); }
+    syncWifiBt();
+  };
+  airplane.addEventListener('click', () => {
+    const on = !airplane.classList.contains('on-orange');
+    applyAirplane(on);
+    if (domRefs.airplaneToggle) domRefs.airplaneToggle.checked = on;
+    zeniToast(on ? 'Tryb samolotowy: włączony' : 'Tryb samolotowy: wyłączony');
+  });
+  domRefs.airplaneToggle?.addEventListener('change', () => applyAirplane(domRefs.airplaneToggle.checked));
+  $z('cc-wifi').addEventListener('click', () => { if (airplane.classList.contains('on-orange')) return; const on = toggle('cc-wifi', 'on-blue'); syncWifiBt(); zeniToast(on ? 'Wi-Fi: włączone' : 'Wi-Fi: wyłączone'); });
+  $z('cc-bluetooth').addEventListener('click', () => { if (airplane.classList.contains('on-orange')) return; const on = toggle('cc-bluetooth', 'on-blue'); syncWifiBt(); zeniToast(on ? 'Bluetooth: włączony' : 'Bluetooth: wyłączony'); });
+  $z('cc-cellular').addEventListener('click', () => { if (airplane.classList.contains('on-orange')) return; const on = toggle('cc-cellular', 'on-green'); zeniToast(on ? 'Dane komórkowe: włączone' : 'Dane komórkowe: wyłączone'); });
+  $z('cc-rotation').addEventListener('click', () => { const on = toggle('cc-rotation', 'on-red'); zeniToast(on ? 'Orientacja zablokowana' : 'Orientacja odblokowana'); });
+  $z('cc-silent').addEventListener('click', () => { const on = toggle('cc-silent', 'on-orange'); zeniToast(on ? 'Tryb cichy: włączony' : 'Tryb cichy: wyłączony'); });
+  $z('cc-dnd').addEventListener('click', () => { const on = toggle('cc-dnd', 'on-purple'); $z('cc-dnd-state').textContent = on ? 'Wł.' : 'Wył.'; });
+  $z('cc-torch').addEventListener('click', () => { const on = toggle('cc-torch', 'on-white'); $z('torch-glow').classList.toggle('on', on); });
+  $z('cc-theme').addEventListener('click', () => setTheme(currentTheme === 'dark' ? 'light' : 'dark'));
+  $z('cc-record').addEventListener('click', () => { const on = toggle('cc-record', 'on-red'); zeniToast(on ? 'Nagrywanie ekranu…' : 'Nagranie zapisane w Galerii'); });
+  $z('cc-battery').addEventListener('click', () => zeniToast(`Bateria: ${typeof currentBatteryLevel === 'number' ? currentBatteryLevel : 94}%`));
+  $z('cc-camera').addEventListener('click', () => zeniToast('Aparat — wkrótce'));
+  const goApp = (id) => { closeControlCenter(); openApp(id); };
+  $z('cc-alarm').addEventListener('click', () => goApp('app-clock'));
+  $z('cc-calc').addEventListener('click', () => goApp('app-calculator'));
+  $z('cc-notes').addEventListener('click', () => goApp('app-notebook'));
+  let playing = false;
+  $z('cc-play').addEventListener('click', () => {
+    playing = !playing;
+    $z('cc-media-title').textContent = playing ? 'Chromatica • Lady Gaga' : 'Nie odtwarza';
+    $z('cc-play-ico').innerHTML = playing ? '<path d="M6 4.5h4v15H6zM14 4.5h4v15h-4z"/>' : '<path d="M7 4.5v15l13-7.5z"/>';
+  });
+
+  /* suwaki */
+  const bindSlider = (el, initial, onChange) => {
+    const fill = el.querySelector('.cc-slider-fill');
+    let drag = false;
+    const set = (e) => {
+      const r = el.getBoundingClientRect();
+      const v = Math.max(0, Math.min(1, 1 - (e.clientY - r.top) / r.height));
+      fill.style.height = `${v * 100}%`;
+      onChange(v);
+    };
+    fill.style.height = `${initial * 100}%`;
+    onChange(initial);
+    el.addEventListener('pointerdown', (e) => { e.stopPropagation(); drag = true; el.setPointerCapture(e.pointerId); set(e); });
+    el.addEventListener('pointermove', (e) => { if (drag) set(e); });
+    el.addEventListener('pointerup', () => { drag = false; });
+    el.addEventListener('pointercancel', () => { drag = false; });
+  };
+  bindSlider($z('cc-brightness'), 0.92, (v) => { $z('dim-overlay').style.opacity = String((1 - Math.max(0.12, v)) * 0.8); });
+  bindSlider($z('cc-volume'), sysVolume, (v) => { sysVolume = v; });
+  applyAirplane(Boolean(domRefs.airplaneToggle?.checked));
+}
+
+/* ---------------- Wspólna inicjalizacja ---------------- */
+function onAppOpened(appId) {
+  if (appId === 'app-calendar') window.__calOpen?.();
+  if (appId === 'app-clock') window.__clockOpen?.();
+  if (appId === 'app-notebook') window.__notesReset?.();
+}
+
+function initZeniApps() {
+  bindTheme();
+  initCalculator();
+  initNotes();
+  initFiles();
+  initCalendar();
+  initClock();
+  initControlCenter();
+
+  const __openApp = openApp;
+  openApp = function (appId) {
+    if (ccOpen) closeControlCenter();
+    __openApp(appId);
+    if (!isLocked) onAppOpened(appId);
+    updateStatusBarTone();
+  };
+  const __closeAllApps = closeAllApps;
+  closeAllApps = function () {
+    if (ccOpen) closeControlCenter();
+    __closeAllApps();
+    updateStatusBarTone();
+  };
 }
 
 if (document.readyState === 'loading') {
