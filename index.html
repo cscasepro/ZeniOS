@@ -17,11 +17,6 @@
     <section class="layer" id="wallpaper-layer">
       <img id="system-wallpaper" alt="ZeniOS Wallpaper" />
 
-      <div class="home-status-pill" aria-hidden="true">
-        <span class="status-dot"></span>
-        <span>ZeniOS</span>
-      </div>
-
       <nav class="liquid-dock" id="liquid-dock" aria-label="Pasek zadań">
         <button class="dock-icon-btn icon-phone" type="button" data-open-app="app-phone" aria-label="Telefon">
           <img src="Icons/Phone_Icon.png" alt="Phone" />
@@ -62,7 +57,6 @@
         </div>
       </header>
 
-      <!-- Widok 1: Albumy i kolekcje / Obrazy -->
       <div class="app-scroll gal-pane active" id="gal-pane-collections">
         <div class="recent-strip">
           <div class="recent-thumb">
@@ -124,7 +118,6 @@
         </div>
       </div>
 
-      <!-- Widok 2: Oś czasu -->
       <div class="app-scroll gal-pane" id="gal-pane-timeline">
         <div class="timeline-group">
           <div class="timeline-head">
@@ -207,199 +200,275 @@
 
     <!-- Aplikacja Ustawienia ZeniOS -->
     <section class="app-view" id="app-settings" aria-label="Ustawienia ZeniOS">
-      <header class="app-header">
-        <div class="app-title-row">
-          <h1 class="app-title">Ustawienia</h1>
-          <button class="close-app-btn" type="button" data-close-app>Zamknij</button>
-        </div>
-        <div class="search-field">
-          <svg class="search-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="7" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input id="settings-search" type="search" placeholder="Szukaj" autocomplete="off" />
-          <svg class="mic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="3" width="6" height="11" rx="3" />
-            <path d="M5 10a7 7 0 0 0 14 0" />
-            <line x1="12" y1="17" x2="12" y2="21" />
-          </svg>
-        </div>
-      </header>
-
-      <div class="app-scroll">
-        <div class="settings-group profile-card">
-          <div class="avatar-circle">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="12" cy="8.5" r="4" />
-              <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+      <!-- Ekran główny ustawień -->
+      <div class="subscreen active" id="settings-main">
+        <header class="app-header">
+          <div class="app-title-row">
+            <h1 class="app-title">Ustawienia</h1>
+            <button class="close-app-btn" type="button" data-close-app>Zamknij</button>
+          </div>
+          <div class="search-field">
+            <svg class="search-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input id="settings-search" type="search" placeholder="Szukaj" autocomplete="off" />
+            <svg class="mic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="3" width="6" height="11" rx="3" />
+              <path d="M5 10a7 7 0 0 0 14 0" />
+              <line x1="12" y1="17" x2="12" y2="21" />
             </svg>
           </div>
-          <div class="profile-meta">
-            <strong>Konto ZeniOS</strong>
-            <span>ZeniID, Chmura i prywatność</span>
+        </header>
+
+        <div class="app-scroll">
+          <div class="settings-group profile-card">
+            <div class="avatar-circle">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="8.5" r="4" />
+                <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+              </svg>
+            </div>
+            <div class="profile-meta">
+              <strong>Konto ZeniOS</strong>
+              <span>ZeniID, Chmura i prywatność</span>
+            </div>
+            <span class="chevron">›</span>
           </div>
-          <span class="chevron">›</span>
+
+          <div class="settings-group" data-group>
+            <div class="settings-row" data-search="tryb samolotowy airplane mode">
+              <span class="row-badge badge-orange">
+                <svg viewBox="0 0 24 24" fill="#fff">
+                  <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
+                </svg>
+              </span>
+              <span class="row-title">Tryb samolotowy</span>
+              <label class="ios-switch" onclick="event.stopPropagation()">
+                <input type="checkbox" id="airplane-toggle" />
+                <span class="ios-slider"></span>
+              </label>
+            </div>
+
+            <div class="settings-row" data-search="wifi siec bezprzewodowa">
+              <span class="row-badge badge-blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round">
+                  <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+                  <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+                  <circle cx="12" cy="19.5" r="1.2" fill="#fff" stroke="none" />
+                </svg>
+              </span>
+              <span class="row-title">Wi-Fi</span>
+              <span class="row-value" id="wifi-status-value">ZeniNet</span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" data-search="bluetooth urzadzenia">
+              <span class="row-badge badge-blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5" />
+                </svg>
+              </span>
+              <span class="row-title">Bluetooth</span>
+              <span class="row-value" id="bt-status-value">Włączony</span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" data-search="siec komorkowa dane mobilne cellular">
+              <span class="row-badge badge-green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round">
+                  <circle cx="12" cy="12" r="2.2" fill="#fff" stroke="none" />
+                  <path d="M8.46 15.54a5 5 0 0 1 0-7.08" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.08" />
+                  <path d="M5.64 18.36a9 9 0 0 1 0-12.72" />
+                  <path d="M18.36 5.64a9 9 0 0 1 0 12.72" />
+                </svg>
+              </span>
+              <span class="row-title">Sieć komórkowa</span>
+              <span class="row-value">5G</span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" data-search="hotspot osobisty udostepnianie">
+              <span class="row-badge badge-green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round">
+                  <circle cx="12" cy="12" r="2.5" fill="#fff" stroke="none" />
+                  <path d="M7.5 16.5a6.5 6.5 0 0 1 0-9" />
+                  <path d="M16.5 7.5a6.5 6.5 0 0 1 0 9" />
+                </svg>
+              </span>
+              <span class="row-title">Hotspot osobisty</span>
+              <span class="row-value">Wyłączony</span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" data-search="bateria zasilanie battery">
+              <span class="row-badge badge-green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="7" width="16" height="10" rx="2" />
+                  <line x1="21" y1="10" x2="21" y2="14" />
+                  <rect x="5.5" y="9.5" width="9" height="5" rx="1" fill="#fff" stroke="none" />
+                </svg>
+              </span>
+              <span class="row-title">Bateria</span>
+              <span class="row-value">94%</span>
+              <span class="chevron">›</span>
+            </div>
+          </div>
+
+          <div class="settings-group" data-group>
+            <div class="settings-row" data-search="ogolne general system">
+              <span class="row-badge badge-gray">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3.2" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </span>
+              <span class="row-title">Ogólne</span>
+              <span class="row-value"></span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" data-search="dostepnosc accessibility">
+              <span class="row-badge badge-blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="5.5" r="1.8" fill="#fff" stroke="none" />
+                  <path d="M5.5 9.5h13M12 9.5v4.5l-3 6M12 14l3 6" />
+                </svg>
+              </span>
+              <span class="row-title">Dostępność</span>
+              <span class="row-value"></span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" id="open-action-button-picker" data-search="przycisk akcji action button szybkie przechodzenie skrot">
+              <span class="row-badge badge-indigo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </span>
+              <span class="row-title">Przycisk akcji</span>
+              <span class="row-value" id="current-action-label">Aparat</span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" data-search="aparat camera">
+              <span class="row-badge badge-gray">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </span>
+              <span class="row-title">Aparat</span>
+              <span class="row-value"></span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" data-search="centrum sterowania control center">
+              <span class="row-badge badge-gray">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round">
+                  <line x1="4" y1="7" x2="20" y2="7" />
+                  <circle cx="9" cy="7" r="2.2" fill="#636366" />
+                  <line x1="4" y1="17" x2="20" y2="17" />
+                  <circle cx="15" cy="17" r="2.2" fill="#636366" />
+                </svg>
+              </span>
+              <span class="row-title">Centrum sterowania</span>
+              <span class="row-value"></span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" id="open-wallpaper-picker" data-search="tapeta tlo wallpaper">
+              <span class="row-badge badge-teal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
+                  <circle cx="9" cy="9.5" r="1.5" fill="#fff" stroke="none" />
+                  <path d="M20.5 15l-4.5-4.5L7.5 19.5" />
+                </svg>
+              </span>
+              <span class="row-title">Tapeta</span>
+              <span class="row-value" id="current-wp-label">default_wallpaper_7</span>
+              <span class="chevron">›</span>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div class="settings-group" data-group>
-          <div class="settings-row" data-search="tryb samolotowy airplane mode">
-            <span class="row-badge badge-orange">
-              <svg viewBox="0 0 24 24" fill="#fff">
-                <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
-              </svg>
-            </span>
-            <span class="row-title">Tryb samolotowy</span>
-            <label class="ios-switch" onclick="event.stopPropagation()">
-              <input type="checkbox" id="airplane-toggle" />
-              <span class="ios-slider"></span>
-            </label>
+      <!-- Zakładka / podwidok: Tapety -->
+      <div class="subscreen" id="settings-wallpaper">
+        <header class="app-header">
+          <div class="app-title-row">
+            <button class="back-btn" type="button" data-settings-back>‹ Ustawienia</button>
+            <h1 class="app-title sub-title">Tapety</h1>
+            <span class="header-spacer"></span>
+          </div>
+        </header>
+
+        <div class="app-scroll">
+          <div class="wallpaper-preview-box">
+            <img id="wallpaper-preview-img" alt="Podgląd tapety" />
+            <div class="wallpaper-preview-meta">
+              <strong id="wallpaper-preview-name">default_wallpaper_7</strong>
+              <span>Aktywna tapeta ekranu głównego</span>
+            </div>
           </div>
 
-          <div class="settings-row" data-search="wifi siec bezprzewodowa">
-            <span class="row-badge badge-blue">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round">
-                <path d="M5 12.55a11 11 0 0 1 14.08 0" />
-                <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
-                <circle cx="12" cy="19.5" r="1.2" fill="#fff" stroke="none" />
-              </svg>
-            </span>
-            <span class="row-title">Wi-Fi</span>
-            <span class="row-value" id="wifi-status-value">ZeniNet</span>
-            <span class="chevron">›</span>
+          <div class="section-head">
+            <h2>Wybierz tapetę ZeniOS</h2>
           </div>
 
-          <div class="settings-row" data-search="bluetooth urzadzenia">
-            <span class="row-badge badge-blue">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5" />
-              </svg>
-            </span>
-            <span class="row-title">Bluetooth</span>
-            <span class="row-value" id="bt-status-value">Włączony</span>
-            <span class="chevron">›</span>
-          </div>
-
-          <div class="settings-row" data-search="siec komorkowa dane mobilne cellular">
-            <span class="row-badge badge-green">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round">
-                <circle cx="12" cy="12" r="2.2" fill="#fff" stroke="none" />
-                <path d="M8.46 15.54a5 5 0 0 1 0-7.08" />
-                <path d="M15.54 8.46a5 5 0 0 1 0 7.08" />
-                <path d="M5.64 18.36a9 9 0 0 1 0-12.72" />
-                <path d="M18.36 5.64a9 9 0 0 1 0 12.72" />
-              </svg>
-            </span>
-            <span class="row-title">Sieć komórkowa</span>
-            <span class="row-value">5G</span>
-            <span class="chevron">›</span>
-          </div>
-
-          <div class="settings-row" data-search="hotspot osobisty udostepnianie">
-            <span class="row-badge badge-green">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round">
-                <circle cx="12" cy="12" r="2.5" fill="#fff" stroke="none" />
-                <path d="M7.5 16.5a6.5 6.5 0 0 1 0-9" />
-                <path d="M16.5 7.5a6.5 6.5 0 0 1 0 9" />
-              </svg>
-            </span>
-            <span class="row-title">Hotspot osobisty</span>
-            <span class="row-value">Wyłączony</span>
-            <span class="chevron">›</span>
-          </div>
-
-          <div class="settings-row" data-search="bateria zasilanie battery">
-            <span class="row-badge badge-green">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="7" width="16" height="10" rx="2" />
-                <line x1="21" y1="10" x2="21" y2="14" />
-                <rect x="5.5" y="9.5" width="9" height="5" rx="1" fill="#fff" stroke="none" />
-              </svg>
-            </span>
-            <span class="row-title">Bateria</span>
-            <span class="row-value">94%</span>
-            <span class="chevron">›</span>
-          </div>
-        </div>
-
-        <div class="settings-group" data-group>
-          <div class="settings-row" data-search="ogolne general system">
-            <span class="row-badge badge-gray">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3.2" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-            </span>
-            <span class="row-title">Ogólne</span>
-            <span class="row-value"></span>
-            <span class="chevron">›</span>
-          </div>
-
-          <div class="settings-row" data-search="dostepnosc accessibility">
-            <span class="row-badge badge-blue">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="5.5" r="1.8" fill="#fff" stroke="none" />
-                <path d="M5.5 9.5h13M12 9.5v4.5l-3 6M12 14l3 6" />
-              </svg>
-            </span>
-            <span class="row-title">Dostępność</span>
-            <span class="row-value"></span>
-            <span class="chevron">›</span>
-          </div>
-
-          <div class="settings-row" data-search="przycisk akcji action button">
-            <span class="row-badge badge-indigo">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            </span>
-            <span class="row-title">Przycisk akcji</span>
-            <span class="row-value"></span>
-            <span class="chevron">›</span>
-          </div>
-
-          <div class="settings-row" data-search="aparat camera">
-            <span class="row-badge badge-gray">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
-            </span>
-            <span class="row-title">Aparat</span>
-            <span class="row-value"></span>
-            <span class="chevron">›</span>
-          </div>
-
-          <div class="settings-row" data-search="centrum sterowania control center">
-            <span class="row-badge badge-gray">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round">
-                <line x1="4" y1="7" x2="20" y2="7" />
-                <circle cx="9" cy="7" r="2.2" fill="#636366" />
-                <line x1="4" y1="17" x2="20" y2="17" />
-                <circle cx="15" cy="17" r="2.2" fill="#636366" />
-              </svg>
-            </span>
-            <span class="row-title">Centrum sterowania</span>
-            <span class="row-value"></span>
-            <span class="chevron">›</span>
-          </div>
-
-          <div class="settings-row" id="open-wallpaper-picker" data-search="tapeta tlo wallpaper">
-            <span class="row-badge badge-teal">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
-                <circle cx="9" cy="9.5" r="1.5" fill="#fff" stroke="none" />
-                <path d="M20.5 15l-4.5-4.5L7.5 19.5" />
-              </svg>
-            </span>
-            <span class="row-title">Tapeta</span>
-            <span class="row-value" id="current-wp-label">default_wallpaper_7</span>
-            <span class="chevron">›</span>
-          </div>
-        </div>
-
-        <div class="wallpaper-drawer" id="wallpaper-drawer">
-          <div class="drawer-title">Tapety ZeniOS (1–7)</div>
           <div class="wp-grid" id="wp-grid"></div>
+        </div>
+      </div>
+
+      <!-- Zakładka / podwidok: Przycisk akcji (szybkie przechodzenie / skróty jak w Androidzie) -->
+      <div class="subscreen" id="settings-action-button">
+        <header class="app-header">
+          <div class="app-title-row">
+            <button class="back-btn" type="button" data-settings-back>‹ Ustawienia</button>
+            <h1 class="app-title sub-title">Przycisk akcji</h1>
+            <span class="header-spacer"></span>
+          </div>
+        </header>
+
+        <div class="app-scroll">
+          <div class="android-quick-strip">
+            <div class="quick-strip-label">Szybkie przechodzenie</div>
+            <div class="quick-chips-row" id="android-quick-chips">
+              <button type="button" class="quick-chip active" data-quick-action="Aparat">Aparat</button>
+              <button type="button" class="quick-chip" data-quick-action="Latarka">Latarka</button>
+              <button type="button" class="quick-chip" data-quick-action="Galeria">Galeria</button>
+              <button type="button" class="quick-chip" data-quick-action="Telefon">Telefon</button>
+            </div>
+          </div>
+
+          <div class="settings-group" id="action-options-list">
+            <div class="settings-row selectable-option active" data-action-value="Aparat">
+              <span class="row-badge badge-blue">📷</span>
+              <span class="row-title">Aparat</span>
+              <span class="option-check">✓</span>
+            </div>
+            <div class="settings-row selectable-option" data-action-value="Latarka">
+              <span class="row-badge badge-orange">🔦</span>
+              <span class="row-title">Latarka</span>
+              <span class="option-check">✓</span>
+            </div>
+            <div class="settings-row selectable-option" data-action-value="Galeria">
+              <span class="row-badge badge-teal">🖼️</span>
+              <span class="row-title">Otwórz Galerię</span>
+              <span class="option-check">✓</span>
+            </div>
+            <div class="settings-row selectable-option" data-action-value="Telefon">
+              <span class="row-badge badge-green">📞</span>
+              <span class="row-title">Otwórz Telefon</span>
+              <span class="option-check">✓</span>
+            </div>
+            <div class="settings-row selectable-option" data-action-value="Tryb cichy">
+              <span class="row-badge badge-indigo">🔕</span>
+              <span class="row-title">Tryb cichy</span>
+              <span class="option-check">✓</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
