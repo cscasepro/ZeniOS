@@ -1,4 +1,5 @@
 const LOAD_DURATION_MS = 5000;
+const AUTO_HIDE_NAV_MS = 5000;
 
 const ZENIOS_WALLPAPERS = [
   'default_wallpapers/default_wallpaper_1',
@@ -13,6 +14,7 @@ const ZENIOS_WALLPAPERS = [
 const DEFAULT_WALLPAPER_INDEX = 6;
 
 let loadTimer = null;
+let navIdleTimer = null;
 let currentWallpaperIndex = DEFAULT_WALLPAPER_INDEX;
 let currentNavMode = 'gestures';
 let domRefs = {};
@@ -89,6 +91,37 @@ function renderWallpaperPicker() {
   });
 }
 
+function isAnyAppOpen() {
+  return Array.from(domRefs.appViews || []).some((view) => view.classList.contains('open'));
+}
+
+function wakeSystemNav() {
+  const overlay = domRefs.systemNavOverlay;
+  if (!overlay) return;
+
+  if (navIdleTimer) {
+    clearTimeout(navIdleTimer);
+    navIdleTimer = null;
+  }
+
+  const appOpen = isAnyAppOpen();
+  overlay.classList.toggle('in-app', appOpen);
+  overlay.classList.remove('auto-hidden');
+
+  if (appOpen) {
+    navIdleTimer = setTimeout(() => {
+      overlay.classList.add('auto-hidden');
+    }, AUTO_HIDE_NAV_MS);
+  }
+}
+
+function bindSystemNavAutoHide() {
+  const events = ['pointerdown', 'pointermove', 'keydown', 'scroll', 'wheel'];
+  events.forEach((evtName) => {
+    document.addEventListener(evtName, wakeSystemNav, { passive: true });
+  });
+}
+
 function openSettingsSubscreen(screenId) {
   [domRefs.settingsMain, domRefs.settingsWallpaper, domRefs.settingsSystemNav].forEach((el) => {
     if (!el) return;
@@ -111,6 +144,8 @@ function setSystemNavMode(mode) {
     domRefs.systemNavOverlay.classList.toggle('mode-gestures', currentNavMode === 'gestures');
     domRefs.systemNavOverlay.classList.toggle('mode-buttons', currentNavMode === 'buttons');
   }
+
+  wakeSystemNav();
 }
 
 function handleBackAction() {
@@ -134,6 +169,7 @@ function openApp(appId) {
   domRefs.appViews.forEach((view) => {
     view.classList.toggle('open', view.id === appId);
   });
+  wakeSystemNav();
 }
 
 function closeAllApps() {
@@ -141,6 +177,7 @@ function closeAllApps() {
     view.classList.remove('open');
   });
   openSettingsSubscreen('settings-main');
+  wakeSystemNav();
 }
 
 function bindAppNavigation() {
@@ -324,6 +361,7 @@ function finishLoading() {
   if (domRefs.liquidDock) {
     domRefs.liquidDock.classList.add('visible');
   }
+  wakeSystemNav();
 }
 
 function cacheDom() {
@@ -376,6 +414,7 @@ function initSystem() {
   bindAppNavigation();
   bindGalleryFeatures();
   bindSettingsFeatures();
+  bindSystemNavAutoHide();
   setWallpaper(DEFAULT_WALLPAPER_INDEX);
   setSystemNavMode(currentNavMode);
   showLayer(domRefs.stillLayer);
