@@ -2401,7 +2401,7 @@ body.zenios-in-app .app-bottom-tabs {
 .files-empty svg { width: 52px; height: 52px; margin-bottom: 10px; opacity: 0.55; }
 
 /* =====================================================================
-   KALENDARZ (styl iOS Calendar, PL)
+   KALENDARZ (styl iOS .Calendar, PL)
    ===================================================================== */
 #app-calendar { background: var(--bgp); }
 .cal-top {
