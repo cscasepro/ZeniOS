@@ -285,7 +285,7 @@ html, body {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   touch-action: pan-y;
-  padding: 12px 14px 104px;
+  padding: 12px 14px 48px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -421,14 +421,15 @@ html, body {
 }
 
 .row-badge {
-  width: 28px;
+  min-width: 28px;
   height: 28px;
+  padding: 0 6px;
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #ffffff;
 }
@@ -921,13 +922,18 @@ html, body {
 .app-bottom-tabs {
   position: relative;
   flex-shrink: 0;
-  height: 56px;
+  height: 54px;
   background: #141418;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   align-items: center;
   z-index: 5;
+  transition: transform 0.25s ease;
+}
+
+body.zenios-in-app .app-bottom-tabs {
+  transform: translateY(-28px);
 }
 
 .bottom-tab {
@@ -940,15 +946,15 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   font-size: 10px;
   font-weight: 500;
   cursor: pointer;
 }
 
 .bottom-tab svg {
-  width: 18px;
-  height: 18px;
+  width: 17px;
+  height: 17px;
 }
 
 .bottom-tab.active {
@@ -987,14 +993,14 @@ html, body {
   height: 28px;
 }
 
-/* Dolna nawigacja systemowa: tylko w aplikacjach, same przyciski bez otoczki, równe rozmiary, auto-ukrywanie po 5 s */
+/* Dolna nawigacja systemowa: tylko w aplikacjach, równe przyciski bez otoczki, auto-ukrywanie po 5 s */
 .system-nav-overlay {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 36px;
-  padding: 0 24px max(4px, env(safe-area-inset-bottom));
+  height: 32px;
+  padding: 0 28px max(4px, env(safe-area-inset-bottom));
   z-index: 40;
   pointer-events: none;
   display: flex;
@@ -1032,6 +1038,7 @@ html, body {
 .sys-buttons-row {
   display: none;
   width: 100%;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
   pointer-events: auto;
@@ -1039,6 +1046,14 @@ html, body {
 
 .system-nav-overlay.mode-gestures .gesture-handle {
   display: block;
+}
+
+.system-nav-overlay.mode-gestures .sys-buttons-row {
+  display: none;
+}
+
+.system-nav-overlay.mode-buttons .gesture-handle {
+  display: none;
 }
 
 .system-nav-overlay.mode-buttons .sys-buttons-row {
@@ -1057,6 +1072,7 @@ html, body {
   width: 32px;
   height: 32px;
   padding: 0;
+  flex: 0 0 32px;
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
