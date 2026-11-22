@@ -1,1 +1,124 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>ZeniOS</title>
+  <style>
+    :root {
+      --phone-w: 390px;
+      --phone-h: 844px;
+    }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #040508;
+      overflow: hidden;
+    }
+
+    .viewport-stage {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .scale-box {
+      width: var(--phone-w);
+      height: var(--phone-h);
+      transform-origin: center center;
+      flex-shrink: 0;
+    }
+
+    .phone-surface {
+      position: relative;
+      width: var(--phone-w);
+      height: var(--phone-h);
+      background: #05060a;
+      overflow: hidden;
+    }
+
+    .layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.55s ease, visibility 0.55s ease;
+    }
+
+    .layer.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #still-layer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #05060a;
+      z-index: 2;
+    }
+
+    #loading-still {
+      max-width: 55%;
+      max-height: 45%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      animation: subtleGlow 4.5s ease-in-out infinite;
+    }
+
+    @keyframes subtleGlow {
+      0%, 100% {
+        filter: brightness(0.95) drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+      }
+      50% {
+        filter: brightness(1.06) drop-shadow(0 0 14px rgba(255, 255, 255, 0.2));
+      }
+    }
+
+    #wallpaper-layer {
+      background: #05060a;
+      z-index: 1;
+    }
+
+    #system-wallpaper {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="viewport-stage">
+    <div class="scale-box" id="scale-box">
+      <div class="phone-surface">
+        <section class="layer active" id="still-layer">
+          <img id="loading-still" src="Boot_Loading/Zenios_loading.png" alt="Zenios_loading" />
+        </section>
+
+        <section class="layer" id="wallpaper-layer">
+          <img id="system-wallpaper" alt="ZeniOS Wallpaper" />
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="loading.js"></script>
+</body>
+</html>
