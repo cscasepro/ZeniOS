@@ -13,6 +13,13 @@ const ZENIOS_WALLPAPERS = [
 const DEFAULT_WALLPAPER_INDEX = 6;
 const BATTERY_PRESETS = [94, 65, 20, 100];
 
+const LOCK_LABELS = {
+  swipe: 'Przeciągnięcie',
+  pin: 'PIN',
+  password: 'Hasło',
+  pattern: 'Wzór'
+};
+
 let loadTimer = null;
 let clockTimer = null;
 let currentWallpaperIndex = DEFAULT_WALLPAPER_INDEX;
@@ -20,6 +27,15 @@ let currentNavMode = 'gestures';
 let currentBatteryLevel = 94;
 let batteryPresetIndex = 0;
 let gestureStartY = null;
+let lockSwipeStartY = null;
+let isLocked = false;
+let currentLockMethod = 'swipe';
+let pinCode = '1234';
+let passwordCode = 'zenios';
+let patternCode = '1-2-5-8-9';
+let enteredPin = '';
+let enteredPattern = [];
+let pendingAppAfterUnlock = null;
 let domRefs = {};
 
 function formatCurrentClock() {
@@ -29,9 +45,23 @@ function formatCurrentClock() {
   return `${hours}:${minutes}`;
 }
 
+function formatCurrentLockDate() {
+  const now = new Date();
+  const days = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+  const months = ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru'];
+  return `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
+}
+
 function updateClock() {
+  const timeText = formatCurrentClock();
   if (domRefs.statusClock) {
-    domRefs.statusClock.textContent = formatCurrentClock();
+    domRefs.statusClock.textContent = timeText;
+  }
+  if (domRefs.lockClock) {
+    domRefs.lockClock.textContent = timeText;
+  }
+  if (domRefs.lockDate) {
+    domRefs.lockDate.textContent = formatCurrentLockDate();
   }
 }
 
@@ -72,12 +102,13 @@ function initRealBatteryIfAvailable() {
 }
 
 function showLayer(target) {
-  const { stillLayer, wallpaperLayer } = domRefs;
-  [stillLayer, wallpaperLayer].forEach((el) => {
+  const { stillLayer, lockscreenLayer, wallpaperLayer } = domRefs;
+  [stillLayer, lockscreenLayer, wallpaperLayer].forEach((el) => {
     if (!el) return;
     el.classList.toggle('active', el === target);
   });
   syncStatusBarDisplay();
+  syncNavBarDisplay();
 }
 
 function resolveWallpaperCandidates(basePath) {
@@ -106,6 +137,9 @@ function setWallpaper(index) {
 
   if (domRefs.systemWallpaper) {
     loadImageWithFallback(domRefs.systemWallpaper, basePath);
+  }
+  if (domRefs.lockWallpaper) {
+    loadImageWithFallback(domRefs.lockWallpaper, basePath);
   }
   if (domRefs.currentWpLabel) {
     domRefs.currentWpLabel.textContent = wpName;
@@ -149,15 +183,15 @@ function isAnyAppOpen() {
 }
 
 function isHomeScreenVisible() {
-  return !isAnyAppOpen() && Boolean(domRefs.wallpaperLayer?.classList.contains('active'));
+  return !isLocked && !isAnyAppOpen() && Boolean(domRefs.wallpaperLayer?.classList.contains('active'));
 }
 
 function syncStatusBarDisplay() {
   const bar = domRefs.statusBarOverlay;
   if (!bar) return;
 
-  const visible = isAnyAppOpen() || isHomeScreenVisible();
-  bar.classList.toggle('visible', visible);
+  const stillActive = Boolean(domRefs.stillLayer?.classList.contains('active'));
+  bar.classList.toggle('visible', !stillActive);
 }
 
 function syncNavBarDisplay() {
@@ -166,10 +200,10 @@ function syncNavBarDisplay() {
 
   const appOpen = isAnyAppOpen();
   const homeVisible = isHomeScreenVisible();
-  const shouldShowNav = appOpen || homeVisible;
+  const shouldShowNav = !isLocked && (appOpen || homeVisible);
   const isButtons = currentNavMode === 'buttons';
 
-  document.body.classList.toggle('zenios-in-app', appOpen);
+  document.body.classList.toggle('zenios-in-app', appOpen && !isLocked);
   overlay.classList.toggle('in-app', shouldShowNav);
   overlay.classList.toggle('mode-gestures', !isButtons);
   overlay.classList.toggle('mode-buttons', isButtons);
@@ -193,8 +227,297 @@ function syncNavBarDisplay() {
   }
 }
 
+function hideAllUnlockPanels() {
+  [domRefs.unlockPinPanel, domRefs.unlockPasswordPanel, domRefs.unlockPatternPanel].forEach((panel) => {
+    if (panel) panel.classList.remove('active');
+  });
+  if (domRefs.pinError) domRefs.pinError.textContent = '';
+  if (domRefs.passwordError) domRefs.passwordError.textContent = '';
+  if (domRefs.patternError) domRefs.patternError.textContent = '';
+  if (domRefs.lockBottomArea) domRefs.lockBottomArea.classList.remove('dimmed');
+}
+
+function resetUnlockInputs() {
+  enteredPin = '';
+  enteredPattern = [];
+  updatePinDots();
+  clearPatternNodes();
+  if (domRefs.lockPasswordInput) domRefs.lockPasswordInput.value = '';
+}
+
+function lockScreen() {
+  isLocked = true;
+  closeAllApps();
+  hideAllUnlockPanels();
+  resetUnlockInputs();
+  updateLockHint();
+  showLayer(domRefs.lockscreenLayer);
+  if (domRefs.liquidDock) {
+    domRefs.liquidDock.classList.remove('visible');
+  }
+}
+
+function unlockScreenNow() {
+  isLocked = false;
+  pendingAppAfterUnlock = null;
+  hideAllUnlockPanels();
+  resetUnlockInputs();
+  showLayer(domRefs.wallpaperLayer);
+  if (domRefs.liquidDock) {
+    domRefs.liquidDock.classList.add('visible');
+  }
+}
+
+function updateLockHint() {
+  if (!domRefs.lockHintText) return;
+  if (currentLockMethod === 'swipe') {
+    domRefs.lockHintText.textContent = 'Przeciągnij w górę, aby odblokować';
+  } else if (currentLockMethod === 'pin') {
+    domRefs.lockHintText.textContent = 'Przeciągnij w górę — wpisz PIN';
+  } else if (currentLockMethod === 'password') {
+    domRefs.lockHintText.textContent = 'Przeciągnij w górę — wpisz hasło';
+  } else if (currentLockMethod === 'pattern') {
+    domRefs.lockHintText.textContent = 'Przeciągnij w górę — narysuj wzór';
+  }
+}
+
+function requestUnlockChallenge(targetAppId = null) {
+  pendingAppAfterUnlock = targetAppId;
+
+  if (currentLockMethod === 'swipe') {
+    unlockScreenNow();
+    if (targetAppId) openApp(targetAppId);
+    return;
+  }
+
+  hideAllUnlockPanels();
+  resetUnlockInputs();
+  if (domRefs.lockBottomArea) domRefs.lockBottomArea.classList.add('dimmed');
+
+  if (currentLockMethod === 'pin' && domRefs.unlockPinPanel) {
+    domRefs.unlockPinPanel.classList.add('active');
+  } else if (currentLockMethod === 'password' && domRefs.unlockPasswordPanel) {
+    domRefs.unlockPasswordPanel.classList.add('active');
+    setTimeout(() => domRefs.lockPasswordInput?.focus(), 50);
+  } else if (currentLockMethod === 'pattern' && domRefs.unlockPatternPanel) {
+    domRefs.unlockPatternPanel.classList.add('active');
+  }
+}
+
+function updatePinDots() {
+  const dots = domRefs.pinDots?.querySelectorAll('span') || [];
+  dots.forEach((dot, i) => {
+    dot.classList.toggle('filled', i < enteredPin.length);
+  });
+}
+
+function handlePinDigit(digit) {
+  if (enteredPin.length >= 4) return;
+  enteredPin += digit;
+  updatePinDots();
+  if (domRefs.pinError) domRefs.pinError.textContent = '';
+
+  if (enteredPin.length === 4) {
+    if (enteredPin === pinCode) {
+      const nextApp = pendingAppAfterUnlock;
+      unlockScreenNow();
+      if (nextApp) openApp(nextApp);
+    } else {
+      if (domRefs.pinError) domRefs.pinError.textContent = 'Nieprawidłowy PIN';
+      setTimeout(() => {
+        enteredPin = '';
+        updatePinDots();
+      }, 280);
+    }
+  }
+}
+
+function submitPasswordUnlock() {
+  const val = domRefs.lockPasswordInput?.value || '';
+  if (val === passwordCode) {
+    const nextApp = pendingAppAfterUnlock;
+    unlockScreenNow();
+    if (nextApp) openApp(nextApp);
+  } else if (domRefs.passwordError) {
+    domRefs.passwordError.textContent = 'Nieprawidłowe hasło';
+  }
+}
+
+function clearPatternNodes() {
+  enteredPattern = [];
+  domRefs.patternNodes?.forEach((node) => node.classList.remove('selected'));
+}
+
+function handlePatternNode(nodeEl) {
+  const id = nodeEl.getAttribute('data-node');
+  if (!id || enteredPattern.includes(id)) return;
+
+  enteredPattern.push(id);
+  nodeEl.classList.add('selected');
+  if (domRefs.patternError) domRefs.patternError.textContent = '';
+
+  const seq = enteredPattern.join('-');
+  if (seq === patternCode) {
+    const nextApp = pendingAppAfterUnlock;
+    unlockScreenNow();
+    if (nextApp) openApp(nextApp);
+  } else if (enteredPattern.length >= 9 || seq.length > patternCode.length) {
+    if (domRefs.patternError) domRefs.patternError.textContent = 'Nieprawidłowy wzór';
+    setTimeout(clearPatternNodes, 350);
+  }
+}
+
+function syncSecretEditorUi() {
+  if (!domRefs.secretEditInput || !domRefs.secretEditorLabel) return;
+  if (currentLockMethod === 'pin') {
+    domRefs.secretEditorLabel.textContent = 'Kod PIN (4 cyfry)';
+    domRefs.secretEditInput.value = pinCode;
+  } else if (currentLockMethod === 'password') {
+    domRefs.secretEditorLabel.textContent = 'Hasło odblokowania';
+    domRefs.secretEditInput.value = passwordCode;
+  } else if (currentLockMethod === 'pattern') {
+    domRefs.secretEditorLabel.textContent = 'Wzór (punkty 1–9 oddzielone myślnikiem)';
+    domRefs.secretEditInput.value = patternCode;
+  } else {
+    domRefs.secretEditorLabel.textContent = 'Zapisany kod / wzór (do użycia po zmianie metody)';
+    domRefs.secretEditInput.value = pinCode;
+  }
+}
+
+function setLockMethod(method) {
+  const valid = ['swipe', 'pin', 'password', 'pattern'].includes(method) ? method : 'swipe';
+  currentLockMethod = valid;
+
+  if (domRefs.currentLockLabel) {
+    domRefs.currentLockLabel.textContent = LOCK_LABELS[valid];
+  }
+
+  domRefs.lockMethodOptions?.forEach((row) => {
+    row.classList.toggle('active', row.getAttribute('data-lock-method') === valid);
+  });
+
+  updateLockHint();
+  syncSecretEditorUi();
+}
+
+function saveSecretFromEditor() {
+  const raw = (domRefs.secretEditInput?.value || '').trim();
+  if (!raw) return;
+
+  if (currentLockMethod === 'pin') {
+    pinCode = raw;
+    if (domRefs.secretStatusHint) domRefs.secretStatusHint.textContent = `Zapisano PIN: ${pinCode}`;
+  } else if (currentLockMethod === 'password') {
+    passwordCode = raw;
+    if (domRefs.secretStatusHint) domRefs.secretStatusHint.textContent = `Zapisano hasło: ${passwordCode}`;
+  } else if (currentLockMethod === 'pattern') {
+    patternCode = raw;
+    if (domRefs.secretStatusHint) domRefs.secretStatusHint.textContent = `Zapisano wzór: ${patternCode}`;
+  } else {
+    pinCode = raw;
+    if (domRefs.secretStatusHint) domRefs.secretStatusHint.textContent = `Zapisano kod PIN: ${pinCode}`;
+  }
+}
+
+function bindLockscreenFeatures() {
+  const layer = domRefs.lockscreenLayer;
+  if (layer) {
+    layer.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.unlock-panel') || e.target.closest('.lock-circle-btn')) return;
+      lockSwipeStartY = e.clientY;
+    });
+
+    layer.addEventListener('pointerup', (e) => {
+      if (e.target.closest('.unlock-panel') || e.target.closest('.lock-circle-btn')) return;
+      if (lockSwipeStartY === null) return;
+      const deltaY = lockSwipeStartY - e.clientY;
+      lockSwipeStartY = null;
+      if (deltaY >= 14) {
+        requestUnlockChallenge(null);
+      }
+    });
+  }
+
+  domRefs.lockSwipeBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    requestUnlockChallenge(null);
+  });
+
+  domRefs.lockTorchBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    domRefs.lockTorchBtn.classList.toggle('torch-on');
+  });
+
+  domRefs.lockCameraBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    requestUnlockChallenge('app-gallery');
+  });
+
+  domRefs.pinKeys?.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const digit = btn.getAttribute('data-pin');
+      if (digit) handlePinDigit(digit);
+    });
+  });
+
+  domRefs.pinClearBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    enteredPin = '';
+    updatePinDots();
+    if (domRefs.pinError) domRefs.pinError.textContent = '';
+  });
+
+  domRefs.pinCancelBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideAllUnlockPanels();
+    resetUnlockInputs();
+  });
+
+  domRefs.passwordSubmitBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    submitPasswordUnlock();
+  });
+
+  domRefs.lockPasswordInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      submitPasswordUnlock();
+    }
+  });
+
+  domRefs.passwordCancelBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideAllUnlockPanels();
+    resetUnlockInputs();
+  });
+
+  domRefs.patternNodes?.forEach((node) => {
+    node.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handlePatternNode(node);
+    });
+  });
+
+  domRefs.patternResetBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    clearPatternNodes();
+  });
+
+  domRefs.patternCancelBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideAllUnlockPanels();
+    resetUnlockInputs();
+  });
+}
+
 function openSettingsSubscreen(screenId) {
-  [domRefs.settingsMain, domRefs.settingsWallpaper, domRefs.settingsSystemNav].forEach((el) => {
+  [
+    domRefs.settingsMain,
+    domRefs.settingsWallpaper,
+    domRefs.settingsSystemNav,
+    domRefs.settingsPasscode
+  ].forEach((el) => {
     if (!el) return;
     el.classList.toggle('active', el.id === screenId);
   });
@@ -218,7 +541,8 @@ function handleBackAction() {
   const settingsOpen = domRefs.settingsView?.classList.contains('open');
   const subscreenActive =
     domRefs.settingsWallpaper?.classList.contains('active') ||
-    domRefs.settingsSystemNav?.classList.contains('active');
+    domRefs.settingsSystemNav?.classList.contains('active') ||
+    domRefs.settingsPasscode?.classList.contains('active');
 
   if (settingsOpen && subscreenActive) {
     openSettingsSubscreen('settings-main');
@@ -229,6 +553,10 @@ function handleBackAction() {
 
 function openApp(appId) {
   if (!appId) return;
+  if (isLocked) {
+    requestUnlockChallenge(appId);
+    return;
+  }
   if (appId === 'app-settings') {
     openSettingsSubscreen('settings-main');
   }
@@ -385,11 +713,15 @@ function bindSettingsFeatures() {
     settingsSearch,
     openWallpaperPicker,
     openSystemNavPicker,
+    openPasscodePicker,
     settingsBackButtons,
     airplaneToggle,
     wifiStatusValue,
     btStatusValue,
     navModeOptions,
+    lockMethodOptions,
+    saveSecretBtn,
+    testLockNowBtn,
     batteryCycleRow
   } = domRefs;
 
@@ -428,6 +760,13 @@ function bindSettingsFeatures() {
     });
   }
 
+  if (openPasscodePicker) {
+    openPasscodePicker.addEventListener('click', () => {
+      syncSecretEditorUi();
+      openSettingsSubscreen('settings-passcode');
+    });
+  }
+
   if (openWallpaperPicker) {
     openWallpaperPicker.addEventListener('click', () => {
       openSettingsSubscreen('settings-wallpaper');
@@ -452,6 +791,23 @@ function bindSettingsFeatures() {
       if (mode) setSystemNavMode(mode);
     });
   });
+
+  lockMethodOptions?.forEach((row) => {
+    row.addEventListener('click', () => {
+      const method = row.getAttribute('data-lock-method');
+      if (method) setLockMethod(method);
+    });
+  });
+
+  saveSecretBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    saveSecretFromEditor();
+  });
+
+  testLockNowBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    lockScreen();
+  });
 }
 
 function finishLoading() {
@@ -462,12 +818,7 @@ function finishLoading() {
   if (domRefs.loadingStill) {
     domRefs.loadingStill.style.animation = 'none';
   }
-  showLayer(domRefs.wallpaperLayer);
-  if (domRefs.liquidDock) {
-    domRefs.liquidDock.classList.add('visible');
-  }
-  syncNavBarDisplay();
-  syncStatusBarDisplay();
+  lockScreen();
 }
 
 function cacheDom() {
@@ -479,6 +830,31 @@ function cacheDom() {
     batteryCycleRow: document.getElementById('battery-cycle-row'),
     batterySettingState: document.getElementById('battery-setting-state'),
     stillLayer: document.getElementById('still-layer'),
+    lockscreenLayer: document.getElementById('lockscreen-layer'),
+    lockWallpaper: document.getElementById('lock-wallpaper'),
+    lockDate: document.getElementById('lock-date'),
+    lockClock: document.getElementById('lock-clock'),
+    lockBottomArea: document.getElementById('lock-bottom-area'),
+    lockSwipeBtn: document.getElementById('lock-swipe-btn'),
+    lockHintText: document.getElementById('lock-hint-text'),
+    lockTorchBtn: document.getElementById('lock-torch-btn'),
+    lockCameraBtn: document.getElementById('lock-camera-btn'),
+    unlockPinPanel: document.getElementById('unlock-pin-panel'),
+    pinDots: document.getElementById('pin-dots'),
+    pinError: document.getElementById('pin-error'),
+    pinKeys: document.querySelectorAll('#pin-keypad .pin-key[data-pin]'),
+    pinClearBtn: document.getElementById('pin-clear-btn'),
+    pinCancelBtn: document.getElementById('pin-cancel-btn'),
+    unlockPasswordPanel: document.getElementById('unlock-password-panel'),
+    lockPasswordInput: document.getElementById('lock-password-input'),
+    passwordError: document.getElementById('password-error'),
+    passwordSubmitBtn: document.getElementById('password-submit-btn'),
+    passwordCancelBtn: document.getElementById('password-cancel-btn'),
+    unlockPatternPanel: document.getElementById('unlock-pattern-panel'),
+    patternNodes: document.querySelectorAll('#pattern-grid .pattern-node'),
+    patternError: document.getElementById('pattern-error'),
+    patternResetBtn: document.getElementById('pattern-reset-btn'),
+    patternCancelBtn: document.getElementById('pattern-cancel-btn'),
     wallpaperLayer: document.getElementById('wallpaper-layer'),
     loadingStill: document.getElementById('loading-still'),
     systemWallpaper: document.getElementById('system-wallpaper'),
@@ -499,11 +875,20 @@ function cacheDom() {
     settingsMain: document.getElementById('settings-main'),
     settingsWallpaper: document.getElementById('settings-wallpaper'),
     settingsSystemNav: document.getElementById('settings-system-nav'),
+    settingsPasscode: document.getElementById('settings-passcode'),
     settingsBackButtons: document.querySelectorAll('[data-settings-back]'),
     settingsSearch: document.getElementById('settings-search'),
     airplaneToggle: document.getElementById('airplane-toggle'),
     wifiStatusValue: document.getElementById('wifi-status-value'),
     btStatusValue: document.getElementById('bt-status-value'),
+    openPasscodePicker: document.getElementById('open-passcode-picker'),
+    currentLockLabel: document.getElementById('current-lock-label'),
+    lockMethodOptions: document.querySelectorAll('#lock-method-options .selectable-option'),
+    secretEditorLabel: document.getElementById('secret-editor-label'),
+    secretEditInput: document.getElementById('secret-edit-input'),
+    saveSecretBtn: document.getElementById('save-secret-btn'),
+    testLockNowBtn: document.getElementById('test-lock-now-btn'),
+    secretStatusHint: document.getElementById('secret-status-hint'),
     openWallpaperPicker: document.getElementById('open-wallpaper-picker'),
     openSystemNavPicker: document.getElementById('open-system-nav-picker'),
     currentNavLabel: document.getElementById('current-nav-label'),
@@ -526,11 +911,13 @@ function initSystem() {
   updateClock();
   clockTimer = setInterval(updateClock, 1000);
   initRealBatteryIfAvailable();
+  bindLockscreenFeatures();
   bindAppNavigation();
   bindGalleryFeatures();
   bindSettingsFeatures();
   setWallpaper(DEFAULT_WALLPAPER_INDEX);
   setSystemNavMode(currentNavMode);
+  setLockMethod(currentLockMethod);
   showLayer(domRefs.stillLayer);
 
   if (domRefs.liquidDock) {
