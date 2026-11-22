@@ -94,19 +94,25 @@ function isAnyAppOpen() {
   return Array.from(domRefs.appViews || []).some((view) => view.classList.contains('open'));
 }
 
+function isHomeScreenVisible() {
+  return !isAnyAppOpen() && Boolean(domRefs.wallpaperLayer?.classList.contains('active'));
+}
+
 function syncNavBarDisplay() {
   const overlay = domRefs.systemNavOverlay;
   if (!overlay) return;
 
   const appOpen = isAnyAppOpen();
+  const homeVisible = isHomeScreenVisible();
+  const shouldShowNav = appOpen || homeVisible;
   const isButtons = currentNavMode === 'buttons';
 
   document.body.classList.toggle('zenios-in-app', appOpen);
-  overlay.classList.toggle('in-app', appOpen);
+  overlay.classList.toggle('in-app', shouldShowNav);
   overlay.classList.toggle('mode-gestures', !isButtons);
   overlay.classList.toggle('mode-buttons', isButtons);
 
-  if (!appOpen) {
+  if (!shouldShowNav) {
     overlay.style.opacity = '0';
     overlay.style.visibility = 'hidden';
     overlay.style.pointerEvents = 'none';
@@ -199,19 +205,21 @@ function bindAppNavigation() {
     domRefs.gestureHandle.addEventListener('pointerup', (e) => {
       e.stopPropagation();
       if (gestureStartY === null) {
-        closeAllApps();
+        if (isAnyAppOpen()) closeAllApps();
         return;
       }
       const deltaY = gestureStartY - e.clientY;
       gestureStartY = null;
-      if (deltaY >= 8 || Math.abs(deltaY) < 10) {
+      if ((deltaY >= 8 || Math.abs(deltaY) < 10) && isAnyAppOpen()) {
         closeAllApps();
       }
     });
 
     domRefs.gestureHandle.addEventListener('click', (e) => {
       e.stopPropagation();
-      closeAllApps();
+      if (isAnyAppOpen()) {
+        closeAllApps();
+      }
     });
   }
 
