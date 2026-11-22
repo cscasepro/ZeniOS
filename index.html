@@ -114,9 +114,52 @@
       </div>
     </section>
 
-    <!-- Pulpit ZeniOS z tapetą i dolnym doku liquid glass -->
-    <section class="layer" id="wallpaper-layer">
+    <!-- Pulpit ZeniOS z tapetą, widżetami, aplikacjami i dolnym doku liquid glass -->
+    <section class="layer home-layer" id="wallpaper-layer">
       <img id="system-wallpaper" alt="ZeniOS Wallpaper" />
+      <div class="home-scrim"></div>
+
+      <div class="home-content" id="home-content">
+        <div class="home-edit-banner" id="home-edit-banner">
+          <button type="button" class="edit-pill-btn primary" id="open-widget-drawer-btn">+ Widżety</button>
+          <span class="edit-hint-label" id="home-edit-status">Przytrzymano — układaj ikony</span>
+          <button type="button" class="edit-pill-btn done" id="done-edit-mode-btn">Gotowe</button>
+        </div>
+
+        <!-- Dynamiczna siatka widżetów na pulpicie -->
+        <div class="widgets-grid" id="widgets-grid"></div>
+
+        <!-- Dynamiczna siatka aplikacji na pulpicie -->
+        <div class="home-apps-grid" id="home-apps-grid"></div>
+      </div>
+
+      <!-- Szuflada dodawania widżetów po przytrzymaniu -->
+      <div class="widget-picker-sheet" id="widget-picker-sheet" aria-label="Wybór widżetów">
+        <div class="widget-picker-header">
+          <strong>Widżety ZeniOS</strong>
+          <button type="button" class="glass-action-btn" id="close-widget-drawer-btn">Zamknij</button>
+        </div>
+        <div class="widget-picker-list" id="widget-picker-list"></div>
+      </div>
+
+      <!-- Ekran wyszukiwania (przesunięcie z prawej do lewej) — tylko zainstalowane aplikacje -->
+      <aside class="app-search-drawer" id="app-search-drawer" aria-label="Wyszukiwanie zainstalowanych aplikacji">
+        <div class="drawer-top-bar">
+          <button type="button" class="back-btn" id="close-search-drawer-btn">‹ Pulpit</button>
+          <span class="drawer-title">Zainstalowane aplikacje</span>
+          <span class="header-spacer"></span>
+        </div>
+
+        <div class="search-field drawer-search-box">
+          <svg class="search-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input id="installed-apps-search" type="search" placeholder="Szukaj zainstalowanej aplikacji..." autocomplete="off" />
+        </div>
+
+        <div class="installed-apps-list" id="installed-apps-list"></div>
+      </aside>
 
       <nav class="liquid-dock" id="liquid-dock" aria-label="Pasek zadań">
         <button class="dock-icon-btn icon-phone" type="button" data-open-app="app-phone" aria-label="Telefon">
@@ -643,6 +686,153 @@
         </div>
         <strong>Telefon ZeniOS</strong>
         <p>Moduł połączeń głosowych jest w przygotowaniu.</p>
+      </div>
+    </section>
+
+    <!-- Aplikacja Wiadomości ZeniOS -->
+    <section class="app-view" id="app-messages" aria-label="Wiadomości ZeniOS">
+      <header class="app-header">
+        <div class="app-title-row">
+          <h1 class="app-title">Wiadomości</h1>
+        </div>
+      </header>
+      <div class="app-scroll">
+        <div class="settings-group">
+          <div class="settings-row">
+            <span class="row-badge badge-green">Z</span>
+            <div class="option-text-col">
+              <span class="row-title">ZeniOS System</span>
+              <span class="option-sub">Witaj w nowej wersji pulpitu z widżetami.</span>
+            </div>
+            <span class="row-value">Teraz</span>
+          </div>
+          <div class="settings-row">
+            <span class="row-badge badge-blue">W</span>
+            <div class="option-text-col">
+              <span class="row-title">Wskazówka</span>
+              <span class="option-sub">Przytrzymaj pulpit lub ikonę, aby zmieniać układ i widżety.</span>
+            </div>
+            <span class="row-value">16:20</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Aplikacja Kalkulator ZeniOS -->
+    <section class="app-view" id="app-calculator" aria-label="Kalkulator ZeniOS">
+      <header class="app-header">
+        <div class="app-title-row">
+          <h1 class="app-title">Kalkulator</h1>
+        </div>
+      </header>
+      <div class="app-scroll calc-body">
+        <div class="calc-display" id="calc-display">0</div>
+        <div class="calc-pad" id="calc-pad">
+          <button type="button" class="calc-btn fn" data-calc="C">C</button>
+          <button type="button" class="calc-btn fn" data-calc="±">±</button>
+          <button type="button" class="calc-btn fn" data-calc="%">%</button>
+          <button type="button" class="calc-btn op" data-calc="/">÷</button>
+
+          <button type="button" class="calc-btn" data-calc="7">7</button>
+          <button type="button" class="calc-btn" data-calc="8">8</button>
+          <button type="button" class="calc-btn" data-calc="9">9</button>
+          <button type="button" class="calc-btn op" data-calc="*">×</button>
+
+          <button type="button" class="calc-btn" data-calc="4">4</button>
+          <button type="button" class="calc-btn" data-calc="5">5</button>
+          <button type="button" class="calc-btn" data-calc="6">6</button>
+          <button type="button" class="calc-btn op" data-calc="-">−</button>
+
+          <button type="button" class="calc-btn" data-calc="1">1</button>
+          <button type="button" class="calc-btn" data-calc="2">2</button>
+          <button type="button" class="calc-btn" data-calc="3">3</button>
+          <button type="button" class="calc-btn op" data-calc="+">+</button>
+
+          <button type="button" class="calc-btn zero" data-calc="0">0</button>
+          <button type="button" class="calc-btn" data-calc=".">.</button>
+          <button type="button" class="calc-btn op" data-calc="=">=</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Aplikacja Kalendarz ZeniOS -->
+    <section class="app-view" id="app-calendar" aria-label="Kalendarz ZeniOS">
+      <header class="app-header">
+        <div class="app-title-row">
+          <h1 class="app-title">Kalendarz</h1>
+        </div>
+      </header>
+      <div class="app-scroll">
+        <div class="settings-group">
+          <div class="settings-row">
+            <span class="row-badge badge-red">KAL</span>
+            <div class="option-text-col">
+              <span class="row-title" id="calendar-app-date">Dzisiaj</span>
+              <span class="option-sub">Harmonogram dnia w ZeniOS</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="row-badge badge-blue">18:00</span>
+            <div class="option-text-col">
+              <span class="row-title">Przegląd interfejsu ZeniOS</span>
+              <span class="option-sub">Widżety, układ ikon oraz wyszukiwanie</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Aplikacja Zegar ZeniOS -->
+    <section class="app-view" id="app-clock" aria-label="Zegar ZeniOS">
+      <header class="app-header">
+        <div class="app-title-row">
+          <h1 class="app-title">Zegar</h1>
+        </div>
+      </header>
+      <div class="app-scroll phone-placeholder">
+        <strong id="clock-app-big" style="font-size: 46px; font-variant-numeric: tabular-nums;">16:26</strong>
+        <p id="clock-app-sub">Czas lokalny urządzenia</p>
+      </div>
+    </section>
+
+    <!-- Aplikacja Pliki ZeniOS -->
+    <section class="app-view" id="app-files" aria-label="Pliki ZeniOS">
+      <header class="app-header">
+        <div class="app-title-row">
+          <h1 class="app-title">Pliki</h1>
+        </div>
+      </header>
+      <div class="app-scroll">
+        <div class="settings-group">
+          <div class="settings-row">
+            <span class="row-badge badge-blue">DIR</span>
+            <div class="option-text-col">
+              <span class="row-title">Icons</span>
+              <span class="option-sub">Ikony aplikacji systemowych ZeniOS</span>
+            </div>
+            <span class="row-value">Folder</span>
+          </div>
+          <div class="settings-row">
+            <span class="row-badge badge-teal">IMG</span>
+            <div class="option-text-col">
+              <span class="row-title">default_wallpapers</span>
+              <span class="option-sub">Tapety ekranu blokady i pulpitu</span>
+            </div>
+            <span class="row-value">7</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Aplikacja Notatnik ZeniOS -->
+    <section class="app-view" id="app-notebook" aria-label="Notatnik ZeniOS">
+      <header class="app-header">
+        <div class="app-title-row">
+          <h1 class="app-title">Notatnik</h1>
+        </div>
+      </header>
+      <div class="app-scroll">
+        <textarea id="notebook-area" class="notebook-textarea" placeholder="Wpisz notatkę w ZeniOS...">Pomysły na układ pulpitu i widżety ZeniOS...</textarea>
       </div>
     </section>
 
