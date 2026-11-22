@@ -16,35 +16,6 @@ let loadTimer = null;
 let currentWallpaperIndex = DEFAULT_WALLPAPER_INDEX;
 let domRefs = {};
 
-function injectFallbackStyles() {
-  if (document.getElementById('zenios-runtime-fallback-css')) return;
-  const style = document.createElement('style');
-  style.id = 'zenios-runtime-fallback-css';
-  style.textContent = `
-    .app-view {
-      position: absolute;
-      inset: 0;
-      z-index: 20;
-      background: #000000;
-      display: none;
-      flex-direction: column;
-      color: #f8fafc;
-    }
-    .app-view.open {
-      display: flex !important;
-      opacity: 1 !important;
-      visibility: visible !important;
-      transform: translateY(0) !important;
-    }
-    .liquid-dock.visible {
-      opacity: 1 !important;
-      visibility: visible !important;
-      z-index: 15 !important;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
 function showLayer(target) {
   const { stillLayer, wallpaperLayer } = domRefs;
   [stillLayer, wallpaperLayer].forEach((el) => {
@@ -90,7 +61,8 @@ function renderWallpaperPicker() {
 
   wpGrid.innerHTML = '';
   ZENIOS_WALLPAPERS.forEach((basePath, idx) => {
-    const btn = document.createElement('div');
+    const btn = document.createElement('button');
+    btn.type = 'button';
     btn.className = `wp-choice${idx === currentWallpaperIndex ? ' active' : ''}`;
     btn.title = `default_wallpaper_${idx + 1}`;
 
@@ -110,20 +82,9 @@ function renderWallpaperPicker() {
 
 function openApp(appId) {
   if (!appId) return;
-  let found = false;
-
   domRefs.appViews.forEach((view) => {
-    const isMatch = view.id === appId;
-    view.classList.toggle('open', isMatch);
-    if (isMatch) found = true;
+    view.classList.toggle('open', view.id === appId);
   });
-
-  if (!found) {
-    const target = document.getElementById(appId);
-    if (target) {
-      target.classList.add('open');
-    }
-  }
 }
 
 function closeAllApps() {
@@ -137,17 +98,10 @@ function bindAppNavigation() {
     const targetId = el.getAttribute('data-open-app');
     if (!targetId) return;
 
-    const handleActivate = (e) => {
+    el.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       openApp(targetId);
-    };
-
-    el.addEventListener('click', handleActivate);
-    el.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        handleActivate(e);
-      }
     });
   });
 
@@ -251,7 +205,6 @@ function cacheDom() {
 }
 
 function initSystem() {
-  injectFallbackStyles();
   cacheDom();
   bindAppNavigation();
   bindGalleryTabs();
