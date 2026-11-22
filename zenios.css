@@ -92,7 +92,7 @@ html, body {
 .liquid-dock {
   position: absolute;
   left: 50%;
-  bottom: max(22px, env(safe-area-inset-bottom));
+  bottom: max(30px, calc(22px + env(safe-area-inset-bottom)));
   transform: translateX(-50%) translateY(10px);
   z-index: 10;
   display: flex;
@@ -993,7 +993,7 @@ body.zenios-in-app .app-bottom-tabs {
   height: 28px;
 }
 
-/* Dolna nawigacja systemowa: tylko w aplikacjach, równe przyciski bez otoczki */
+/* Dolna nawigacja systemowa: pulpit oraz aplikacje, równe przyciski bez otoczki */
 .system-nav-overlay {
   position: absolute;
   left: 0;
