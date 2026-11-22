@@ -606,8 +606,11 @@ html, body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.36),
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.55),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.16);
   cursor: pointer;
   transition: transform 0.15s ease;
 }
@@ -617,20 +620,18 @@ html, body {
   min-height: 94px;
 }
 
-.zen-widget.music-widget {
-  background: linear-gradient(155deg, #ff3b5c 0%, #e11d48 100%);
-  color: #ffffff;
-}
-
-.zen-widget.calendar-widget {
-  background: rgba(20, 22, 29, 0.72);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  color: #ffffff;
-}
-
+/* wszystkie widżety: ta sama szklana warstwa co dock */
+.zen-widget.music-widget,
+.zen-widget.calendar-widget,
 .zen-widget.weather-widget {
-  background: linear-gradient(155deg, #0284c7 0%, #1e3a8a 100%);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.18) 100%
+  );
+  backdrop-filter: blur(28px) saturate(185%) contrast(108%);
+  -webkit-backdrop-filter: blur(28px) saturate(185%) contrast(108%);
   color: #ffffff;
 }
 
@@ -642,19 +643,35 @@ html, body {
 }
 
 .widget-art {
-  width: 54px;
-  height: 54px;
-  border-radius: 13px;
-  background: linear-gradient(135deg, #1f2937, #7f1d1d 55%, #f43f5e 100%);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  font-weight: 800;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
   color: #ffffff;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
   flex-shrink: 0;
+}
+
+.zen-widget.music-widget.idle .widget-art,
+.zen-widget.music-widget.idle .widget-sub {
+  opacity: 0.55;
+}
+
+.widget-dow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #ff453a;
+}
+
+.widget-title.big-day {
+  font-size: 40px;
+  font-weight: 300;
+  line-height: 1;
+  margin-bottom: 2px;
 }
 
 .widget-badge-icon {
