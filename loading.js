@@ -105,7 +105,7 @@ function syncNavBarDisplay() {
   overlay.classList.toggle('mode-buttons', isButtons);
 
   if (domRefs.gestureHandle) {
-    domRefs.gestureHandle.style.display = isButtons ? 'none' : 'block';
+    domRefs.gestureHandle.style.display = isButtons ? 'none' : 'inline-flex';
   }
   if (domRefs.sysButtonsRow) {
     domRefs.sysButtonsRow.style.display = isButtons ? 'flex' : 'none';
@@ -144,7 +144,12 @@ function wakeSystemNav() {
 function bindSystemNavAutoHide() {
   const events = ['pointerdown', 'pointermove', 'keydown', 'scroll', 'wheel'];
   events.forEach((evtName) => {
-    document.addEventListener(evtName, wakeSystemNav, { passive: true });
+    document.addEventListener(evtName, (e) => {
+      if (e.target && e.target.closest && e.target.closest('#system-nav-overlay')) {
+        return;
+      }
+      wakeSystemNav();
+    }, { passive: true });
   });
 }
 
@@ -215,13 +220,13 @@ function bindAppNavigation() {
     });
   });
 
-  if (domRefs.gestureHomeBtn) {
-    domRefs.gestureHomeBtn.addEventListener('pointerdown', (e) => {
+  if (domRefs.gestureHandle) {
+    domRefs.gestureHandle.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
       gestureStartY = e.clientY;
     });
 
-    domRefs.gestureHomeBtn.addEventListener('pointerup', (e) => {
+    domRefs.gestureHandle.addEventListener('pointerup', (e) => {
       e.stopPropagation();
       if (gestureStartY === null) {
         closeAllApps();
@@ -229,12 +234,12 @@ function bindAppNavigation() {
       }
       const deltaY = gestureStartY - e.clientY;
       gestureStartY = null;
-      if (deltaY >= 10 || Math.abs(deltaY) < 8) {
+      if (deltaY >= 8 || Math.abs(deltaY) < 10) {
         closeAllApps();
       }
     });
 
-    domRefs.gestureHomeBtn.addEventListener('click', (e) => {
+    domRefs.gestureHandle.addEventListener('click', (e) => {
       e.stopPropagation();
       closeAllApps();
     });
