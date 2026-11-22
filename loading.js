@@ -17,6 +17,7 @@ let loadTimer = null;
 let navIdleTimer = null;
 let currentWallpaperIndex = DEFAULT_WALLPAPER_INDEX;
 let currentNavMode = 'gestures';
+let gestureStartY = null;
 let domRefs = {};
 
 function showLayer(target) {
@@ -217,10 +218,30 @@ function bindAppNavigation() {
     });
   });
 
-  domRefs.gestureHomeBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    closeAllApps();
-  });
+  if (domRefs.gestureHomeBtn) {
+    domRefs.gestureHomeBtn.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      gestureStartY = e.clientY;
+    });
+
+    domRefs.gestureHomeBtn.addEventListener('pointerup', (e) => {
+      e.stopPropagation();
+      if (gestureStartY === null) {
+        closeAllApps();
+        return;
+      }
+      const deltaY = gestureStartY - e.clientY;
+      gestureStartY = null;
+      if (deltaY >= 12 || Math.abs(deltaY) < 6) {
+        closeAllApps();
+      }
+    });
+
+    domRefs.gestureHomeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAllApps();
+    });
+  }
 
   domRefs.sysBtnHome?.addEventListener('click', (e) => {
     e.stopPropagation();
