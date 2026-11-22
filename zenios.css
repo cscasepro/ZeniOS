@@ -62,48 +62,94 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 
-.status-battery {
+/* Prawa strona paska statusu: zasięg, Wi-Fi, bateria */
+.status-right {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
+  color: #ffffff;
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.65));
+}
+
+.status-signal { width: 17px; height: 11px; }
+.status-wifi { width: 16px; height: 11px; }
+
+/* Bateria w stylu iOS: obudowa z wypustem i liczbą wewnątrz */
+.status-battery {
+  --lvl: 94%;
+  --bt-line: rgba(255, 255, 255, 0.55);
+  --bt-track: rgba(255, 255, 255, 0.22);
+  --bt-fill: #ffffff;
+  --bt-txt-empty: #ffffff;
+  --bt-txt-fill: #0b0b0d;
+  display: inline-flex;
+  align-items: center;
+  gap: 1.5px;
 }
 
 .battery-body {
   position: relative;
-  width: 24px;
-  height: 12px;
-  padding: 1.5px;
-  border-radius: 3.5px;
-  border: 1.4px solid rgba(255, 255, 255, 0.92);
-  background: rgba(255, 255, 255, 0.14);
-  display: flex;
-  align-items: center;
+  box-sizing: border-box;
+  width: 27px;
+  height: 13px;
+  border-radius: 4.5px;
+  border: 1px solid var(--bt-line);
+  background: var(--bt-track);
   overflow: hidden;
 }
 
 .battery-fill {
-  height: 100%;
-  width: 94%;
-  border-radius: 1.8px;
-  background: #ffffff;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--lvl);
+  background: var(--bt-fill);
   transition: width 0.25s ease, background-color 0.25s ease;
 }
 
-.status-battery.low .battery-fill {
-  background: #ff453a;
+/* dwie warstwy liczby: ciemna tylko na wypełnieniu, jasna na pustej części */
+.battery-pct {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  text-shadow: none;
 }
 
-.status-battery.full .battery-fill {
-  background: #30d158;
+.battery-pct.p-empty { color: var(--bt-txt-empty); }
+
+.battery-pct.p-fill {
+  color: var(--bt-txt-fill);
+  clip-path: inset(0 calc(100% - var(--lvl)) 0 0);
+  transition: clip-path 0.25s ease;
 }
 
 .battery-cap {
-  width: 2px;
+  width: 1.7px;
   height: 5px;
-  border-radius: 0 2px 2px 0;
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: 0 1.5px 1.5px 0;
+  background: var(--bt-line);
 }
+
+.battery-bolt {
+  display: none;
+  width: 6px;
+  height: 10px;
+  margin-right: 1px;
+  fill: currentColor;
+}
+
+.status-battery.low { --bt-fill: #ff453a; --bt-txt-fill: #ffffff; }
+.status-battery.charging { --bt-fill: #30d158; --bt-txt-fill: #04130a; }
+.status-battery.charging .battery-bolt { display: block; }
 
 .layer {
   position: absolute;
@@ -2123,9 +2169,16 @@ body.zenios-in-app .app-bottom-tabs {
 
 /* pasek stanu i uchwyt gestów na jasnych ekranach */
 .phone-screen.tone-dark .status-clock { color: #000; text-shadow: none; }
-.phone-screen.tone-dark .status-battery { filter: none; }
-.phone-screen.tone-dark .battery-body { border-color: rgba(0, 0, 0, 0.55); background: rgba(0, 0, 0, 0.08); }
-.phone-screen.tone-dark .battery-cap { background: rgba(0, 0, 0, 0.55); }
+.phone-screen.tone-dark .status-right { color: #000; filter: none; }
+.phone-screen.tone-dark .status-battery {
+  --bt-line: rgba(0, 0, 0, 0.45);
+  --bt-track: rgba(0, 0, 0, 0.12);
+  --bt-fill: #111111;
+  --bt-txt-empty: #000000;
+  --bt-txt-fill: #ffffff;
+}
+.phone-screen.tone-dark .status-battery.low { --bt-fill: #ff453a; --bt-txt-fill: #ffffff; }
+.phone-screen.tone-dark .status-battery.charging { --bt-fill: #30d158; --bt-txt-fill: #04130a; }
 .phone-screen.tone-dark .gesture-handle::after { background: rgba(0, 0, 0, 0.78); box-shadow: none; }
 .phone-screen.tone-dark .sys-nav-btn { color: rgba(0, 0, 0, 0.8); }
 
@@ -2401,7 +2454,7 @@ body.zenios-in-app .app-bottom-tabs {
 .files-empty svg { width: 52px; height: 52px; margin-bottom: 10px; opacity: 0.55; }
 
 /* =====================================================================
-   KALENDARZ (styl iOS .Calendar, PL)
+   KALENDARZ (styl iOS Calendar, PL)
    ===================================================================== */
 #app-calendar { background: var(--bgp); }
 .cal-top {
@@ -2657,3 +2710,369 @@ body.zenios-in-app .app-bottom-tabs {
 .cc-toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 .phone-screen input, .phone-screen textarea, .phone-screen select, .phone-screen button { font-family: inherit; }
+
+
+/* =====================================================================
+   ZeniPeek — podgląd konwersacji (tylko do odczytu)
+   ===================================================================== */
+.zpeek {
+  position: absolute;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 14px 84px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+.zpeek.open { opacity: 1; visibility: visible; pointer-events: auto; }
+
+.zpeek-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.zpeek-card {
+  --peek-accent: #0a84ff;
+  position: relative;
+  width: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 26px;
+  background: var(--card, #1c1c1e);
+  color: var(--text, #fff);
+  border: 1px solid var(--glass-b, rgba(255, 255, 255, 0.14));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  transform: scale(0.92) translateY(14px);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: pointer;
+}
+.zpeek.open .zpeek-card { transform: scale(1) translateY(0); }
+
+.zpeek-grab { display: flex; justify-content: center; padding: 8px 0 2px; touch-action: none; cursor: grab; }
+.zpeek-grab span { width: 36px; height: 4px; border-radius: 999px; background: var(--sep, rgba(255, 255, 255, 0.25)); }
+
+.zpeek-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px 10px;
+  border-bottom: 1px solid var(--sep, rgba(255, 255, 255, 0.1));
+  touch-action: none;
+}
+.zpeek-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 15px; color: #fff; overflow: hidden; flex-shrink: 0;
+}
+.zpeek-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.zpeek-titles { min-width: 0; }
+.zpeek-title { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zpeek-sub { font-size: 11px; color: var(--sub, #8e8e93); }
+
+.zpeek-body {
+  flex: 1 1 auto;
+  min-height: 80px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.zpeek-msg { display: flex; }
+.zpeek-msg.me { justify-content: flex-end; }
+.zpeek-bubble {
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.3;
+  background: var(--fill, rgba(118, 118, 128, 0.24));
+  word-break: break-word;
+}
+.zpeek-msg.me .zpeek-bubble { background: var(--peek-accent); color: #fff; border-bottom-right-radius: 6px; }
+.zpeek-msg.them .zpeek-bubble { border-bottom-left-radius: 6px; }
+.zpeek-author { font-size: 11px; font-weight: 700; opacity: 0.75; margin-bottom: 2px; }
+.zpeek-meta { font-size: 10px; opacity: 0.6; margin-top: 3px; }
+.zpeek-reacts { display: flex; gap: 4px; margin-top: 4px; font-size: 13px; }
+.zpeek-reacts .txt { font-size: 9px; font-weight: 800; }
+
+.zpeek-foot {
+  padding: 10px 16px 12px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--sub, #8e8e93);
+  border-top: 1px solid var(--sep, rgba(255, 255, 255, 0.1));
+}
+
+/* =====================================================================
+   ZeniMessageMenu — reakcje + menu akcji nad rozmytym widokiem
+   ===================================================================== */
+.zmenu {
+  position: absolute;
+  inset: 0;
+  z-index: 150;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.zmenu.open { opacity: 1; }
+.zmenu.measuring { opacity: 0; visibility: hidden; }
+
+.zmenu-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.zmenu-spot {
+  position: absolute !important;
+  margin: 0 !important;
+  max-width: none !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.zmenu-reactions {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 6px;
+  border-radius: 999px;
+  background: var(--glass, rgba(58, 58, 62, 0.8));
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  border: 1px solid var(--glass-b, rgba(255, 255, 255, 0.14));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+  transform: scale(0.6);
+  opacity: 0;
+  transition: transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.16s ease;
+}
+.zmenu.open .zmenu-reactions { transform: scale(1); opacity: 1; }
+
+.zmenu-react {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text, #fff);
+  min-width: 36px;
+  height: 36px;
+  padding: 0 4px;
+  border-radius: 999px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: transform 0.14s ease, background-color 0.14s ease;
+}
+.zmenu-react.txt { font-size: 11px; font-weight: 800; letter-spacing: -0.2px; padding: 0 7px; }
+.zmenu-react:active { transform: scale(0.85); }
+.zmenu-react.active { background: var(--accent, #0a84ff); color: #fff; }
+
+.zmenu-actions {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--glass, rgba(58, 58, 62, 0.8));
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  border: 1px solid var(--glass-b, rgba(255, 255, 255, 0.14));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+  transform: scale(0.8);
+  opacity: 0;
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.16s ease;
+}
+.zmenu.open .zmenu-actions { transform: scale(1); opacity: 1; }
+
+.zmenu-item {
+  appearance: none;
+  -webkit-appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-bottom: 1px solid var(--sep, rgba(255, 255, 255, 0.12));
+  background: transparent;
+  color: var(--text, #fff);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.zmenu-item:last-child { border-bottom: none; }
+.zmenu-item:active { background: var(--fill, rgba(255, 255, 255, 0.1)); }
+.zmenu-item.danger { color: var(--red, #ff453a); }
+.zmenu-item-icon { width: 18px; height: 18px; display: inline-flex; flex-shrink: 0; }
+.zmenu-item-icon svg { width: 100%; height: 100%; }
+
+/* =====================================================================
+   Aplikacja Wiadomości (przykład integracji)
+   ===================================================================== */
+.msg-screen { display: none; flex-direction: column; flex: 1 1 auto; min-height: 0; height: 100%; }
+.msg-screen.active { display: flex; }
+
+.msg-hint { margin: 0; font-size: 12px; color: var(--sub, #8e8e93); }
+
+.msg-conv-list {
+  background: var(--card, #1c1c1e);
+  border: 1px solid var(--sep, rgba(255, 255, 255, 0.08));
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.msg-conv {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 14px 11px 22px;
+  border-bottom: 1px solid var(--sep, rgba(255, 255, 255, 0.08));
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: pan-y;
+  transition: background 0.14s ease;
+}
+.msg-conv:last-child { border-bottom: none; }
+.msg-conv:active { background: var(--fill, rgba(255, 255, 255, 0.07)); }
+
+.msg-unread-dot {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--accent, #0a84ff);
+  opacity: 0;
+}
+.msg-conv.unread .msg-unread-dot { opacity: 1; }
+
+.msg-avatar {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: 700; color: #fff;
+}
+.msg-avatar.sm { width: 28px; height: 28px; font-size: 13px; }
+
+.msg-conv-main { flex: 1; min-width: 0; }
+.msg-conv-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.msg-conv-name { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.msg-conv-time { font-size: 12px; color: var(--sub, #8e8e93); flex-shrink: 0; }
+.msg-conv-prev {
+  font-size: 13px; color: var(--sub, #8e8e93); margin-top: 2px;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+.msg-conv.unread .msg-conv-name,
+.msg-conv.unread .msg-conv-prev { font-weight: 700; }
+.msg-conv.unread .msg-conv-prev { color: var(--text, #fff); }
+
+.msg-unread-count {
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent, #0a84ff); color: #fff; font-size: 12px; font-weight: 700;
+}
+
+/* czat */
+.msg-chat-screen { --chat-accent: #0a84ff; }
+.msg-chat-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; }
+.msg-chat-who { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.msg-chat-name { font-size: 12px; font-weight: 600; }
+
+.msg-thread {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding: 12px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.msg-row { display: flex; }
+.msg-row.me { justify-content: flex-end; }
+
+.msg-bubble {
+  position: relative;
+  max-width: 78%;
+  padding: 8px 13px;
+  border-radius: 19px;
+  font-size: 15px;
+  line-height: 1.3;
+  background: var(--fill, rgba(118, 118, 128, 0.24));
+  color: var(--text, #fff);
+  word-break: break-word;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.msg-row.me .msg-bubble { background: var(--chat-accent); color: #fff; border-bottom-right-radius: 6px; }
+.msg-row.them .msg-bubble { border-bottom-left-radius: 6px; }
+.msg-quote {
+  font-size: 12px; opacity: 0.75; padding-left: 8px; margin-bottom: 4px;
+  border-left: 2px solid currentColor;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.msg-edited { display: block; font-size: 10px; opacity: 0.6; margin-top: 2px; }
+.msg-reacts {
+  position: absolute; bottom: -10px; right: 8px;
+  display: flex; gap: 3px; padding: 1px 7px;
+  border-radius: 999px; font-size: 12px; line-height: 18px;
+  background: var(--card, #1c1c1e); color: var(--text, #fff);
+  border: 1px solid var(--sep, rgba(255, 255, 255, 0.15));
+}
+.msg-reacts .txt { font-size: 8.5px; font-weight: 800; }
+.msg-bubble:has(.msg-reacts) { margin-bottom: 10px; }
+
+.msg-composer {
+  flex-shrink: 0;
+  padding: 6px 12px 40px;
+  background: var(--hdr, rgba(0, 0, 0, 0.82));
+  border-top: 1px solid var(--sep, rgba(255, 255, 255, 0.08));
+}
+.msg-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 6px 10px; margin-bottom: 6px; border-radius: 12px;
+  background: var(--fill, rgba(118, 118, 128, 0.24)); font-size: 12px;
+}
+.msg-banner[hidden] { display: none; }
+.msg-banner-text { min-width: 0; display: flex; flex-direction: column; }
+.msg-banner-text b { color: var(--chat-accent); }
+.msg-banner-text span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--sub, #8e8e93); }
+.msg-banner button { border: none; background: transparent; color: var(--sub, #8e8e93); font-size: 14px; cursor: pointer; }
+
+.msg-composer-row { display: flex; align-items: center; gap: 8px; }
+.msg-composer-row input {
+  flex: 1; min-width: 0; height: 36px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid var(--sep, rgba(255, 255, 255, 0.15));
+  background: var(--fill, rgba(118, 118, 128, 0.24));
+  color: var(--text, #fff); font-size: 15px; outline: none;
+}
+.msg-composer-row button {
+  width: 34px; height: 34px; border-radius: 50%; border: none; flex-shrink: 0;
+  background: var(--chat-accent); color: #fff; font-size: 18px; font-weight: 700; cursor: pointer;
+}
