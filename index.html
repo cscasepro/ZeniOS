@@ -219,26 +219,18 @@
         </header>
 
         <div class="app-scroll">
-          <div class="settings-group" data-group>
-            <div class="settings-row" id="open-system-nav-picker" data-search="nawigacja systemowa gesty przyciski navigation">
-              <span class="row-badge badge-indigo">◀●■</span>
-              <span class="row-title">Nawigacja: Gesty / Przyciski</span>
-              <span class="row-value" id="current-nav-label">Gesty</span>
-              <span class="chevron">›</span>
+          <div class="settings-group profile-card">
+            <div class="avatar-circle">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="8.5" r="4" />
+                <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+              </svg>
             </div>
-
-            <div class="settings-row" id="open-wallpaper-picker" data-search="tapeta tlo wallpaper">
-              <span class="row-badge badge-teal">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
-                  <circle cx="9" cy="9.5" r="1.5" fill="#fff" stroke="none" />
-                  <path d="M20.5 15l-4.5-4.5L7.5 19.5" />
-                </svg>
-              </span>
-              <span class="row-title">Tapeta</span>
-              <span class="row-value" id="current-wp-label">default_wallpaper_7</span>
-              <span class="chevron">›</span>
+            <div class="profile-meta">
+              <strong>Konto ZeniOS</strong>
+              <span>ZeniID, Chmura i prywatność</span>
             </div>
+            <span class="chevron">›</span>
           </div>
 
           <div class="settings-group" data-group>
@@ -279,6 +271,34 @@
               <span class="chevron">›</span>
             </div>
 
+            <div class="settings-row" data-search="siec komorkowa dane mobilne cellular">
+              <span class="row-badge badge-green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round">
+                  <circle cx="12" cy="12" r="2.2" fill="#fff" stroke="none" />
+                  <path d="M8.46 15.54a5 5 0 0 1 0-7.08" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.08" />
+                  <path d="M5.64 18.36a9 9 0 0 1 0-12.72" />
+                  <path d="M18.36 5.64a9 9 0 0 1 0 12.72" />
+                </svg>
+              </span>
+              <span class="row-title">Sieć komórkowa</span>
+              <span class="row-value">5G</span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" data-search="hotspot osobisty udostepnianie">
+              <span class="row-badge badge-green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round">
+                  <circle cx="12" cy="12" r="2.5" fill="#fff" stroke="none" />
+                  <path d="M7.5 16.5a6.5 6.5 0 0 1 0-9" />
+                  <path d="M16.5 7.5a6.5 6.5 0 0 1 0 9" />
+                </svg>
+              </span>
+              <span class="row-title">Hotspot osobisty</span>
+              <span class="row-value">Wyłączony</span>
+              <span class="chevron">›</span>
+            </div>
+
             <div class="settings-row" data-search="bateria zasilanie battery">
               <span class="row-badge badge-green">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
@@ -289,6 +309,78 @@
               </span>
               <span class="row-title">Bateria</span>
               <span class="row-value">94%</span>
+              <span class="chevron">›</span>
+            </div>
+          </div>
+
+          <div class="settings-group" data-group>
+            <div class="settings-row" data-search="ogolne general system">
+              <span class="row-badge badge-gray">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3.2" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </span>
+              <span class="row-title">Ogólne</span>
+              <span class="row-value"></span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" data-search="dostepnosc accessibility">
+              <span class="row-badge badge-blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="5.5" r="1.8" fill="#fff" stroke="none" />
+                  <path d="M5.5 9.5h13M12 9.5v4.5l-3 6M12 14l3 6" />
+                </svg>
+              </span>
+              <span class="row-title">Dostępność</span>
+              <span class="row-value"></span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" id="open-system-nav-picker" data-search="nawigacja systemowa gesty przyciski navigation">
+              <span class="row-badge badge-indigo">◀●■</span>
+              <span class="row-title">Nawigacja: Gesty / Przyciski</span>
+              <span class="row-value" id="current-nav-label">Gesty</span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" data-search="aparat camera">
+              <span class="row-badge badge-gray">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </span>
+              <span class="row-title">Aparat</span>
+              <span class="row-value"></span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" data-search="centrum sterowania control center">
+              <span class="row-badge badge-gray">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round">
+                  <line x1="4" y1="7" x2="20" y2="7" />
+                  <circle cx="9" cy="7" r="2.2" fill="#636366" />
+                  <line x1="4" y1="17" x2="20" y2="17" />
+                  <circle cx="15" cy="17" r="2.2" fill="#636366" />
+                </svg>
+              </span>
+              <span class="row-title">Centrum sterowania</span>
+              <span class="row-value"></span>
+              <span class="chevron">›</span>
+            </div>
+
+            <div class="settings-row" id="open-wallpaper-picker" data-search="tapeta tlo wallpaper">
+              <span class="row-badge badge-teal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
+                  <circle cx="9" cy="9.5" r="1.5" fill="#fff" stroke="none" />
+                  <path d="M20.5 15l-4.5-4.5L7.5 19.5" />
+                </svg>
+              </span>
+              <span class="row-title">Tapeta</span>
+              <span class="row-value" id="current-wp-label">default_wallpaper_7</span>
               <span class="chevron">›</span>
             </div>
           </div>
