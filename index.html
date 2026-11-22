@@ -458,6 +458,16 @@
           </div>
 
           <div class="settings-group" data-group>
+            <div class="settings-row" data-search="wyglad motyw jasny ciemny tryb ciemny theme dark light">
+              <span class="row-badge badge-indigo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="#fff"/></svg>
+              </span>
+              <span class="row-title">Wygląd</span>
+              <div class="theme-seg"><button type="button" data-theme-set="light">Jasny</button><button type="button" data-theme-set="dark" class="active">Ciemny</button></div>
+            </div>
+          </div>
+
+          <div class="settings-group" data-group>
             <div class="settings-row" id="open-passcode-picker" data-search="haslo blokada ekranu pin wzor passcode lock">
               <span class="row-badge badge-red">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
@@ -718,18 +728,13 @@
       </div>
     </section>
 
-    <!-- Aplikacja Kalkulator ZeniOS -->
+    <!-- Aplikacja Kalkulator ZeniOS (styl iOS) -->
     <section class="app-view" id="app-calculator" aria-label="Kalkulator ZeniOS">
-      <header class="app-header">
-        <div class="app-title-row">
-          <h1 class="app-title">Kalkulator</h1>
-        </div>
-      </header>
-      <div class="app-scroll calc-body">
-        <div class="calc-display" id="calc-display">0</div>
+      <div class="calc-screen">
+        <div class="calc-display-wrap"><div class="calc-display" id="calc-display">0</div></div>
         <div class="calc-pad" id="calc-pad">
-          <button type="button" class="calc-btn fn" data-calc="C">C</button>
-          <button type="button" class="calc-btn fn" data-calc="±">±</button>
+          <button type="button" class="calc-btn fn" id="calc-ac" data-calc="C">AC</button>
+          <button type="button" class="calc-btn fn" data-calc="±">+/−</button>
           <button type="button" class="calc-btn fn" data-calc="%">%</button>
           <button type="button" class="calc-btn op" data-calc="/">÷</button>
 
@@ -749,92 +754,273 @@
           <button type="button" class="calc-btn op" data-calc="+">+</button>
 
           <button type="button" class="calc-btn zero" data-calc="0">0</button>
-          <button type="button" class="calc-btn" data-calc=".">.</button>
+          <button type="button" class="calc-btn" data-calc=".">,</button>
           <button type="button" class="calc-btn op" data-calc="=">=</button>
         </div>
       </div>
     </section>
 
-    <!-- Aplikacja Kalendarz ZeniOS -->
+    <!-- Aplikacja Kalendarz ZeniOS (styl iOS) -->
     <section class="app-view" id="app-calendar" aria-label="Kalendarz ZeniOS">
-      <header class="app-header">
-        <div class="app-title-row">
-          <h1 class="app-title">Kalendarz</h1>
+      <div class="cal-top">
+        <button type="button" id="cal-year-btn"><span style="font-size:26px;line-height:1">‹</span> <span id="cal-year-label">2026</span></button>
+        <div class="cal-top-actions">
+          <button type="button" id="cal-search-btn" aria-label="Szukaj">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+          <button type="button" id="cal-add-btn" aria-label="Dodaj wydarzenie" style="font-size:30px;font-weight:300">+</button>
         </div>
-      </header>
-      <div class="app-scroll">
-        <div class="settings-group">
-          <div class="settings-row">
-            <span class="row-badge badge-red">KAL</span>
-            <div class="option-text-col">
-              <span class="row-title" id="calendar-app-date">Dzisiaj</span>
-              <span class="option-sub">Harmonogram dnia w ZeniOS</span>
-            </div>
-          </div>
-          <div class="settings-row">
-            <span class="row-badge badge-blue">18:00</span>
-            <div class="option-text-col">
-              <span class="row-title">Przegląd interfejsu ZeniOS</span>
-              <span class="option-sub">Widżety, układ ikon oraz wyszukiwanie</span>
-            </div>
-          </div>
+      </div>
+      <div class="cal-weekdays" id="cal-weekdays"><span>P</span><span>W</span><span>Ś</span><span>C</span><span>P</span><span>S</span><span>N</span></div>
+      <div class="cal-months" id="cal-months"></div>
+      <div class="cal-year-view" id="cal-year-view"></div>
+      <div class="cal-day-panel" id="cal-day-panel"></div>
+      <div class="cal-toolbar">
+        <button type="button" id="cal-today-btn">Dzisiaj</button>
+        <button type="button" id="cal-cals-btn">Kalendarze</button>
+        <button type="button" id="cal-upcoming-btn">Przychodzące</button>
+      </div>
+
+      <div class="sheet-scrim" id="cal-scrim"></div>
+      <div class="sheet short" id="cal-sheet-cals">
+        <div class="sheet-head"><span style="width:40px"></span><span>Kalendarze</span><button type="button" data-close-sheet>OK</button></div>
+        <div class="sheet-body" id="cal-cals-list"></div>
+      </div>
+      <div class="sheet short" id="cal-sheet-add">
+        <div class="sheet-head"><button type="button" data-close-sheet>Anuluj</button><span>Nowe wydarzenie</span><button type="button" id="cal-save-event">Dodaj</button></div>
+        <div class="sheet-body">
+          <div style="height:12px"></div>
+          <div class="sheet-field"><span>Tytuł</span><input id="cal-ev-title" type="text" placeholder="Wydarzenie" autocomplete="off" /></div>
+          <div class="sheet-field"><span>Data</span><input id="cal-ev-date" type="date" /></div>
+          <div class="sheet-field"><span>Godzina</span><input id="cal-ev-time" type="time" value="12:00" /></div>
+          <div class="sheet-field"><span>Kalendarz</span><select id="cal-ev-cal"></select></div>
         </div>
+      </div>
+      <div class="sheet" id="cal-sheet-upcoming">
+        <div class="sheet-head"><span style="width:40px"></span><span>Przychodzące</span><button type="button" data-close-sheet>OK</button></div>
+        <div style="padding:0 16px 8px"><div class="search-pill" style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="cal-upcoming-search" type="search" placeholder="Szukaj wydarzeń" autocomplete="off" /></div></div>
+        <div class="sheet-body" id="cal-upcoming-list"></div>
       </div>
     </section>
 
-    <!-- Aplikacja Zegar ZeniOS -->
+    <!-- Aplikacja Zegar ZeniOS (styl iOS) -->
     <section class="app-view" id="app-clock" aria-label="Zegar ZeniOS">
-      <header class="app-header">
-        <div class="app-title-row">
-          <h1 class="app-title">Zegar</h1>
+      <!-- Zegary światowe -->
+      <div class="clock-pane" id="clock-pane-world">
+        <div class="clock-bar"><span></span><span></span></div>
+        <h1 class="clock-h1">Zegary światowe</h1>
+        <div id="world-list"></div>
+      </div>
+
+      <!-- Alarmy -->
+      <div class="clock-pane active" id="clock-pane-alarms">
+        <div class="clock-bar">
+          <button type="button" id="alarm-edit-btn">Edycja</button>
+          <button type="button" class="plus" id="alarm-add-btn" aria-label="Dodaj alarm">+</button>
         </div>
-      </header>
-      <div class="app-scroll phone-placeholder">
-        <strong id="clock-app-big" style="font-size: 46px; font-variant-numeric: tabular-nums;">16:26</strong>
-        <p id="clock-app-sub">Czas lokalny urządzenia</p>
+        <h1 class="clock-h1">Alarmy</h1>
+        <div class="clock-sec">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18V7M2 14h20v4M22 14v-2a4 4 0 0 0-4-4h-7v6"/><circle cx="7" cy="11" r="1.6"/></svg>
+          Sen | Pobudka
+        </div>
+        <div class="sleep-row"><span class="big">Brak alarmu</span><button type="button" class="sleep-pill" id="sleep-change-btn">ZMIEŃ</button></div>
+        <div class="clock-sec" style="border-bottom:none;padding-bottom:0">Inne</div>
+        <div id="alarm-list"></div>
+      </div>
+
+      <!-- Stoper -->
+      <div class="clock-pane" id="clock-pane-stopwatch">
+        <div class="clock-bar"><span></span><span></span></div>
+        <div class="sw-display" id="sw-display">00:00,00</div>
+        <div class="sw-buttons">
+          <button type="button" class="round-btn grey" id="sw-lap" disabled>Okrążenie</button>
+          <button type="button" class="round-btn green" id="sw-start">Start</button>
+        </div>
+        <div id="sw-laps"></div>
+      </div>
+
+      <!-- Minutniki -->
+      <div class="clock-pane" id="clock-pane-timer">
+        <div class="clock-bar"><span></span><span></span></div>
+        <div id="timer-setup">
+          <div class="wheel-row timer-pickers" id="timer-wheels"></div>
+        </div>
+        <div class="timer-run" id="timer-run">00:05:00</div>
+        <div class="sw-buttons">
+          <button type="button" class="round-btn grey" id="timer-cancel">Anuluj</button>
+          <button type="button" class="round-btn green" id="timer-start">Start</button>
+        </div>
+      </div>
+
+      <nav class="clock-tabbar" id="clock-tabbar">
+        <button type="button" class="clock-tab" data-clock-tab="world">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><ellipse cx="12" cy="12" rx="4" ry="9.5"/><line x1="2.5" y1="12" x2="21.5" y2="12"/></svg>
+          <span>Zegary świata</span>
+        </button>
+        <button type="button" class="clock-tab active" data-clock-tab="alarms">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M4 5.5l3-2.5M20 5.5l-3-2.5"/></svg>
+          <span>Alarmy</span>
+        </button>
+        <button type="button" class="clock-tab" data-clock-tab="stopwatch">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="14" r="7.5"/><path d="M12 14l3-3M9.5 2.5h5M12 2.5v4"/></svg>
+          <span>Stoper</span>
+        </button>
+        <button type="button" class="clock-tab" data-clock-tab="timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 6.5V12l3.5 2"/></svg>
+          <span>Minutniki</span>
+        </button>
+      </nav>
+
+      <div class="sheet-scrim" id="alarm-scrim"></div>
+      <div class="sheet short alarm-sheet" id="alarm-sheet" style="top:70px">
+        <div class="sheet-head"><button type="button" id="alarm-cancel-btn">Anuluj</button><span id="alarm-sheet-title">Dodaj alarm</span><button type="button" id="alarm-save-btn">Zachowaj</button></div>
+        <div class="sheet-body">
+          <div class="wheel-row" id="alarm-wheels" style="margin-top:14px"></div>
+          <div class="alarm-sheet-card">
+            <div class="sheet-field" id="alarm-repeat-row"><span>Powtarzaj</span><span style="color:var(--sub)" id="alarm-repeat-val">dni robocze ›</span></div>
+            <div class="sheet-field"><span>Etykieta</span><input id="alarm-label-input" type="text" placeholder="Alarm" autocomplete="off" /></div>
+            <div class="sheet-field" id="alarm-sound-row"><span>Dźwięk</span><span style="color:var(--sub)" id="alarm-sound-val">Kręgi ›</span></div>
+            <div class="sheet-field"><span>Drzemka</span>
+              <label class="ios-switch"><input type="checkbox" id="alarm-snooze-input" checked /><span class="ios-slider"></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alarm-ring" id="alarm-ring">
+        <div class="ring-time" id="ring-time">07:00</div>
+        <div class="ring-label" id="ring-label">Alarm</div>
+        <div class="ring-actions">
+          <button type="button" class="snooze" id="ring-snooze">Drzemka</button>
+          <button type="button" class="stop" id="ring-stop">Zatrzymaj</button>
+        </div>
       </div>
     </section>
 
-    <!-- Aplikacja Pliki ZeniOS -->
+    <!-- Aplikacja Pliki ZeniOS (styl iOS) -->
     <section class="app-view" id="app-files" aria-label="Pliki ZeniOS">
-      <header class="app-header">
-        <div class="app-title-row">
-          <h1 class="app-title">Pliki</h1>
+      <div class="files-top">
+        <div class="glass-pill files-nav">
+          <button type="button" id="files-back" disabled aria-label="Wstecz">‹</button>
+          <button type="button" id="files-fwd" disabled aria-label="Dalej">›</button>
         </div>
-      </header>
-      <div class="app-scroll">
-        <div class="settings-group">
-          <div class="settings-row">
-            <span class="row-badge badge-blue">DIR</span>
-            <div class="option-text-col">
-              <span class="row-title">Icons</span>
-              <span class="option-sub">Ikony aplikacji systemowych ZeniOS</span>
-            </div>
-            <span class="row-value">Folder</span>
+        <button type="button" class="glass-circle" id="files-more" aria-label="Więcej">•••</button>
+      </div>
+      <div class="app-scroll files-scroll" id="files-scroll">
+        <div class="files-pane active" id="files-pane-browse">
+          <h1 class="files-title" id="files-title">Przeglądaj</h1>
+          <div class="search-field files-search">
+            <svg class="search-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="files-search" type="search" placeholder="Szukaj" autocomplete="off" />
+            <svg class="mic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           </div>
-          <div class="settings-row">
-            <span class="row-badge badge-teal">IMG</span>
-            <div class="option-text-col">
-              <span class="row-title">default_wallpapers</span>
-              <span class="option-sub">Tapety ekranu blokady i pulpitu</span>
-            </div>
-            <span class="row-value">7</span>
+          <div id="files-browse-body"></div>
+        </div>
+        <div class="files-pane" id="files-pane-list"></div>
+      </div>
+      <nav class="glass-pill files-tabbar" id="files-tabbar">
+        <button type="button" class="files-tab" data-files-tab="recents">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Ostatnie
+        </button>
+        <button type="button" class="files-tab" data-files-tab="shared">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 19a6.5 6.5 0 0 1 13 0z"/><circle cx="17" cy="9" r="2.6"/><path d="M16.5 13.5a5.5 5.5 0 0 1 5 5.5h-4.2a8 8 0 0 0-2-4.6z"/></svg>Udostępnione
+        </button>
+        <button type="button" class="files-tab active" data-files-tab="browse">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h3.6c.6 0 1.2.3 1.6.8L12 6.3h6.5A2.5 2.5 0 0 1 21 8.8v8.7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/></svg>Przeglądaj
+        </button>
+      </nav>
+    </section>
+
+    <!-- Aplikacja Notatnik ZeniOS (styl iOS Notes) -->
+    <section class="app-view" id="app-notebook" aria-label="Notatnik ZeniOS">
+      <div class="notes-screen active" id="notes-list-screen">
+        <div class="notes-list-head"><h1>Notatki</h1></div>
+        <div class="search-pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="notes-search" type="search" placeholder="Szukaj" autocomplete="off" />
+        </div>
+        <div class="notes-scroll" id="notes-scroll"><div id="notes-list"></div></div>
+        <div class="notes-footer">
+          <span style="width:42px"></span>
+          <span id="notes-count">0 notatek</span>
+          <button type="button" class="glass-circle" id="note-new-btn" aria-label="Nowa notatka">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="notes-screen" id="notes-edit-screen">
+        <div class="notes-edit-bar">
+          <button type="button" class="glass-circle" id="note-back" aria-label="Wstecz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5 8 12 15 19"/></svg></button>
+          <div class="glass-pill">
+            <button type="button" id="note-undo" aria-label="Cofnij"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+            <button type="button" id="note-share" aria-label="Udostępnij"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button>
+            <button type="button" id="note-more" aria-label="Więcej"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
           </div>
+          <button type="button" class="glass-circle note-done" id="note-done" aria-label="Gotowe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 10 18.5 20 6"/></svg></button>
+        </div>
+        <div class="note-menu" id="note-menu"><button type="button" id="note-delete">Usuń notatkę</button></div>
+        <div class="note-date" id="note-date"></div>
+        <div class="note-edit-scroll">
+          <input id="note-title" class="note-title-input" type="text" placeholder="Tytuł" autocomplete="off" />
+          <textarea id="note-body" class="note-body-input" placeholder="Zacznij pisać…"></textarea>
+        </div>
+        <div class="glass-pill note-format-bar">
+          <button type="button" data-fmt="outdent" aria-label="Zmniejsz wcięcie"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="6" x2="21" y2="6"/><line x1="12" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><polyline points="7 8 3 12 7 16"/></svg></button>
+          <button type="button" data-fmt="indent" aria-label="Zwiększ wcięcie"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="6" x2="21" y2="6"/><line x1="12" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><polyline points="3 8 7 12 3 16"/></svg></button>
+          <button type="button" data-fmt="top" aria-label="Na początek"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="4" x2="19" y2="4"/><line x1="12" y1="20" x2="12" y2="8"/><polyline points="7 12 12 7 17 12"/></svg></button>
+          <button type="button" data-fmt="bottom" aria-label="Na koniec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="19" y2="20"/><line x1="12" y1="4" x2="12" y2="16"/><polyline points="7 12 12 17 17 12"/></svg></button>
+          <button type="button" data-fmt="check" aria-label="Lista kontrolna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><polyline points="8.5 12.3 11 14.8 15.8 9.5"/></svg></button>
+          <button type="button" data-fmt="bullet" aria-label="Lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/><circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="18" r="1" fill="currentColor"/></svg></button>
         </div>
       </div>
     </section>
 
-    <!-- Aplikacja Notatnik ZeniOS -->
-    <section class="app-view" id="app-notebook" aria-label="Notatnik ZeniOS">
-      <header class="app-header">
-        <div class="app-title-row">
-          <h1 class="app-title">Notatnik</h1>
+    <!-- Efekty systemowe: przyciemnienie (jasność) + latarka -->
+    <div id="torch-glow"></div>
+    <div id="dim-overlay"></div>
+    <div class="cc-toast" id="cc-toast"></div>
+
+    <!-- Centrum sterowania: przeciągnij z góry ekranu w dół -->
+    <div class="cc-hotzone" id="cc-hotzone" aria-hidden="true"></div>
+    <div class="cc-layer" id="cc-layer" aria-label="Centrum sterowania" aria-hidden="true">
+      <div class="cc-backdrop" id="cc-backdrop"></div>
+      <div class="cc-panel" id="cc-panel">
+        <div class="cc-grid">
+          <div class="cc-tile cc-conn">
+            <button type="button" class="cc-round" id="cc-airplane" aria-label="Tryb samolotowy"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></button>
+            <button type="button" class="cc-round on-green" id="cc-cellular" aria-label="Dane komórkowe"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="15" width="3.4" height="6" rx="1"/><rect x="8.2" y="11" width="3.4" height="10" rx="1"/><rect x="13.4" y="7" width="3.4" height="14" rx="1"/><rect x="18.6" y="3" width="3.4" height="18" rx="1"/></svg></button>
+            <button type="button" class="cc-round on-blue" id="cc-wifi" aria-label="Wi-Fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M2.5 9a14 14 0 0 1 19 0"/><path d="M5.8 12.8a9.3 9.3 0 0 1 12.4 0"/><path d="M9 16.5a4.6 4.6 0 0 1 6 0"/><circle cx="12" cy="20" r="1.2" fill="currentColor"/></svg></button>
+            <button type="button" class="cc-round on-blue" id="cc-bluetooth" aria-label="Bluetooth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 7.5 17 17l-5 4.5V2.5L17 7 6.5 16.5"/></svg></button>
+          </div>
+          <button type="button" class="cc-tile" id="cc-rotation" aria-label="Blokada orientacji"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><polyline points="20 3.5 20 8 15.5 8"/><rect x="9.5" y="10.5" width="5" height="4.5" rx="1"/></svg></button>
+          <button type="button" class="cc-tile" id="cc-silent" aria-label="Tryb cichy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 9-5.2M18 10c0 4 1.5 6 2.5 7H4.5c1-1 1.5-3 1.5-7"/><path d="M10 20a2 2 0 0 0 4 0"/><line x1="3" y1="3" x2="21" y2="21"/></svg></button>
+          <div class="cc-tile cc-slider" id="cc-brightness" aria-label="Jasność"><div class="cc-slider-fill"></div><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4.2"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.6" y1="4.6" x2="6.4" y2="6.4"/><line x1="17.6" y1="17.6" x2="19.4" y2="19.4"/><line x1="4.6" y1="19.4" x2="6.4" y2="17.6"/><line x1="17.6" y1="6.4" x2="19.4" y2="4.6"/></g></svg></div>
+          <div class="cc-tile cc-slider" id="cc-volume" aria-label="Głośność"><div class="cc-slider-fill"></div><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9.5v5h4l5 4v-13l-5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <button type="button" class="cc-tile cc-focus" id="cc-dnd"><span class="moon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/></svg></span><span><b>Nie przeszkadzać</b><small id="cc-dnd-state">Wył.</small></span></button>
+          <button type="button" class="cc-tile" id="cc-torch" aria-label="Latarka" style="grid-column:1;grid-row:4"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2h10l-1.6 5v3H8.6V7zM9.5 11h5v10a1.5 1.5 0 0 1-1.5 1.5h-2A1.5 1.5 0 0 1 9.5 21z"/></svg></button>
+          <button type="button" class="cc-tile" id="cc-theme" aria-label="Tryb ciemny" style="grid-column:2;grid-row:4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg></button>
+          <button type="button" class="cc-tile" id="cc-alarm" aria-label="Zegar" style="grid-column:3;grid-row:4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M4 5.5l3-2.5M20 5.5l-3-2.5"/></svg></button>
+          <button type="button" class="cc-tile" id="cc-calc" aria-label="Kalkulator" style="grid-column:4;grid-row:4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4.5" y="2.5" width="15" height="19" rx="2.5"/><rect x="7.5" y="5.5" width="9" height="3.5" rx="0.8"/><circle cx="8.5" cy="13" r="0.9" fill="currentColor"/><circle cx="12" cy="13" r="0.9" fill="currentColor"/><circle cx="15.5" cy="13" r="0.9" fill="currentColor"/><circle cx="8.5" cy="17" r="0.9" fill="currentColor"/><circle cx="12" cy="17" r="0.9" fill="currentColor"/><circle cx="15.5" cy="17" r="0.9" fill="currentColor"/></svg></button>
+          <button type="button" class="cc-tile" id="cc-battery" aria-label="Bateria" style="grid-column:1;grid-row:5;flex-direction:column;gap:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="17" height="10" rx="2.5"/><line x1="22" y1="10.5" x2="22" y2="13.5"/><rect x="4.2" y="9.2" width="6" height="5.6" rx="1" fill="currentColor" stroke="none" id="cc-batt-fill"/></svg><span class="cc-battery-txt" id="cc-batt-txt">94%</span></button>
+          <button type="button" class="cc-tile" id="cc-record" aria-label="Nagrywanie ekranu" style="grid-column:2;grid-row:5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5" fill="currentColor" stroke="none"/></svg></button>
+          <button type="button" class="cc-tile" id="cc-notes" aria-label="Notatki" style="grid-column:3;grid-row:5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+          <button type="button" class="cc-tile" id="cc-camera" aria-label="Aparat" style="grid-column:4;grid-row:5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+          <div class="cc-tile cc-media" style="grid-row:6 / span 2">
+            <div class="cc-art"></div>
+            <div class="cc-media-right">
+              <div class="cc-media-title" id="cc-media-title">Nie odtwarza</div>
+              <div class="cc-media-ctrls">
+                <button type="button" aria-label="Poprzedni"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 6v12L2.5 12zM21 6v12l-8.5-6z"/></svg></button>
+                <button type="button" class="play" id="cc-play" aria-label="Odtwórz"><svg viewBox="0 0 24 24" fill="currentColor" id="cc-play-ico"><path d="M7 4.5v15l13-7.5z"/></svg></button>
+                <button type="button" aria-label="Następny"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 6v12l8.5-6zM3 6v12l8.5-6z"/></svg></button>
+              </div>
+              <div class="cc-media-bar"></div>
+            </div>
+          </div>
         </div>
-      </header>
-      <div class="app-scroll">
-        <textarea id="notebook-area" class="notebook-textarea" placeholder="Wpisz notatkę w ZeniOS...">Pomysły na układ pulpitu i widżety ZeniOS...</textarea>
       </div>
-    </section>
+    </div>
 
     <!-- Dolna nawigacja systemowa: pulpit oraz aplikacje -->
     <div class="system-nav-overlay mode-gestures" id="system-nav-overlay">
