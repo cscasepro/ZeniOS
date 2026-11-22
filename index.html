@@ -24,6 +24,96 @@
       <img id="loading-still" src="Boot_Loading/Zenios_loading.png" alt="Zenios_loading" />
     </section>
 
+    <!-- Ekran blokady ZeniOS (po załadowaniu systemu) -->
+    <section class="layer lockscreen-layer" id="lockscreen-layer" aria-label="Ekran blokady ZeniOS">
+      <img id="lock-wallpaper" alt="Tapeta ekranu blokady" />
+      <div class="lock-scrim"></div>
+
+      <div class="lock-top-block">
+        <div class="lock-date" id="lock-date">Niedziela, 22 Lis</div>
+        <div class="lock-clock" id="lock-clock">16:37</div>
+      </div>
+
+      <!-- Panel odblokowania: PIN -->
+      <div class="unlock-panel" id="unlock-pin-panel">
+        <div class="unlock-title">Wpisz PIN</div>
+        <div class="pin-dots" id="pin-dots">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="unlock-error" id="pin-error"></div>
+        <div class="pin-keypad" id="pin-keypad">
+          <button type="button" class="pin-key" data-pin="1">1</button>
+          <button type="button" class="pin-key" data-pin="2">2</button>
+          <button type="button" class="pin-key" data-pin="3">3</button>
+          <button type="button" class="pin-key" data-pin="4">4</button>
+          <button type="button" class="pin-key" data-pin="5">5</button>
+          <button type="button" class="pin-key" data-pin="6">6</button>
+          <button type="button" class="pin-key" data-pin="7">7</button>
+          <button type="button" class="pin-key" data-pin="8">8</button>
+          <button type="button" class="pin-key" data-pin="9">9</button>
+          <button type="button" class="pin-key pin-action" id="pin-clear-btn">Wyczyść</button>
+          <button type="button" class="pin-key" data-pin="0">0</button>
+          <button type="button" class="pin-key pin-action" id="pin-cancel-btn">Anuluj</button>
+        </div>
+      </div>
+
+      <!-- Panel odblokowania: Hasło -->
+      <div class="unlock-panel" id="unlock-password-panel">
+        <div class="unlock-title">Wpisz hasło</div>
+        <input type="password" class="password-input" id="lock-password-input" placeholder="Hasło" autocomplete="off" />
+        <div class="unlock-error" id="password-error"></div>
+        <div class="unlock-btn-row">
+          <button type="button" class="glass-action-btn" id="password-cancel-btn">Anuluj</button>
+          <button type="button" class="glass-action-btn primary" id="password-submit-btn">Odblokuj</button>
+        </div>
+      </div>
+
+      <!-- Panel odblokowania: Wzór -->
+      <div class="unlock-panel" id="unlock-pattern-panel">
+        <div class="unlock-title">Narysuj wzór</div>
+        <div class="pattern-grid" id="pattern-grid">
+          <button type="button" class="pattern-node" data-node="1"><span></span></button>
+          <button type="button" class="pattern-node" data-node="2"><span></span></button>
+          <button type="button" class="pattern-node" data-node="3"><span></span></button>
+          <button type="button" class="pattern-node" data-node="4"><span></span></button>
+          <button type="button" class="pattern-node" data-node="5"><span></span></button>
+          <button type="button" class="pattern-node" data-node="6"><span></span></button>
+          <button type="button" class="pattern-node" data-node="7"><span></span></button>
+          <button type="button" class="pattern-node" data-node="8"><span></span></button>
+          <button type="button" class="pattern-node" data-node="9"><span></span></button>
+        </div>
+        <div class="unlock-error" id="pattern-error"></div>
+        <div class="unlock-btn-row">
+          <button type="button" class="glass-action-btn" id="pattern-reset-btn">Wyczyść</button>
+          <button type="button" class="glass-action-btn" id="pattern-cancel-btn">Anuluj</button>
+        </div>
+      </div>
+
+      <div class="lock-bottom-area" id="lock-bottom-area">
+        <div class="lock-shortcuts-row">
+          <button type="button" class="lock-circle-btn" id="lock-torch-btn" aria-label="Latarka">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 3h10l-1.5 4.5v13.5h-7V7.5L7 3z" />
+              <line x1="8.5" y1="7.5" x2="15.5" y2="7.5" />
+              <line x1="12" y1="11" x2="12" y2="14" />
+            </svg>
+          </button>
+
+          <button type="button" class="lock-swipe-prompt" id="lock-swipe-btn">
+            <span id="lock-hint-text">Przeciągnij w górę, aby odblokować</span>
+          </button>
+
+          <button type="button" class="lock-circle-btn" id="lock-camera-btn" aria-label="Aparat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+          </button>
+        </div>
+        <div class="lock-home-bar"></div>
+      </div>
+    </section>
+
     <!-- Pulpit ZeniOS z tapetą i dolnym doku liquid glass -->
     <section class="layer" id="wallpaper-layer">
       <img id="system-wallpaper" alt="ZeniOS Wallpaper" />
@@ -325,6 +415,18 @@
           </div>
 
           <div class="settings-group" data-group>
+            <div class="settings-row" id="open-passcode-picker" data-search="haslo blokada ekranu pin wzor passcode lock">
+              <span class="row-badge badge-red">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="11" width="16" height="10" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+              </span>
+              <span class="row-title">Hasło i blokada ekranu</span>
+              <span class="row-value" id="current-lock-label">Przeciągnięcie</span>
+              <span class="chevron">›</span>
+            </div>
+
             <div class="settings-row" data-search="ogolne general system">
               <span class="row-badge badge-gray">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
@@ -393,6 +495,73 @@
               <span class="row-title">Tapeta</span>
               <span class="row-value" id="current-wp-label">default_wallpaper_7</span>
               <span class="chevron">›</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zakładka / podwidok: Hasło i blokada ekranu -->
+      <div class="subscreen" id="settings-passcode">
+        <header class="app-header">
+          <div class="app-title-row">
+            <button class="back-btn" type="button" data-settings-back>‹ Ustawienia</button>
+            <h1 class="app-title sub-title">Hasło i blokada</h1>
+            <span class="header-spacer"></span>
+          </div>
+        </header>
+
+        <div class="app-scroll">
+          <div class="section-head">
+            <h2>Metoda odblokowania</h2>
+          </div>
+
+          <div class="settings-group" id="lock-method-options">
+            <div class="settings-row selectable-option active" data-lock-method="swipe">
+              <span class="row-badge badge-teal">↑</span>
+              <div class="option-text-col">
+                <span class="row-title">Przeciągnięcie ekranu</span>
+                <span class="option-sub">Domyślne — odblokowanie przesunięciem w górę</span>
+              </div>
+              <span class="option-check">✓</span>
+            </div>
+
+            <div class="settings-row selectable-option" data-lock-method="pin">
+              <span class="row-badge badge-blue">1234</span>
+              <div class="option-text-col">
+                <span class="row-title">PIN</span>
+                <span class="option-sub">4-cyfrowy kod odblokowania</span>
+              </div>
+              <span class="option-check">✓</span>
+            </div>
+
+            <div class="settings-row selectable-option" data-lock-method="password">
+              <span class="row-badge badge-purple">•••</span>
+              <div class="option-text-col">
+                <span class="row-title">Hasło</span>
+                <span class="option-sub">Hasło tekstowe na ekranie blokady</span>
+              </div>
+              <span class="option-check">✓</span>
+            </div>
+
+            <div class="settings-row selectable-option" data-lock-method="pattern">
+              <span class="row-badge badge-indigo">❖</span>
+              <div class="option-text-col">
+                <span class="row-title">Wzór</span>
+                <span class="option-sub">Sekwencja punktów na siatce 3×3</span>
+              </div>
+              <span class="option-check">✓</span>
+            </div>
+          </div>
+
+          <div class="settings-group" id="lock-secret-box">
+            <div class="settings-row" style="cursor: default; flex-direction: column; align-items: stretch; gap: 8px;">
+              <span class="row-title" id="secret-editor-label">Aktualny kod / hasło / wzór</span>
+              <input type="text" class="secret-edit-input" id="secret-edit-input" placeholder="Np. 1234 lub 1-2-5-8-9" />
+              <div class="secret-actions-row">
+                <button type="button" class="mini-save-btn" id="save-secret-btn">Zapisz kod / wzór</button>
+                <button type="button" class="mini-lock-btn" id="test-lock-now-btn">Zablokuj ekran</button>
+              </div>
+              <span class="option-sub" id="secret-status-hint">Domyślnie: PIN = 1234, Hasło = zenios, Wzór = 1-2-5-8-9</span>
             </div>
           </div>
         </div>
