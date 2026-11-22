@@ -1,8 +1,5 @@
-const PHONE_W = 390;
-const PHONE_H = 844;
 const LOAD_DURATION_MS = 5000;
 
-// Rejestr wbudowanych tapet ZeniOS (gotowy pod przyszłą zmianę tapety)
 const ZENIOS_WALLPAPERS = [
   'default_wallpapers/default_wallpaper_1',
   'default_wallpapers/default_wallpaper_2',
@@ -13,21 +10,16 @@ const ZENIOS_WALLPAPERS = [
   'default_wallpapers/default_wallpaper_7'
 ];
 
-const DEFAULT_WALLPAPER_INDEX = 6; // default_wallpaper_7
+const DEFAULT_WALLPAPER_INDEX = 6;
 
-const scaleBox = document.getElementById('scale-box');
 const stillLayer = document.getElementById('still-layer');
 const wallpaperLayer = document.getElementById('wallpaper-layer');
 const loadingStill = document.getElementById('loading-still');
 const systemWallpaper = document.getElementById('system-wallpaper');
+const liquidDock = document.getElementById('liquid-dock');
 
 let loadTimer = null;
 let currentWallpaperIndex = DEFAULT_WALLPAPER_INDEX;
-
-function fitToViewport() {
-  const scale = Math.min(1, window.innerWidth / PHONE_W, window.innerHeight / PHONE_H);
-  scaleBox.style.transform = `scale(${scale})`;
-}
 
 function showLayer(target) {
   [stillLayer, wallpaperLayer].forEach((el) => {
@@ -59,14 +51,14 @@ function finishLoading() {
   }
   loadingStill.style.animation = 'none';
   showLayer(wallpaperLayer);
+  liquidDock.classList.add('visible');
 }
 
 function initSystem() {
-  fitToViewport();
   setWallpaper(DEFAULT_WALLPAPER_INDEX);
   showLayer(stillLayer);
+  liquidDock.classList.remove('visible');
   loadTimer = setTimeout(finishLoading, LOAD_DURATION_MS);
 }
 
-window.addEventListener('resize', fitToViewport);
 initSystem();
