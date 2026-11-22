@@ -27,7 +27,7 @@ const AVAILABLE_WIDGETS = [
   {
     id: 'music',
     name: 'Muzyka',
-    subtitle: 'Chromatica • Lady Gaga',
+    subtitle: '',
     caption: 'Music',
     theme: 'music-widget',
     artText: '♪',
@@ -36,7 +36,7 @@ const AVAILABLE_WIDGETS = [
   {
     id: 'calendar',
     name: 'Kalendarz',
-    subtitle: 'Wydarzenia i data',
+    subtitle: '',
     caption: 'Calendar',
     theme: 'calendar-widget',
     artText: '22',
@@ -52,6 +52,10 @@ const AVAILABLE_WIDGETS = [
     badge: '☀'
   }
 ];
+
+/* Wspólny stan muzyki (widżet + Centrum sterowania) */
+const zenMusic = { playing: false, title: 'Chromatica', artist: 'Lady Gaga' };
+let zenTodayEvents = () => [];
 
 const DEFAULT_WALLPAPER_INDEX = 6;
 const BATTERY_PRESETS = [94, 65, 20, 100];
@@ -254,25 +258,51 @@ function renderWidgets() {
     const topRow = document.createElement('div');
     topRow.className = 'widget-top-row';
 
-    const art = document.createElement('div');
-    art.className = 'widget-art';
-    art.textContent = meta.artText;
-
-    const badge = document.createElement('span');
-    badge.className = 'widget-badge-icon';
-    badge.textContent = meta.badge;
-
-    topRow.appendChild(art);
-    topRow.appendChild(badge);
-
     const infoCol = document.createElement('div');
+    infoCol.className = 'widget-info';
     const titleEl = document.createElement('div');
     titleEl.className = 'widget-title';
-    titleEl.textContent = meta.id === 'calendar' ? `${new Date().getDate()} ${formatCurrentLockDate().split(',')[1] || ''}` : meta.name;
-
     const subEl = document.createElement('div');
     subEl.className = 'widget-sub';
-    subEl.textContent = meta.subtitle;
+
+    const now = new Date();
+    const DAYS_UP = ['NIEDZIELA', 'PONIEDZIAŁEK', 'WTOREK', 'ŚRODA', 'CZWARTEK', 'PIĄTEK', 'SOBOTA'];
+    const MONTHS_GEN = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
+
+    if (meta.id === 'music') {
+      wrap.classList.toggle('idle', !zenMusic.playing);
+      const art = document.createElement('div');
+      art.className = 'widget-art';
+      art.textContent = '♪';
+      const badge = document.createElement('span');
+      badge.className = 'widget-badge-icon';
+      badge.textContent = zenMusic.playing ? '♫' : '';
+      topRow.appendChild(art);
+      topRow.appendChild(badge);
+      titleEl.textContent = zenMusic.playing ? zenMusic.title : 'Nic nie leci';
+      subEl.textContent = zenMusic.playing ? zenMusic.artist : 'Wybierz utwór';
+    } else if (meta.id === 'calendar') {
+      /* dzień pokazany tylko RAZ: etykieta dnia tygodnia + duża cyfra + miesiąc */
+      const dow = document.createElement('span');
+      dow.className = 'widget-dow';
+      dow.textContent = DAYS_UP[now.getDay()];
+      topRow.appendChild(dow);
+      titleEl.textContent = String(now.getDate());
+      titleEl.classList.add('big-day');
+      const evs = zenTodayEvents();
+      subEl.textContent = `${MONTHS_GEN[now.getMonth()]} · ${evs.length ? `${evs[0].time} ${evs[0].title}` : 'Brak wydarzeń'}`;
+    } else {
+      const art = document.createElement('div');
+      art.className = 'widget-art';
+      art.textContent = meta.artText;
+      const badge = document.createElement('span');
+      badge.className = 'widget-badge-icon';
+      badge.textContent = meta.badge;
+      topRow.appendChild(art);
+      topRow.appendChild(badge);
+      titleEl.textContent = meta.name;
+      subEl.textContent = meta.subtitle;
+    }
 
     infoCol.appendChild(titleEl);
     infoCol.appendChild(subEl);
@@ -1839,6 +1869,7 @@ function initCalendar() {
   ];
   const calOf = (id) => cals.find((c) => c.id === id);
   const eventsOn = (k) => events.filter((e) => e.date === k && calOf(e.cal)?.on).sort((a, b) => a.time.localeCompare(b.time));
+  zenTodayEvents = () => eventsOn(key(today));
 
   const monthBlock = (y, m) => {
     const wrap = document.createElement('div');
@@ -1887,7 +1918,7 @@ function initCalendar() {
     panel.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => {
       const i = events.findIndex((x) => x.id === Number(b.getAttribute('data-del')));
       if (i >= 0) events.splice(i, 1);
-      renderMonths(); renderDay();
+      renderMonths(); renderDay(); renderWidgets();
     }));
   };
   const scrollToMonth = (m, smooth = false) => {
@@ -1963,7 +1994,7 @@ function initCalendar() {
     const [y, m, d] = date.split('-').map(Number);
     selected = new Date(y, m - 1, d);
     viewYear = y;
-    closeSheets(); renderMonths(); renderDay();
+    closeSheets(); renderMonths(); renderDay(); renderWidgets();
   });
   $z('cal-year-btn').addEventListener('click', () => setMode('year'));
   $z('cal-today-btn').addEventListener('click', () => {
@@ -1972,7 +2003,7 @@ function initCalendar() {
     selected = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     renderMonths(); renderDay(); scrollToMonth(today.getMonth(), true);
   });
-  renderMonths(); renderDay();
+  renderMonths(); renderDay(); renderWidgets();
   window.__calOpen = () => { setMode('month'); closeSheets(); viewYear = today.getFullYear(); renderMonths(); renderDay(); scrollToMonth(today.getMonth()); };
 }
 
@@ -2352,11 +2383,15 @@ function initControlCenter() {
   $z('cc-alarm').addEventListener('click', () => goApp('app-clock'));
   $z('cc-calc').addEventListener('click', () => goApp('app-calculator'));
   $z('cc-notes').addEventListener('click', () => goApp('app-notebook'));
-  let playing = false;
-  $z('cc-play').addEventListener('click', () => {
-    playing = !playing;
-    $z('cc-media-title').textContent = playing ? 'Chromatica • Lady Gaga' : 'Nie odtwarza';
+  const syncMusicUI = () => {
+    const playing = zenMusic.playing;
+    $z('cc-media-title').textContent = playing ? `${zenMusic.title} • ${zenMusic.artist}` : 'Nie odtwarza';
     $z('cc-play-ico').innerHTML = playing ? '<path d="M6 4.5h4v15H6zM14 4.5h4v15h-4z"/>' : '<path d="M7 4.5v15l13-7.5z"/>';
+    renderWidgets();
+  };
+  $z('cc-play').addEventListener('click', () => {
+    zenMusic.playing = !zenMusic.playing;
+    syncMusicUI();
   });
 
   /* suwaki */
