@@ -30,6 +30,81 @@ html, body {
     0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
+/* Górny pasek statusu: godzina po lewej, sama ikona baterii po prawej */
+.status-bar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  padding: max(6px, env(safe-area-inset-top)) 18px 0;
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.status-bar-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.status-clock {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
+  font-variant-numeric: tabular-nums;
+}
+
+.status-battery {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.65));
+}
+
+.battery-body {
+  position: relative;
+  width: 24px;
+  height: 12px;
+  padding: 1.5px;
+  border-radius: 3.5px;
+  border: 1.4px solid rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.14);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.battery-fill {
+  height: 100%;
+  width: 94%;
+  border-radius: 1.8px;
+  background: #ffffff;
+  transition: width 0.25s ease, background-color 0.25s ease;
+}
+
+.status-battery.low .battery-fill {
+  background: #ff453a;
+}
+
+.status-battery.full .battery-fill {
+  background: #30d158;
+}
+
+.battery-cap {
+  width: 2px;
+  height: 5px;
+  border-radius: 0 2px 2px 0;
+  background: rgba(255, 255, 255, 0.92);
+}
+
 .layer {
   position: absolute;
   inset: 0;
@@ -205,7 +280,7 @@ html, body {
 }
 
 .app-header {
-  padding: 14px 16px 12px;
+  padding: 34px 16px 12px;
   background: rgba(14, 14, 18, 0.94);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
