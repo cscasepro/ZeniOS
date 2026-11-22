@@ -1,3 +1,4 @@
+/*s*/
 const LOAD_DURATION_MS = 5000;
 const LONG_PRESS_MS = 450;
 
