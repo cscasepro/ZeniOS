@@ -129,18 +129,15 @@ function wakeSystemNav() {
   if (!appOpen) {
     overlay.style.opacity = '0';
     overlay.style.visibility = 'hidden';
-    overlay.style.pointerEvents = 'none';
     return;
   }
 
   overlay.style.opacity = '1';
   overlay.style.visibility = 'visible';
-  overlay.style.pointerEvents = 'none';
 
   navIdleTimer = setTimeout(() => {
     overlay.classList.add('auto-hidden');
     overlay.style.opacity = '0';
-    overlay.style.pointerEvents = 'none';
   }, AUTO_HIDE_NAV_MS);
 }
 
@@ -232,7 +229,7 @@ function bindAppNavigation() {
       }
       const deltaY = gestureStartY - e.clientY;
       gestureStartY = null;
-      if (deltaY >= 12 || Math.abs(deltaY) < 6) {
+      if (deltaY >= 10 || Math.abs(deltaY) < 8) {
         closeAllApps();
       }
     });
