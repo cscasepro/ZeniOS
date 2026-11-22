@@ -5,11 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>ZeniOS</title>
   <style>
-    :root {
-      --phone-w: 390px;
-      --phone-h: 844px;
-    }
-
     * {
       box-sizing: border-box;
       margin: 0;
@@ -20,31 +15,15 @@
 
     html, body {
       width: 100%;
-      height: 100%;
+      height: 100dvh;
       background: #040508;
       overflow: hidden;
     }
 
-    .viewport-stage {
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    .scale-box {
-      width: var(--phone-w);
-      height: var(--phone-h);
-      transform-origin: center center;
-      flex-shrink: 0;
-    }
-
-    .phone-surface {
+    .phone-screen {
       position: relative;
-      width: var(--phone-w);
-      height: var(--phone-h);
+      width: 100vw;
+      height: 100dvh;
       background: #05060a;
       overflow: hidden;
     }
@@ -102,21 +81,84 @@
       object-fit: cover;
       display: block;
     }
+
+    .liquid-dock {
+      position: fixed;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      padding: 12px 22px;
+      border-radius: 34px;
+      background: linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.24) 0%,
+        rgba(255, 255, 255, 0.08) 48%,
+        rgba(255, 255, 255, 0.18) 100%
+      );
+      backdrop-filter: blur(28px) saturate(185%) contrast(108%);
+      -webkit-backdrop-filter: blur(28px) saturate(185%) contrast(108%);
+      border: 1px solid rgba(255, 255, 255, 0.36);
+      box-shadow:
+        0 14px 34px rgba(0, 0, 0, 0.32),
+        inset 0 1.5px 1px rgba(255, 255, 255, 0.55),
+        inset 0 -1px 2px rgba(255, 255, 255, 0.16);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.45s ease, visibility 0.45s ease;
+    }
+
+    .liquid-dock.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .dock-icon-btn {
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        0 6px 16px rgba(0, 0, 0, 0.24),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    }
+
+    .dock-icon-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
   </style>
 </head>
 <body>
-  <div class="viewport-stage">
-    <div class="scale-box" id="scale-box">
-      <div class="phone-surface">
-        <section class="layer active" id="still-layer">
-          <img id="loading-still" src="Boot_Loading/Zenios_loading.png" alt="Zenios_loading" />
-        </section>
+  <div class="phone-screen">
+    <section class="layer active" id="still-layer">
+      <img id="loading-still" src="Boot_Loading/Zenios_loading.png" alt="Zenios_loading" />
+    </section>
 
-        <section class="layer" id="wallpaper-layer">
-          <img id="system-wallpaper" alt="ZeniOS Wallpaper" />
-        </section>
+    <section class="layer" id="wallpaper-layer">
+      <img id="system-wallpaper" alt="ZeniOS Wallpaper" />
+    </section>
+
+    <nav class="liquid-dock" id="liquid-dock" aria-label="Pasek zadań">
+      <div class="dock-icon-btn">
+        <img src="Icons/Phone_Icon.png" alt="Phone" />
       </div>
-    </div>
+      <div class="dock-icon-btn">
+        <img src="Icons/Settings_Icon.png" alt="Settings" />
+      </div>
+      <div class="dock-icon-btn">
+        <img src="Icons/gallery_icon.png" alt="Gallery" />
+      </div>
+    </nav>
   </div>
 
   <script src="loading.js"></script>
