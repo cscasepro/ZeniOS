@@ -114,33 +114,85 @@ function bindAppNavigation() {
   });
 }
 
-function bindGalleryTabs() {
-  const galleryMessages = {
-    all: 'Brak pozycji',
+function setGalleryView(viewMode) {
+  const isTimeline = viewMode === 'timeline';
+
+  if (domRefs.galPaneCollections) {
+    domRefs.galPaneCollections.classList.toggle('active', !isTimeline);
+  }
+  if (domRefs.galPaneTimeline) {
+    domRefs.galPaneTimeline.classList.toggle('active', isTimeline);
+  }
+
+  domRefs.galSegButtons.forEach((btn) => {
+    btn.classList.toggle('active', btn.getAttribute('data-gal-view') === viewMode);
+  });
+
+  const messages = {
+    collections: 'Brak pozycji',
     photos: 'Brak obrazów',
-    videos: 'Brak klipów',
     albums: 'Brak kolekcji',
     search: 'Brak wyników'
   };
 
-  domRefs.galTabButtons.forEach((btn) => {
+  if (domRefs.galleryEmptyText && messages[viewMode]) {
+    domRefs.galleryEmptyText.textContent = messages[viewMode];
+  }
+  if (domRefs.galleryRecentCount) {
+    domRefs.galleryRecentCount.textContent = '0 obrazów, 0 klipów';
+  }
+}
+
+function bindGalleryFeatures() {
+  domRefs.galSegButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
-      const tab = btn.getAttribute('data-gal-tab');
-      domRefs.galTabButtons.forEach((b) => {
-        b.classList.toggle('active', b.getAttribute('data-gal-tab') === tab);
-      });
-      if (domRefs.galleryEmptyText) {
-        domRefs.galleryEmptyText.textContent = galleryMessages[tab] || 'Brak pozycji';
+      const mode = btn.getAttribute('data-gal-view');
+      if (mode) setGalleryView(mode);
+    });
+  });
+
+  domRefs.galNavButtons.forEach((btn, index) => {
+    btn.addEventListener('click', () => {
+      const nav = btn.getAttribute('data-gal-nav');
+      domRefs.galNavButtons.forEach((b, i) => b.classList.toggle('active', i === index));
+
+      if (nav === 'timeline') {
+        setGalleryView('timeline');
+      } else if (nav === 'search') {
+        setGalleryView('collections');
+        domRefs.gallerySearchWrap?.classList.add('open');
+        domRefs.gallerySearchInput?.focus();
+      } else {
+        setGalleryView(nav || 'collections');
       }
-      if (domRefs.galleryRecentCount) {
-        domRefs.galleryRecentCount.textContent = '0 obrazów, 0 klipów';
-      }
+    });
+  });
+
+  if (domRefs.gallerySearchToggle && domRefs.gallerySearchWrap) {
+    domRefs.gallerySearchToggle.addEventListener('click', () => {
+      const opened = domRefs.gallerySearchWrap.classList.toggle('open');
+      if (opened) domRefs.gallerySearchInput?.focus();
+    });
+  }
+
+  if (domRefs.gallerySearchInput && domRefs.galleryEmptyText) {
+    domRefs.gallerySearchInput.addEventListener('input', () => {
+      const q = domRefs.gallerySearchInput.value.trim();
+      domRefs.galleryEmptyText.textContent = q
+        ? `Brak wyników dla „${q}”`
+        : 'Brak pozycji';
+    });
+  }
+
+  domRefs.zoomPills.forEach((pill) => {
+    pill.addEventListener('click', () => {
+      domRefs.zoomPills.forEach((p) => p.classList.toggle('active', p === pill));
     });
   });
 }
 
 function bindSettingsFeatures() {
-  const { settingsSearch, openWallpaperPicker, wallpaperDrawer } = domRefs;
+  const { settingsSearch, openWallpaperPicker, wallpaperDrawer, airplaneToggle, wifiStatusValue, btStatusValue } = domRefs;
 
   if (settingsSearch) {
     settingsSearch.addEventListener('input', () => {
@@ -159,6 +211,14 @@ function bindSettingsFeatures() {
 
         group.classList.toggle('all-hidden', visibleCount === 0);
       });
+    });
+  }
+
+  if (airplaneToggle) {
+    airplaneToggle.addEventListener('change', () => {
+      const on = airplaneToggle.checked;
+      if (wifiStatusValue) wifiStatusValue.textContent = on ? 'Wyłączone' : 'ZeniNet';
+      if (btStatusValue) btStatusValue.textContent = on ? 'Wyłączony' : 'Włączony';
     });
   }
 
@@ -193,10 +253,20 @@ function cacheDom() {
     appViews: document.querySelectorAll('.app-view'),
     openAppTriggers: document.querySelectorAll('[data-open-app]'),
     closeAppTriggers: document.querySelectorAll('[data-close-app]'),
-    galTabButtons: document.querySelectorAll('[data-gal-tab]'),
+    galSegButtons: document.querySelectorAll('[data-gal-view]'),
+    galNavButtons: document.querySelectorAll('[data-gal-nav]'),
+    galPaneCollections: document.getElementById('gal-pane-collections'),
+    galPaneTimeline: document.getElementById('gal-pane-timeline'),
+    gallerySearchToggle: document.getElementById('gallery-search-toggle'),
+    gallerySearchWrap: document.getElementById('gallery-search-wrap'),
+    gallerySearchInput: document.getElementById('gallery-search-input'),
+    zoomPills: document.querySelectorAll('[data-zoom]'),
     galleryEmptyText: document.getElementById('gallery-empty-text'),
     galleryRecentCount: document.getElementById('gallery-recent-count'),
     settingsSearch: document.getElementById('settings-search'),
+    airplaneToggle: document.getElementById('airplane-toggle'),
+    wifiStatusValue: document.getElementById('wifi-status-value'),
+    btStatusValue: document.getElementById('bt-status-value'),
     openWallpaperPicker: document.getElementById('open-wallpaper-picker'),
     wallpaperDrawer: document.getElementById('wallpaper-drawer'),
     wpGrid: document.getElementById('wp-grid'),
@@ -207,7 +277,7 @@ function cacheDom() {
 function initSystem() {
   cacheDom();
   bindAppNavigation();
-  bindGalleryTabs();
+  bindGalleryFeatures();
   bindSettingsFeatures();
   setWallpaper(DEFAULT_WALLPAPER_INDEX);
   showLayer(domRefs.stillLayer);
