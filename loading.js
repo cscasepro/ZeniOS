@@ -1,4 +1,3 @@
-/*s*/
 const LOAD_DURATION_MS = 5000;
 const LONG_PRESS_MS = 450;
 
@@ -73,6 +72,7 @@ let clockTimer = null;
 let currentWallpaperIndex = DEFAULT_WALLPAPER_INDEX;
 let currentNavMode = 'gestures';
 let currentBatteryLevel = 94;
+let currentBatteryCharging = false;
 let batteryPresetIndex = 0;
 let gestureStartY = null;
 let lockSwipeStartY = null;
@@ -127,40 +127,53 @@ function updateClock() {
   if (domRefs.calendarAppDate) domRefs.calendarAppDate.textContent = dateText;
 }
 
-function applyBatteryLevel(level) {
-  const clamped = Math.max(0, Math.min(100, Number(level) || 0));
+/* Wskaźnik baterii w stylu iOS.
+   setBatteryLevel(percent, { charging }) — percent 0–100; charging (opcjonalnie) włącza stan ładowania.
+   Pominięcie opts.charging zachowuje poprzedni stan ładowania. */
+function setBatteryLevel(percent, opts) {
+  const clamped = Math.max(0, Math.min(100, Math.round(Number(percent)) || 0));
   currentBatteryLevel = clamped;
+  if (opts && typeof opts.charging === 'boolean') currentBatteryCharging = opts.charging;
 
-  if (domRefs.batteryFill) {
-    domRefs.batteryFill.style.width = `${clamped}%`;
-  }
-
-  if (domRefs.statusBattery) {
-    domRefs.statusBattery.setAttribute('data-level', String(clamped));
-    domRefs.statusBattery.classList.toggle('low', clamped <= 20);
-    domRefs.statusBattery.classList.toggle('full', clamped === 100);
+  const batt = domRefs.statusBattery || document.getElementById('status-battery');
+  if (batt) {
+    batt.style.setProperty('--lvl', `${clamped}%`);
+    batt.setAttribute('data-level', String(clamped));
+    batt.classList.toggle('low', clamped <= 20 && !currentBatteryCharging);
+    batt.classList.toggle('charging', currentBatteryCharging);
+    batt.setAttribute('aria-label', `Bateria ${clamped}%${currentBatteryCharging ? ', ładowanie' : ''}`);
+    batt.querySelectorAll('.battery-pct').forEach((n) => { n.textContent = String(clamped); });
   }
 
   if (domRefs.batterySettingState) {
-    domRefs.batterySettingState.textContent = `${clamped}%`;
+    domRefs.batterySettingState.textContent = `${clamped}%${currentBatteryCharging ? ' ⚡' : ''}`;
   }
+  const ccTxt = document.getElementById('cc-batt-txt');
+  if (ccTxt) ccTxt.textContent = `${clamped}%`;
+  const ccFill = document.getElementById('cc-batt-fill');
+  if (ccFill) ccFill.setAttribute('width', String(Math.max(1, 13 * clamped / 100)));
+}
+
+/* zachowana nazwa używana w reszcie kodu */
+function applyBatteryLevel(level, opts) {
+  setBatteryLevel(level, opts);
 }
 
 function initRealBatteryIfAvailable() {
-  applyBatteryLevel(currentBatteryLevel);
-  if (typeof navigator !== 'undefined' && typeof navigator.getBattery === 'function') {
-    navigator.getBattery().then((battery) => {
-      if (!battery) return;
-      const syncFromDevice = () => {
-        const pct = Math.round((battery.level || 0) * 100);
-        const idx = BATTERY_PRESETS.indexOf(pct);
-        if (idx >= 0) batteryPresetIndex = idx;
-        applyBatteryLevel(pct);
-      };
-      syncFromDevice();
-      battery.addEventListener('levelchange', syncFromDevice);
-    }).catch(() => {});
-  }
+  setBatteryLevel(currentBatteryLevel, { charging: false });   // fallback, gdy API baterii jest niedostępne
+  if (typeof navigator === 'undefined' || typeof navigator.getBattery !== 'function') return;
+  navigator.getBattery().then((battery) => {
+    if (!battery) return;
+    const syncFromDevice = () => {
+      const pct = Math.round((battery.level || 0) * 100);
+      const idx = BATTERY_PRESETS.indexOf(pct);
+      if (idx >= 0) batteryPresetIndex = idx;
+      setBatteryLevel(pct, { charging: Boolean(battery.charging) });
+    };
+    syncFromDevice();
+    battery.addEventListener('levelchange', syncFromDevice);
+    battery.addEventListener('chargingchange', syncFromDevice);
+  }).catch(() => { /* zostaje fallback */ });
 }
 
 function showLayer(target) {
