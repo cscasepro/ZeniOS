@@ -18,12 +18,16 @@
       height: 100dvh;
       background: #040508;
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
+    /* Powierzchnia w proporcji telefonu 18:9 (wysokość : szerokość = 18 : 9 = 2 : 1) */
     .phone-screen {
       position: relative;
-      width: 100vw;
-      height: 100dvh;
+      width: min(100vw, 50dvh);
+      height: min(100dvh, 200vw);
       background: #05060a;
       overflow: hidden;
     }
@@ -83,7 +87,7 @@
     }
 
     .liquid-dock {
-      position: fixed;
+      position: absolute;
       left: 50%;
       bottom: max(18px, env(safe-area-inset-bottom));
       transform: translateX(-50%);
