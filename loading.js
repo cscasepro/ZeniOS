@@ -11,12 +11,65 @@ const ZENIOS_WALLPAPERS = [
 ];
 
 const DEFAULT_WALLPAPER_INDEX = 6;
+const BATTERY_PRESETS = [94, 65, 20, 100];
 
 let loadTimer = null;
+let clockTimer = null;
 let currentWallpaperIndex = DEFAULT_WALLPAPER_INDEX;
 let currentNavMode = 'gestures';
+let currentBatteryLevel = 94;
+let batteryPresetIndex = 0;
 let gestureStartY = null;
 let domRefs = {};
+
+function formatCurrentClock() {
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+function updateClock() {
+  if (domRefs.statusClock) {
+    domRefs.statusClock.textContent = formatCurrentClock();
+  }
+}
+
+function applyBatteryLevel(level) {
+  const clamped = Math.max(0, Math.min(100, Number(level) || 0));
+  currentBatteryLevel = clamped;
+
+  if (domRefs.batteryFill) {
+    domRefs.batteryFill.style.width = `${clamped}%`;
+  }
+
+  if (domRefs.statusBattery) {
+    domRefs.statusBattery.setAttribute('data-level', String(clamped));
+    domRefs.statusBattery.classList.toggle('low', clamped <= 20);
+    domRefs.statusBattery.classList.toggle('full', clamped === 100);
+  }
+
+  if (domRefs.batterySettingState) {
+    domRefs.batterySettingState.textContent = `${clamped}%`;
+  }
+}
+
+function initRealBatteryIfAvailable() {
+  applyBatteryLevel(currentBatteryLevel);
+  if (typeof navigator !== 'undefined' && typeof navigator.getBattery === 'function') {
+    navigator.getBattery().then((battery) => {
+      if (!battery) return;
+      const syncFromDevice = () => {
+        const pct = Math.round((battery.level || 0) * 100);
+        const idx = BATTERY_PRESETS.indexOf(pct);
+        if (idx >= 0) batteryPresetIndex = idx;
+        applyBatteryLevel(pct);
+      };
+      syncFromDevice();
+      battery.addEventListener('levelchange', syncFromDevice);
+    }).catch(() => {});
+  }
+}
 
 function showLayer(target) {
   const { stillLayer, wallpaperLayer } = domRefs;
@@ -24,6 +77,7 @@ function showLayer(target) {
     if (!el) return;
     el.classList.toggle('active', el === target);
   });
+  syncStatusBarDisplay();
 }
 
 function resolveWallpaperCandidates(basePath) {
@@ -96,6 +150,14 @@ function isAnyAppOpen() {
 
 function isHomeScreenVisible() {
   return !isAnyAppOpen() && Boolean(domRefs.wallpaperLayer?.classList.contains('active'));
+}
+
+function syncStatusBarDisplay() {
+  const bar = domRefs.statusBarOverlay;
+  if (!bar) return;
+
+  const visible = isAnyAppOpen() || isHomeScreenVisible();
+  bar.classList.toggle('visible', visible);
 }
 
 function syncNavBarDisplay() {
@@ -174,6 +236,7 @@ function openApp(appId) {
     view.classList.toggle('open', view.id === appId);
   });
   syncNavBarDisplay();
+  syncStatusBarDisplay();
 }
 
 function closeAllApps() {
@@ -182,6 +245,7 @@ function closeAllApps() {
   });
   openSettingsSubscreen('settings-main');
   syncNavBarDisplay();
+  syncStatusBarDisplay();
 }
 
 function bindAppNavigation() {
@@ -325,7 +389,8 @@ function bindSettingsFeatures() {
     airplaneToggle,
     wifiStatusValue,
     btStatusValue,
-    navModeOptions
+    navModeOptions,
+    batteryCycleRow
   } = domRefs;
 
   if (settingsSearch) {
@@ -353,6 +418,13 @@ function bindSettingsFeatures() {
       const on = airplaneToggle.checked;
       if (wifiStatusValue) wifiStatusValue.textContent = on ? 'Wyłączone' : 'ZeniNet';
       if (btStatusValue) btStatusValue.textContent = on ? 'Wyłączony' : 'Włączony';
+    });
+  }
+
+  if (batteryCycleRow) {
+    batteryCycleRow.addEventListener('click', () => {
+      batteryPresetIndex = (batteryPresetIndex + 1) % BATTERY_PRESETS.length;
+      applyBatteryLevel(BATTERY_PRESETS[batteryPresetIndex]);
     });
   }
 
@@ -395,10 +467,17 @@ function finishLoading() {
     domRefs.liquidDock.classList.add('visible');
   }
   syncNavBarDisplay();
+  syncStatusBarDisplay();
 }
 
 function cacheDom() {
   domRefs = {
+    statusBarOverlay: document.getElementById('status-bar-overlay'),
+    statusClock: document.getElementById('status-clock'),
+    statusBattery: document.getElementById('status-battery'),
+    batteryFill: document.getElementById('battery-fill'),
+    batteryCycleRow: document.getElementById('battery-cycle-row'),
+    batterySettingState: document.getElementById('battery-setting-state'),
     stillLayer: document.getElementById('still-layer'),
     wallpaperLayer: document.getElementById('wallpaper-layer'),
     loadingStill: document.getElementById('loading-still'),
@@ -444,6 +523,9 @@ function cacheDom() {
 
 function initSystem() {
   cacheDom();
+  updateClock();
+  clockTimer = setInterval(updateClock, 1000);
+  initRealBatteryIfAvailable();
   bindAppNavigation();
   bindGalleryFeatures();
   bindSettingsFeatures();
