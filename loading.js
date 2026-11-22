@@ -12,31 +12,43 @@ const ZENIOS_WALLPAPERS = [
 
 const DEFAULT_WALLPAPER_INDEX = 6;
 
-const stillLayer = document.getElementById('still-layer');
-const wallpaperLayer = document.getElementById('wallpaper-layer');
-const loadingStill = document.getElementById('loading-still');
-const systemWallpaper = document.getElementById('system-wallpaper');
-const liquidDock = document.getElementById('liquid-dock');
-
-const appViews = document.querySelectorAll('.app-view');
-const openAppTriggers = document.querySelectorAll('[data-open-app]');
-const closeAppTriggers = document.querySelectorAll('[data-close-app]');
-
-const galTabButtons = document.querySelectorAll('[data-gal-tab]');
-const galleryEmptyText = document.getElementById('gallery-empty-text');
-const galleryRecentCount = document.getElementById('gallery-recent-count');
-
-const settingsSearch = document.getElementById('settings-search');
-const openWallpaperPicker = document.getElementById('open-wallpaper-picker');
-const wallpaperDrawer = document.getElementById('wallpaper-drawer');
-const wpGrid = document.getElementById('wp-grid');
-const currentWpLabel = document.getElementById('current-wp-label');
-
 let loadTimer = null;
 let currentWallpaperIndex = DEFAULT_WALLPAPER_INDEX;
+let domRefs = {};
+
+function injectFallbackStyles() {
+  if (document.getElementById('zenios-runtime-fallback-css')) return;
+  const style = document.createElement('style');
+  style.id = 'zenios-runtime-fallback-css';
+  style.textContent = `
+    .app-view {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      background: #000000;
+      display: none;
+      flex-direction: column;
+      color: #f8fafc;
+    }
+    .app-view.open {
+      display: flex !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: translateY(0) !important;
+    }
+    .liquid-dock.visible {
+      opacity: 1 !important;
+      visibility: visible !important;
+      z-index: 15 !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 function showLayer(target) {
+  const { stillLayer, wallpaperLayer } = domRefs;
   [stillLayer, wallpaperLayer].forEach((el) => {
+    if (!el) return;
     el.classList.toggle('active', el === target);
   });
 }
@@ -46,12 +58,15 @@ function resolveWallpaperCandidates(basePath) {
 }
 
 function loadImageWithFallback(imgEl, basePath) {
+  if (!imgEl || !basePath) return;
   const candidates = resolveWallpaperCandidates(basePath);
   let attempt = 0;
+
   function tryNext() {
     if (attempt >= candidates.length) return;
     imgEl.src = candidates[attempt++];
   }
+
   imgEl.onerror = tryNext;
   tryNext();
 }
@@ -59,13 +74,20 @@ function loadImageWithFallback(imgEl, basePath) {
 function setWallpaper(index) {
   if (index < 0 || index >= ZENIOS_WALLPAPERS.length) return;
   currentWallpaperIndex = index;
-  loadImageWithFallback(systemWallpaper, ZENIOS_WALLPAPERS[index]);
-  currentWpLabel.textContent = `default_wallpaper_${index + 1}`;
+
+  if (domRefs.systemWallpaper) {
+    loadImageWithFallback(domRefs.systemWallpaper, ZENIOS_WALLPAPERS[index]);
+  }
+  if (domRefs.currentWpLabel) {
+    domRefs.currentWpLabel.textContent = `default_wallpaper_${index + 1}`;
+  }
   renderWallpaperPicker();
 }
 
 function renderWallpaperPicker() {
+  const { wpGrid } = domRefs;
   if (!wpGrid) return;
+
   wpGrid.innerHTML = '';
   ZENIOS_WALLPAPERS.forEach((basePath, idx) => {
     const btn = document.createElement('div');
@@ -76,82 +98,121 @@ function renderWallpaperPicker() {
     thumb.alt = `Tapeta ${idx + 1}`;
     loadImageWithFallback(thumb, basePath);
 
-    btn.addEventListener('click', () => setWallpaper(idx));
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setWallpaper(idx);
+    });
+
     btn.appendChild(thumb);
     wpGrid.appendChild(btn);
   });
 }
 
 function openApp(appId) {
-  appViews.forEach((view) => {
-    view.classList.toggle('open', view.id === appId);
+  if (!appId) return;
+  let found = false;
+
+  domRefs.appViews.forEach((view) => {
+    const isMatch = view.id === appId;
+    view.classList.toggle('open', isMatch);
+    if (isMatch) found = true;
   });
+
+  if (!found) {
+    const target = document.getElementById(appId);
+    if (target) {
+      target.classList.add('open');
+    }
+  }
 }
 
 function closeAllApps() {
-  appViews.forEach((view) => view.classList.remove('open'));
+  domRefs.appViews.forEach((view) => {
+    view.classList.remove('open');
+  });
 }
 
-openAppTriggers.forEach((el) => {
-  const targetId = el.getAttribute('data-open-app');
-  el.addEventListener('click', () => openApp(targetId));
-  el.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+function bindAppNavigation() {
+  domRefs.openAppTriggers.forEach((el) => {
+    const targetId = el.getAttribute('data-open-app');
+    if (!targetId) return;
+
+    const handleActivate = (e) => {
       e.preventDefault();
+      e.stopPropagation();
       openApp(targetId);
-    }
-  });
-});
+    };
 
-closeAppTriggers.forEach((btn) => {
-  btn.addEventListener('click', closeAllApps);
-});
-
-const galleryMessages = {
-  all: 'Brak pozycji',
-  photos: 'Brak obrazów',
-  videos: 'Brak klipów',
-  albums: 'Brak kolekcji',
-  search: 'Brak wyników'
-};
-
-galTabButtons.forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const tab = btn.getAttribute('data-gal-tab');
-    galTabButtons.forEach((b) => {
-      b.classList.toggle('active', b.getAttribute('data-gal-tab') === tab);
+    el.addEventListener('click', handleActivate);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        handleActivate(e);
+      }
     });
-    if (galleryEmptyText) {
-      galleryEmptyText.textContent = galleryMessages[tab] || 'Brak pozycji';
-    }
-    if (galleryRecentCount) {
-      galleryRecentCount.textContent = '0 obrazów, 0 klipów';
-    }
   });
-});
 
-if (settingsSearch) {
-  settingsSearch.addEventListener('input', () => {
-    const q = settingsSearch.value.trim().toLowerCase();
-    document.querySelectorAll('.settings-group[data-group]').forEach((group) => {
-      const rows = group.querySelectorAll('.settings-row');
-      let visibleCount = 0;
-      rows.forEach((row) => {
-        const titleText = (row.querySelector('.row-title')?.textContent || '').toLowerCase();
-        const extra = (row.getAttribute('data-search') || '').toLowerCase();
-        const match = !q || titleText.includes(q) || extra.includes(q);
-        row.classList.toggle('hidden-by-search', !match);
-        if (match) visibleCount++;
-      });
-      group.classList.toggle('all-hidden', visibleCount === 0);
+  domRefs.closeAppTriggers.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeAllApps();
     });
   });
 }
 
-if (openWallpaperPicker && wallpaperDrawer) {
-  openWallpaperPicker.addEventListener('click', () => {
-    wallpaperDrawer.classList.toggle('open');
+function bindGalleryTabs() {
+  const galleryMessages = {
+    all: 'Brak pozycji',
+    photos: 'Brak obrazów',
+    videos: 'Brak klipów',
+    albums: 'Brak kolekcji',
+    search: 'Brak wyników'
+  };
+
+  domRefs.galTabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const tab = btn.getAttribute('data-gal-tab');
+      domRefs.galTabButtons.forEach((b) => {
+        b.classList.toggle('active', b.getAttribute('data-gal-tab') === tab);
+      });
+      if (domRefs.galleryEmptyText) {
+        domRefs.galleryEmptyText.textContent = galleryMessages[tab] || 'Brak pozycji';
+      }
+      if (domRefs.galleryRecentCount) {
+        domRefs.galleryRecentCount.textContent = '0 obrazów, 0 klipów';
+      }
+    });
   });
+}
+
+function bindSettingsFeatures() {
+  const { settingsSearch, openWallpaperPicker, wallpaperDrawer } = domRefs;
+
+  if (settingsSearch) {
+    settingsSearch.addEventListener('input', () => {
+      const q = settingsSearch.value.trim().toLowerCase();
+      document.querySelectorAll('.settings-group[data-group]').forEach((group) => {
+        const rows = group.querySelectorAll('.settings-row');
+        let visibleCount = 0;
+
+        rows.forEach((row) => {
+          const titleText = (row.querySelector('.row-title')?.textContent || '').toLowerCase();
+          const extra = (row.getAttribute('data-search') || '').toLowerCase();
+          const match = !q || titleText.includes(q) || extra.includes(q);
+          row.classList.toggle('hidden-by-search', !match);
+          if (match) visibleCount++;
+        });
+
+        group.classList.toggle('all-hidden', visibleCount === 0);
+      });
+    });
+  }
+
+  if (openWallpaperPicker && wallpaperDrawer) {
+    openWallpaperPicker.addEventListener('click', () => {
+      wallpaperDrawer.classList.toggle('open');
+    });
+  }
 }
 
 function finishLoading() {
@@ -159,16 +220,54 @@ function finishLoading() {
     clearTimeout(loadTimer);
     loadTimer = null;
   }
-  loadingStill.style.animation = 'none';
-  showLayer(wallpaperLayer);
-  liquidDock.classList.add('visible');
+  if (domRefs.loadingStill) {
+    domRefs.loadingStill.style.animation = 'none';
+  }
+  showLayer(domRefs.wallpaperLayer);
+  if (domRefs.liquidDock) {
+    domRefs.liquidDock.classList.add('visible');
+  }
+}
+
+function cacheDom() {
+  domRefs = {
+    stillLayer: document.getElementById('still-layer'),
+    wallpaperLayer: document.getElementById('wallpaper-layer'),
+    loadingStill: document.getElementById('loading-still'),
+    systemWallpaper: document.getElementById('system-wallpaper'),
+    liquidDock: document.getElementById('liquid-dock'),
+    appViews: document.querySelectorAll('.app-view'),
+    openAppTriggers: document.querySelectorAll('[data-open-app]'),
+    closeAppTriggers: document.querySelectorAll('[data-close-app]'),
+    galTabButtons: document.querySelectorAll('[data-gal-tab]'),
+    galleryEmptyText: document.getElementById('gallery-empty-text'),
+    galleryRecentCount: document.getElementById('gallery-recent-count'),
+    settingsSearch: document.getElementById('settings-search'),
+    openWallpaperPicker: document.getElementById('open-wallpaper-picker'),
+    wallpaperDrawer: document.getElementById('wallpaper-drawer'),
+    wpGrid: document.getElementById('wp-grid'),
+    currentWpLabel: document.getElementById('current-wp-label')
+  };
 }
 
 function initSystem() {
+  injectFallbackStyles();
+  cacheDom();
+  bindAppNavigation();
+  bindGalleryTabs();
+  bindSettingsFeatures();
   setWallpaper(DEFAULT_WALLPAPER_INDEX);
-  showLayer(stillLayer);
-  liquidDock.classList.remove('visible');
+  showLayer(domRefs.stillLayer);
+
+  if (domRefs.liquidDock) {
+    domRefs.liquidDock.classList.remove('visible');
+  }
+
   loadTimer = setTimeout(finishLoading, LOAD_DURATION_MS);
 }
 
-initSystem();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initSystem, { once: true });
+} else {
+  initSystem();
+}
