@@ -242,6 +242,47 @@ function renderWallpaperPicker() {
   });
 }
 
+/* Ujednolica ikony: przycina przezroczysty margines i skaluje każdą do pełnego pola,
+   żeby wszystkie miały identyczny rozmiar (bez ciemnego tła pod spodem). */
+const iconCache = {};
+function normalizeIcon(img) {
+  const src = img.src;
+  const apply = (url) => { img.src = url; };
+  if (iconCache[src]) { apply(iconCache[src]); return; }
+  const probe = new Image();
+  probe.onload = () => {
+    try {
+      const w = probe.naturalWidth, h = probe.naturalHeight;
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(probe, 0, 0);
+      const d = ctx.getImageData(0, 0, w, h).data;
+      let x0 = w, y0 = h, x1 = -1, y1 = -1;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          if (d[(y * w + x) * 4 + 3] > 20) {
+            if (x < x0) x0 = x; if (x > x1) x1 = x;
+            if (y < y0) y0 = y; if (y > y1) y1 = y;
+          }
+        }
+      }
+      if (x1 < 0) return;
+      const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+      const side = Math.max(bw, bh);
+      const out = document.createElement('canvas');
+      out.width = out.height = 256;
+      const octx = out.getContext('2d');
+      octx.imageSmoothingQuality = 'high';
+      const sc = 256 / side;
+      octx.drawImage(probe, x0, y0, bw, bh, (256 - bw * sc) / 2, (256 - bh * sc) / 2, bw * sc, bh * sc);
+      iconCache[src] = out.toDataURL('image/png');
+      apply(iconCache[src]);
+    } catch (e) { /* np. file:// blokuje canvas — zostaje CSS */ }
+  };
+  probe.src = src;
+}
+
 /* Widżety i tryb przytrzymania na pulpicie */
 function renderWidgets() {
   const grid = domRefs.widgetsGrid;
@@ -407,8 +448,8 @@ function renderHomeApps() {
     const img = document.createElement('img');
     img.src = app.icon;
     img.alt = app.title;
-    if (app.scaleIcon) img.style.transform = 'scale(1.24)';
     attachAppIconFallback(img, app.badge);
+    normalizeIcon(img);
 
     const label = document.createElement('span');
     label.className = 'home-app-label';
