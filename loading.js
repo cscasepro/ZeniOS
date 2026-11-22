@@ -55,7 +55,14 @@ function initLoading() {
 
   bootVideo.addEventListener('ended', startStillPhase, { once: true });
 
-  const sources = ['LoadingVideo', 'LoadingVideo.mp4', 'LoadingVideo.webm'];
+  const sources = [
+    'Boot_Loading/LoadingVideo',
+    'Boot_Loading/LoadingVideo.mp4',
+    'Boot_Loading/LoadingVideo.webm',
+    'LoadingVideo',
+    'LoadingVideo.mp4',
+    'LoadingVideo.webm'
+  ];
   let idx = 0;
 
   function tryNextVideo() {
@@ -86,6 +93,3 @@ function initLoading() {
 
 window.addEventListener('resize', fitToViewport);
 initLoading();
-```[cite: 6]
-
-Wklej oba pliki obok siebie w tym samym folderze co `Zenios_loading.png` oraz `LoadingVideo`[cite: 5, 6, 7]. Co chcesz zmienić dalej — np. czas czekania na `Zenios_loading.png` albo siłę tego lekkiego poświatowego efektu?
