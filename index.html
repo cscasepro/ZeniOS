@@ -200,7 +200,6 @@
 
     <!-- Aplikacja Ustawienia ZeniOS -->
     <section class="app-view" id="app-settings" aria-label="Ustawienia ZeniOS">
-      <!-- Ekran główny ustawień -->
       <div class="subscreen active" id="settings-main">
         <header class="app-header">
           <div class="app-title-row">
@@ -341,14 +340,15 @@
               <span class="chevron">›</span>
             </div>
 
-            <div class="settings-row" id="open-action-button-picker" data-search="przycisk akcji action button szybkie przechodzenie skrot">
+            <div class="settings-row" id="open-system-nav-picker" data-search="nawigacja systemowa gesty przyciski navigation">
               <span class="row-badge badge-indigo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round">
-                  <path d="M12 5v14M5 12h14" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="4" width="16" height="16" rx="3" />
+                  <line x1="8" y1="16" x2="16" y2="16" />
                 </svg>
               </span>
-              <span class="row-title">Przycisk akcji</span>
-              <span class="row-value" id="current-action-label">Aparat</span>
+              <span class="row-title">Nawigacja systemowa</span>
+              <span class="row-value" id="current-nav-label">Gesty</span>
               <span class="chevron">›</span>
             </div>
 
@@ -421,51 +421,33 @@
         </div>
       </div>
 
-      <!-- Zakładka / podwidok: Przycisk akcji (szybkie przechodzenie / skróty jak w Androidzie) -->
-      <div class="subscreen" id="settings-action-button">
+      <!-- Zakładka / podwidok: Nawigacja systemowa (Gesty / Przyciski) -->
+      <div class="subscreen" id="settings-system-nav">
         <header class="app-header">
           <div class="app-title-row">
             <button class="back-btn" type="button" data-settings-back>‹ Ustawienia</button>
-            <h1 class="app-title sub-title">Przycisk akcji</h1>
+            <h1 class="app-title sub-title">Nawigacja systemowa</h1>
             <span class="header-spacer"></span>
           </div>
         </header>
 
         <div class="app-scroll">
-          <div class="android-quick-strip">
-            <div class="quick-strip-label">Szybkie przechodzenie</div>
-            <div class="quick-chips-row" id="android-quick-chips">
-              <button type="button" class="quick-chip active" data-quick-action="Aparat">Aparat</button>
-              <button type="button" class="quick-chip" data-quick-action="Latarka">Latarka</button>
-              <button type="button" class="quick-chip" data-quick-action="Galeria">Galeria</button>
-              <button type="button" class="quick-chip" data-quick-action="Telefon">Telefon</button>
+          <div class="settings-group" id="nav-mode-options">
+            <div class="settings-row selectable-option active" data-nav-mode="gestures">
+              <span class="row-badge badge-blue">👆</span>
+              <div class="option-text-col">
+                <span class="row-title">Gesty</span>
+                <span class="option-sub">Pasek gestów na dole ekranu</span>
+              </div>
+              <span class="option-check">✓</span>
             </div>
-          </div>
 
-          <div class="settings-group" id="action-options-list">
-            <div class="settings-row selectable-option active" data-action-value="Aparat">
-              <span class="row-badge badge-blue">📷</span>
-              <span class="row-title">Aparat</span>
-              <span class="option-check">✓</span>
-            </div>
-            <div class="settings-row selectable-option" data-action-value="Latarka">
-              <span class="row-badge badge-orange">🔦</span>
-              <span class="row-title">Latarka</span>
-              <span class="option-check">✓</span>
-            </div>
-            <div class="settings-row selectable-option" data-action-value="Galeria">
-              <span class="row-badge badge-teal">🖼️</span>
-              <span class="row-title">Otwórz Galerię</span>
-              <span class="option-check">✓</span>
-            </div>
-            <div class="settings-row selectable-option" data-action-value="Telefon">
-              <span class="row-badge badge-green">📞</span>
-              <span class="row-title">Otwórz Telefon</span>
-              <span class="option-check">✓</span>
-            </div>
-            <div class="settings-row selectable-option" data-action-value="Tryb cichy">
-              <span class="row-badge badge-indigo">🔕</span>
-              <span class="row-title">Tryb cichy</span>
+            <div class="settings-row selectable-option" data-nav-mode="buttons">
+              <span class="row-badge badge-indigo">⌨️</span>
+              <div class="option-text-col">
+                <span class="row-title">Przyciski</span>
+                <span class="option-sub">Klasyczne przyciski Wstecz, Pulpit, Ostatnie</span>
+              </div>
               <span class="option-check">✓</span>
             </div>
           </div>
@@ -491,6 +473,16 @@
         <p>Moduł połączeń głosowych jest w przygotowaniu.</p>
       </div>
     </section>
+
+    <!-- Dolna nawigacja systemowa (Gesty / Przyciski) -->
+    <div class="system-nav-overlay mode-gestures" id="system-nav-overlay">
+      <button type="button" class="gesture-handle" id="gesture-home-btn" aria-label="Pulpit"></button>
+      <div class="sys-buttons-bar" id="sys-buttons-bar">
+        <button type="button" class="sys-nav-btn" id="sys-btn-back" aria-label="Wstecz">◀</button>
+        <button type="button" class="sys-nav-btn" id="sys-btn-home" aria-label="Pulpit">●</button>
+        <button type="button" class="sys-nav-btn" id="sys-btn-recents" aria-label="Zamknij aplikację">■</button>
+      </div>
+    </div>
   </div>
 
   <script src="loading.js"></script>
