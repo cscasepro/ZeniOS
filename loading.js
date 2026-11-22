@@ -14,7 +14,7 @@ const DEFAULT_WALLPAPER_INDEX = 6;
 
 let loadTimer = null;
 let currentWallpaperIndex = DEFAULT_WALLPAPER_INDEX;
-let currentActionName = 'Aparat';
+let currentNavMode = 'gestures';
 let domRefs = {};
 
 function showLayer(target) {
@@ -90,23 +90,40 @@ function renderWallpaperPicker() {
 }
 
 function openSettingsSubscreen(screenId) {
-  [domRefs.settingsMain, domRefs.settingsWallpaper, domRefs.settingsActionButton].forEach((el) => {
+  [domRefs.settingsMain, domRefs.settingsWallpaper, domRefs.settingsSystemNav].forEach((el) => {
     if (!el) return;
     el.classList.toggle('active', el.id === screenId);
   });
 }
 
-function setActionButtonValue(value) {
-  currentActionName = value;
-  if (domRefs.currentActionLabel) {
-    domRefs.currentActionLabel.textContent = value;
+function setSystemNavMode(mode) {
+  currentNavMode = mode === 'buttons' ? 'buttons' : 'gestures';
+
+  if (domRefs.currentNavLabel) {
+    domRefs.currentNavLabel.textContent = currentNavMode === 'buttons' ? 'Przyciski' : 'Gesty';
   }
-  domRefs.actionOptions.forEach((row) => {
-    row.classList.toggle('active', row.getAttribute('data-action-value') === value);
+
+  domRefs.navModeOptions.forEach((row) => {
+    row.classList.toggle('active', row.getAttribute('data-nav-mode') === currentNavMode);
   });
-  domRefs.quickChips.forEach((chip) => {
-    chip.classList.toggle('active', chip.getAttribute('data-quick-action') === value);
-  });
+
+  if (domRefs.systemNavOverlay) {
+    domRefs.systemNavOverlay.classList.toggle('mode-gestures', currentNavMode === 'gestures');
+    domRefs.systemNavOverlay.classList.toggle('mode-buttons', currentNavMode === 'buttons');
+  }
+}
+
+function handleBackAction() {
+  const settingsOpen = domRefs.settingsView?.classList.contains('open');
+  const subscreenActive =
+    domRefs.settingsWallpaper?.classList.contains('active') ||
+    domRefs.settingsSystemNav?.classList.contains('active');
+
+  if (settingsOpen && subscreenActive) {
+    openSettingsSubscreen('settings-main');
+  } else {
+    closeAllApps();
+  }
 }
 
 function openApp(appId) {
@@ -145,6 +162,11 @@ function bindAppNavigation() {
       closeAllApps();
     });
   });
+
+  domRefs.gestureHomeBtn?.addEventListener('click', closeAllApps);
+  domRefs.sysBtnHome?.addEventListener('click', closeAllApps);
+  domRefs.sysBtnRecents?.addEventListener('click', closeAllApps);
+  domRefs.sysBtnBack?.addEventListener('click', handleBackAction);
 }
 
 function setGalleryView(viewMode) {
@@ -228,13 +250,12 @@ function bindSettingsFeatures() {
   const {
     settingsSearch,
     openWallpaperPicker,
-    openActionButtonPicker,
+    openSystemNavPicker,
     settingsBackButtons,
     airplaneToggle,
     wifiStatusValue,
     btStatusValue,
-    actionOptions,
-    quickChips
+    navModeOptions
   } = domRefs;
 
   if (settingsSearch) {
@@ -271,9 +292,9 @@ function bindSettingsFeatures() {
     });
   }
 
-  if (openActionButtonPicker) {
-    openActionButtonPicker.addEventListener('click', () => {
-      openSettingsSubscreen('settings-action-button');
+  if (openSystemNavPicker) {
+    openSystemNavPicker.addEventListener('click', () => {
+      openSettingsSubscreen('settings-system-nav');
     });
   }
 
@@ -283,17 +304,10 @@ function bindSettingsFeatures() {
     });
   });
 
-  actionOptions.forEach((row) => {
+  navModeOptions.forEach((row) => {
     row.addEventListener('click', () => {
-      const val = row.getAttribute('data-action-value');
-      if (val) setActionButtonValue(val);
-    });
-  });
-
-  quickChips.forEach((chip) => {
-    chip.addEventListener('click', () => {
-      const val = chip.getAttribute('data-quick-action');
-      if (val) setActionButtonValue(val);
+      const mode = row.getAttribute('data-nav-mode');
+      if (mode) setSystemNavMode(mode);
     });
   });
 }
@@ -320,6 +334,7 @@ function cacheDom() {
     systemWallpaper: document.getElementById('system-wallpaper'),
     liquidDock: document.getElementById('liquid-dock'),
     appViews: document.querySelectorAll('.app-view'),
+    settingsView: document.getElementById('app-settings'),
     openAppTriggers: document.querySelectorAll('[data-open-app]'),
     closeAppTriggers: document.querySelectorAll('[data-close-app]'),
     galSegButtons: document.querySelectorAll('[data-gal-view]'),
@@ -334,21 +349,25 @@ function cacheDom() {
     galleryRecentCount: document.getElementById('gallery-recent-count'),
     settingsMain: document.getElementById('settings-main'),
     settingsWallpaper: document.getElementById('settings-wallpaper'),
-    settingsActionButton: document.getElementById('settings-action-button'),
+    settingsSystemNav: document.getElementById('settings-system-nav'),
     settingsBackButtons: document.querySelectorAll('[data-settings-back]'),
     settingsSearch: document.getElementById('settings-search'),
     airplaneToggle: document.getElementById('airplane-toggle'),
     wifiStatusValue: document.getElementById('wifi-status-value'),
     btStatusValue: document.getElementById('bt-status-value'),
     openWallpaperPicker: document.getElementById('open-wallpaper-picker'),
-    openActionButtonPicker: document.getElementById('open-action-button-picker'),
-    currentActionLabel: document.getElementById('current-action-label'),
-    actionOptions: document.querySelectorAll('#action-options-list .selectable-option'),
-    quickChips: document.querySelectorAll('#android-quick-chips .quick-chip'),
+    openSystemNavPicker: document.getElementById('open-system-nav-picker'),
+    currentNavLabel: document.getElementById('current-nav-label'),
+    navModeOptions: document.querySelectorAll('#nav-mode-options .selectable-option'),
     wpGrid: document.getElementById('wp-grid'),
     wallpaperPreviewImg: document.getElementById('wallpaper-preview-img'),
     wallpaperPreviewName: document.getElementById('wallpaper-preview-name'),
-    currentWpLabel: document.getElementById('current-wp-label')
+    currentWpLabel: document.getElementById('current-wp-label'),
+    systemNavOverlay: document.getElementById('system-nav-overlay'),
+    gestureHomeBtn: document.getElementById('gesture-home-btn'),
+    sysBtnBack: document.getElementById('sys-btn-back'),
+    sysBtnHome: document.getElementById('sys-btn-home'),
+    sysBtnRecents: document.getElementById('sys-btn-recents')
   };
 }
 
@@ -358,7 +377,7 @@ function initSystem() {
   bindGalleryFeatures();
   bindSettingsFeatures();
   setWallpaper(DEFAULT_WALLPAPER_INDEX);
-  setActionButtonValue(currentActionName);
+  setSystemNavMode(currentNavMode);
   showLayer(domRefs.stillLayer);
 
   if (domRefs.liquidDock) {
