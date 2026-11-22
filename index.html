@@ -42,7 +42,6 @@
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
             </button>
-            <button class="close-app-btn" type="button" data-close-app>Zamknij</button>
           </div>
         </div>
 
@@ -204,7 +203,6 @@
         <header class="app-header">
           <div class="app-title-row">
             <h1 class="app-title">Ustawienia</h1>
-            <button class="close-app-btn" type="button" data-close-app>Zamknij</button>
           </div>
           <div class="search-field">
             <svg class="search-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -434,7 +432,7 @@
         <div class="app-scroll">
           <div class="settings-group" id="nav-mode-options">
             <div class="settings-row selectable-option active" data-nav-mode="gestures">
-              <span class="row-badge badge-blue">👆</span>
+              <span class="row-badge badge-blue">—</span>
               <div class="option-text-col">
                 <span class="row-title">Gesty</span>
                 <span class="option-sub">Pasek gestów na dole aplikacji</span>
@@ -443,10 +441,10 @@
             </div>
 
             <div class="settings-row selectable-option" data-nav-mode="buttons">
-              <span class="row-badge badge-indigo">⌨️</span>
+              <span class="row-badge badge-indigo">◀●■</span>
               <div class="option-text-col">
                 <span class="row-title">Przyciski</span>
-                <span class="option-sub">Przyciski nawigacji w stylu ZeniOS</span>
+                <span class="option-sub">Same przyciski o równych rozmiarach</span>
               </div>
               <span class="option-check">✓</span>
             </div>
@@ -460,7 +458,6 @@
       <header class="app-header">
         <div class="app-title-row">
           <h1 class="app-title">Telefon</h1>
-          <button class="close-app-btn" type="button" data-close-app>Zamknij</button>
         </div>
       </header>
       <div class="app-scroll phone-placeholder">
@@ -474,13 +471,13 @@
       </div>
     </section>
 
-    <!-- Dolna nawigacja systemowa (tylko w aplikacjach, auto-ukrywanie po 5 s) -->
+    <!-- Dolna nawigacja systemowa: tylko w aplikacjach, auto-ukrywanie po 5 s -->
     <div class="system-nav-overlay mode-gestures" id="system-nav-overlay">
       <button type="button" class="gesture-handle" id="gesture-home-btn" aria-label="Pulpit"></button>
-      <div class="sys-buttons-bar" id="sys-buttons-bar">
-        <button type="button" class="sys-nav-btn" id="sys-btn-back" aria-label="Wstecz">‹</button>
+      <div class="sys-buttons-row" id="sys-buttons-row">
+        <button type="button" class="sys-nav-btn" id="sys-btn-back" aria-label="Wstecz">◀</button>
         <button type="button" class="sys-nav-btn" id="sys-btn-home" aria-label="Pulpit">●</button>
-        <button type="button" class="sys-nav-btn" id="sys-btn-recents" aria-label="Zamknij aplikację">▢</button>
+        <button type="button" class="sys-nav-btn" id="sys-btn-recents" aria-label="Zamknij aplikację">■</button>
       </div>
     </div>
   </div>
