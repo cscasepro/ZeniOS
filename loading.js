@@ -14,6 +14,7 @@ const DEFAULT_WALLPAPER_INDEX = 6;
 
 let loadTimer = null;
 let currentWallpaperIndex = DEFAULT_WALLPAPER_INDEX;
+let currentActionName = 'Aparat';
 let domRefs = {};
 
 function showLayer(target) {
@@ -45,12 +46,20 @@ function loadImageWithFallback(imgEl, basePath) {
 function setWallpaper(index) {
   if (index < 0 || index >= ZENIOS_WALLPAPERS.length) return;
   currentWallpaperIndex = index;
+  const wpName = `default_wallpaper_${index + 1}`;
+  const basePath = ZENIOS_WALLPAPERS[index];
 
   if (domRefs.systemWallpaper) {
-    loadImageWithFallback(domRefs.systemWallpaper, ZENIOS_WALLPAPERS[index]);
+    loadImageWithFallback(domRefs.systemWallpaper, basePath);
   }
   if (domRefs.currentWpLabel) {
-    domRefs.currentWpLabel.textContent = `default_wallpaper_${index + 1}`;
+    domRefs.currentWpLabel.textContent = wpName;
+  }
+  if (domRefs.wallpaperPreviewImg) {
+    loadImageWithFallback(domRefs.wallpaperPreviewImg, basePath);
+  }
+  if (domRefs.wallpaperPreviewName) {
+    domRefs.wallpaperPreviewName.textContent = wpName;
   }
   renderWallpaperPicker();
 }
@@ -80,8 +89,31 @@ function renderWallpaperPicker() {
   });
 }
 
+function openSettingsSubscreen(screenId) {
+  [domRefs.settingsMain, domRefs.settingsWallpaper, domRefs.settingsActionButton].forEach((el) => {
+    if (!el) return;
+    el.classList.toggle('active', el.id === screenId);
+  });
+}
+
+function setActionButtonValue(value) {
+  currentActionName = value;
+  if (domRefs.currentActionLabel) {
+    domRefs.currentActionLabel.textContent = value;
+  }
+  domRefs.actionOptions.forEach((row) => {
+    row.classList.toggle('active', row.getAttribute('data-action-value') === value);
+  });
+  domRefs.quickChips.forEach((chip) => {
+    chip.classList.toggle('active', chip.getAttribute('data-quick-action') === value);
+  });
+}
+
 function openApp(appId) {
   if (!appId) return;
+  if (appId === 'app-settings') {
+    openSettingsSubscreen('settings-main');
+  }
   domRefs.appViews.forEach((view) => {
     view.classList.toggle('open', view.id === appId);
   });
@@ -91,6 +123,7 @@ function closeAllApps() {
   domRefs.appViews.forEach((view) => {
     view.classList.remove('open');
   });
+  openSettingsSubscreen('settings-main');
 }
 
 function bindAppNavigation() {
@@ -192,12 +225,22 @@ function bindGalleryFeatures() {
 }
 
 function bindSettingsFeatures() {
-  const { settingsSearch, openWallpaperPicker, wallpaperDrawer, airplaneToggle, wifiStatusValue, btStatusValue } = domRefs;
+  const {
+    settingsSearch,
+    openWallpaperPicker,
+    openActionButtonPicker,
+    settingsBackButtons,
+    airplaneToggle,
+    wifiStatusValue,
+    btStatusValue,
+    actionOptions,
+    quickChips
+  } = domRefs;
 
   if (settingsSearch) {
     settingsSearch.addEventListener('input', () => {
       const q = settingsSearch.value.trim().toLowerCase();
-      document.querySelectorAll('.settings-group[data-group]').forEach((group) => {
+      document.querySelectorAll('#settings-main .settings-group[data-group]').forEach((group) => {
         const rows = group.querySelectorAll('.settings-row');
         let visibleCount = 0;
 
@@ -222,11 +265,37 @@ function bindSettingsFeatures() {
     });
   }
 
-  if (openWallpaperPicker && wallpaperDrawer) {
+  if (openWallpaperPicker) {
     openWallpaperPicker.addEventListener('click', () => {
-      wallpaperDrawer.classList.toggle('open');
+      openSettingsSubscreen('settings-wallpaper');
     });
   }
+
+  if (openActionButtonPicker) {
+    openActionButtonPicker.addEventListener('click', () => {
+      openSettingsSubscreen('settings-action-button');
+    });
+  }
+
+  settingsBackButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      openSettingsSubscreen('settings-main');
+    });
+  });
+
+  actionOptions.forEach((row) => {
+    row.addEventListener('click', () => {
+      const val = row.getAttribute('data-action-value');
+      if (val) setActionButtonValue(val);
+    });
+  });
+
+  quickChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const val = chip.getAttribute('data-quick-action');
+      if (val) setActionButtonValue(val);
+    });
+  });
 }
 
 function finishLoading() {
@@ -263,13 +332,22 @@ function cacheDom() {
     zoomPills: document.querySelectorAll('[data-zoom]'),
     galleryEmptyText: document.getElementById('gallery-empty-text'),
     galleryRecentCount: document.getElementById('gallery-recent-count'),
+    settingsMain: document.getElementById('settings-main'),
+    settingsWallpaper: document.getElementById('settings-wallpaper'),
+    settingsActionButton: document.getElementById('settings-action-button'),
+    settingsBackButtons: document.querySelectorAll('[data-settings-back]'),
     settingsSearch: document.getElementById('settings-search'),
     airplaneToggle: document.getElementById('airplane-toggle'),
     wifiStatusValue: document.getElementById('wifi-status-value'),
     btStatusValue: document.getElementById('bt-status-value'),
     openWallpaperPicker: document.getElementById('open-wallpaper-picker'),
-    wallpaperDrawer: document.getElementById('wallpaper-drawer'),
+    openActionButtonPicker: document.getElementById('open-action-button-picker'),
+    currentActionLabel: document.getElementById('current-action-label'),
+    actionOptions: document.querySelectorAll('#action-options-list .selectable-option'),
+    quickChips: document.querySelectorAll('#android-quick-chips .quick-chip'),
     wpGrid: document.getElementById('wp-grid'),
+    wallpaperPreviewImg: document.getElementById('wallpaper-preview-img'),
+    wallpaperPreviewName: document.getElementById('wallpaper-preview-name'),
     currentWpLabel: document.getElementById('current-wp-label')
   };
 }
@@ -280,6 +358,7 @@ function initSystem() {
   bindGalleryFeatures();
   bindSettingsFeatures();
   setWallpaper(DEFAULT_WALLPAPER_INDEX);
+  setActionButtonValue(currentActionName);
   showLayer(domRefs.stillLayer);
 
   if (domRefs.liquidDock) {
