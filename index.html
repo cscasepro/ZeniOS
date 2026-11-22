@@ -7,10 +7,10 @@
   <link rel="stylesheet" href="zenios.css" />
 </head>
 <body>
-  <div class="phone-screen">
-    <!-- Górny pasek statusu: godzina po lewej, ikona baterii po prawej (bez tekstu procentów) -->
+  <div class="phone-screen" id="phone-screen">
+    <!-- Górny pasek statusu -->
     <div class="status-bar-overlay" id="status-bar-overlay" aria-hidden="true">
-      <span class="status-clock" id="status-clock">16:26</span>
+      <span class="status-clock" id="status-clock">18:11</span>
       <span class="status-battery" id="status-battery" data-level="94">
         <span class="battery-body">
           <span class="battery-fill" id="battery-fill" style="width: 94%;"></span>
@@ -24,14 +24,14 @@
       <img id="loading-still" src="Boot_Loading/Zenios_loading.png" alt="Zenios_loading" />
     </section>
 
-    <!-- Ekran blokady ZeniOS (po załadowaniu systemu) -->
+    <!-- Ekran blokady ZeniOS -->
     <section class="layer lockscreen-layer" id="lockscreen-layer" aria-label="Ekran blokady ZeniOS">
       <img id="lock-wallpaper" alt="Tapeta ekranu blokady" />
       <div class="lock-scrim"></div>
 
       <div class="lock-top-block">
         <div class="lock-date" id="lock-date">Niedziela, 22 Lis</div>
-        <div class="lock-clock" id="lock-clock">16:37</div>
+        <div class="lock-clock" id="lock-clock">18:11</div>
       </div>
 
       <!-- Panel odblokowania: PIN -->
@@ -114,10 +114,10 @@
       </div>
     </section>
 
-    <!-- Pulpit ZeniOS z tapetą, widżetami, aplikacjami i dolnym doku liquid glass -->
+    <!-- Pulpit ZeniOS -->
     <section class="layer home-layer" id="wallpaper-layer">
       <img id="system-wallpaper" alt="ZeniOS Wallpaper" />
-      <div class="home-scrim"></div>
+      <div class="home-scrim" id="home-brightness-overlay"></div>
 
       <div class="home-content" id="home-content">
         <div class="home-edit-banner" id="home-edit-banner">
@@ -126,14 +126,14 @@
           <button type="button" class="edit-pill-btn done" id="done-edit-mode-btn">Gotowe</button>
         </div>
 
-        <!-- Dynamiczna siatka widżetów na pulpicie -->
+        <!-- Widżety z efektem liquid glass jak dolny dock -->
         <div class="widgets-grid" id="widgets-grid"></div>
 
-        <!-- Dynamiczna siatka aplikacji na pulpicie -->
+        <!-- Siatka aplikacji na pulpicie -->
         <div class="home-apps-grid" id="home-apps-grid"></div>
       </div>
 
-      <!-- Szuflada dodawania widżetów po przytrzymaniu -->
+      <!-- Szuflada wyboru widżetów po przytrzymaniu -->
       <div class="widget-picker-sheet" id="widget-picker-sheet" aria-label="Wybór widżetów">
         <div class="widget-picker-header">
           <strong>Widżety ZeniOS</strong>
@@ -142,7 +142,7 @@
         <div class="widget-picker-list" id="widget-picker-list"></div>
       </div>
 
-      <!-- Ekran wyszukiwania (przesunięcie z prawej do lewej) — tylko zainstalowane aplikacje -->
+      <!-- Ekran wyszukiwania (przesunięcie z prawej do lewej) -->
       <aside class="app-search-drawer" id="app-search-drawer" aria-label="Wyszukiwanie zainstalowanych aplikacji">
         <div class="drawer-top-bar">
           <button type="button" class="back-btn" id="close-search-drawer-btn">‹ Pulpit</button>
@@ -161,6 +161,7 @@
         <div class="installed-apps-list" id="installed-apps-list"></div>
       </aside>
 
+      <!-- Dolny pasek zadań liquid glass -->
       <nav class="liquid-dock" id="liquid-dock" aria-label="Pasek zadań">
         <button class="dock-icon-btn icon-phone" type="button" data-open-app="app-phone" aria-label="Telefon">
           <img src="Icons/Phone_Icon.png" alt="Phone" />
@@ -172,6 +173,391 @@
           <img src="Icons/gallery_icon.png" alt="Gallery" />
         </button>
       </nav>
+    </section>
+
+    <!-- CENTRUM STEROWANIA (przeciągnięcie z góry na dół) -->
+    <aside class="control-center-overlay" id="control-center-overlay" aria-label="Centrum sterowania">
+      <div class="cc-top-close-row">
+        <span class="cc-label-small">Centrum sterowania</span>
+        <button type="button" class="cc-close-btn" id="close-cc-btn" aria-label="Zamknij">✕</button>
+      </div>
+
+      <div class="cc-grid">
+        <!-- Kafelek łączności 2x2 -->
+        <div class="cc-card cc-conn-card">
+          <button type="button" class="cc-conn-btn" id="cc-btn-airplane" title="Tryb samolotowy">✈</button>
+          <button type="button" class="cc-conn-btn active" id="cc-btn-cellular" title="Dane komórkowe">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="12" cy="12" r="2" fill="currentColor" />
+              <path d="M8.5 15.5a5 5 0 0 1 0-7M15.5 8.5a5 5 0 0 1 0 7M5.5 18.5a9 9 0 0 1 0-13M18.5 5.5a9 9 0 0 1 0 13" />
+            </svg>
+          </button>
+          <button type="button" class="cc-conn-btn active" id="cc-btn-wifi" title="Wi-Fi">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M5 12.55a11 11 0 0 1 14.08 0M8.53 16.11a6 6 0 0 1 6.95 0" />
+              <circle cx="12" cy="19.5" r="1.2" fill="currentColor" />
+            </svg>
+          </button>
+          <button type="button" class="cc-conn-btn active" id="cc-btn-bt" title="Bluetooth">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Prawa góra: obrót, wyciszenie + suwaki jasności i głośności -->
+        <div class="cc-right-col">
+          <div class="cc-mini-pair">
+            <button type="button" class="cc-round-tile" id="cc-btn-rotation" aria-label="Blokada obrotu">🔒</button>
+            <button type="button" class="cc-round-tile" id="cc-btn-silent" aria-label="Wyciszenie">🔔</button>
+          </div>
+          <div class="cc-sliders-pair">
+            <div class="cc-v-slider" id="cc-brightness-slider" data-val="82" title="Jasność">
+              <div class="cc-v-fill" id="cc-brightness-fill" style="height: 82%;"></div>
+              <span class="cc-v-icon">☀</span>
+            </div>
+            <div class="cc-v-slider" id="cc-volume-slider" data-val="64" title="Głośność">
+              <div class="cc-v-fill" id="cc-volume-fill" style="height: 64%;"></div>
+              <span class="cc-v-icon">🔊</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kafelek Nie przeszkadzać -->
+        <button type="button" class="cc-card cc-dnd-card" id="cc-btn-dnd">
+          <span class="cc-dnd-moon">☾</span>
+          <span class="cc-dnd-text">
+            <strong>Nie przeszkadzać</strong>
+            <small id="cc-dnd-state">Wył.</small>
+          </span>
+        </button>
+      </div>
+
+      <!-- Rzędy okrągłych skrótów -->
+      <div class="cc-circles-row">
+        <button type="button" class="cc-circle-tool" id="cc-tool-torch" aria-label="Latarka">🔦</button>
+        <button type="button" class="cc-circle-tool" id="cc-tool-timer" data-open-app="app-clock" aria-label="Zegar">⏱</button>
+        <button type="button" class="cc-circle-tool" id="cc-tool-calc" data-open-app="app-calculator" aria-label="Kalkulator">🧮</button>
+        <button type="button" class="cc-circle-tool" id="cc-tool-cam" data-open-app="app-gallery" aria-label="Galeria">📷</button>
+      </div>
+
+      <!-- Odtwarzacz muzyki w Centrum sterowania -->
+      <div class="cc-card cc-media-card">
+        <div class="cc-media-art">♪</div>
+        <div class="cc-media-info">
+          <strong id="cc-track-title">Nie odtwarza</strong>
+          <span id="cc-track-sub">Chromatica • Lady Gaga</span>
+          <div class="cc-media-controls">
+            <button type="button" class="cc-media-btn" id="cc-prev-btn">⏮</button>
+            <button type="button" class="cc-media-btn" id="cc-play-btn">▶</button>
+            <button type="button" class="cc-media-btn" id="cc-next-btn">⏭</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cc-bottom-hint">Przesuń w górę lub kliknij ✕, aby zamknąć</div>
+    </aside>
+
+    <!-- APLIKACJA: KALKULATOR (styl iOS z okrągłymi przyciskami) -->
+    <section class="app-view calc-app-theme" id="app-calculator" aria-label="Kalkulator ZeniOS">
+      <div class="calc-screen-wrap">
+        <div class="calc-expression-sub" id="calc-sub-display"></div>
+        <div class="calc-display" id="calc-display">0</div>
+        <div class="calc-pad" id="calc-pad">
+          <button type="button" class="calc-btn fn" data-calc="C">AC</button>
+          <button type="button" class="calc-btn fn" data-calc="±">+/-</button>
+          <button type="button" class="calc-btn fn" data-calc="%">%</button>
+          <button type="button" class="calc-btn op" data-calc="/">÷</button>
+
+          <button type="button" class="calc-btn" data-calc="7">7</button>
+          <button type="button" class="calc-btn" data-calc="8">8</button>
+          <button type="button" class="calc-btn" data-calc="9">9</button>
+          <button type="button" class="calc-btn op" data-calc="*">×</button>
+
+          <button type="button" class="calc-btn" data-calc="4">4</button>
+          <button type="button" class="calc-btn" data-calc="5">5</button>
+          <button type="button" class="calc-btn" data-calc="6">6</button>
+          <button type="button" class="calc-btn op" data-calc="-">−</button>
+
+          <button type="button" class="calc-btn" data-calc="1">1</button>
+          <button type="button" class="calc-btn" data-calc="2">2</button>
+          <button type="button" class="calc-btn" data-calc="3">3</button>
+          <button type="button" class="calc-btn op" data-calc="+">+</button>
+
+          <button type="button" class="calc-btn zero" data-calc="0">0</button>
+          <button type="button" class="calc-btn" data-calc=".">,</button>
+          <button type="button" class="calc-btn op" data-calc="=">=</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- APLIKACJA: NOTATNIK (styl jasny z paskiem narzędzi i klawiaturą) -->
+    <section class="app-view light-app-theme" id="app-notebook" aria-label="Notatnik ZeniOS">
+      <div class="notes-top-nav">
+        <button type="button" class="pill-light-btn" id="notes-back-home">‹</button>
+        <div class="notes-actions-pill">
+          <button type="button" class="pill-icon-action" id="notes-undo-btn" title="Cofnij">↶</button>
+          <button type="button" class="pill-icon-action" id="notes-clear-btn" title="Wyczyść">⌫</button>
+          <button type="button" class="pill-icon-action" id="notes-bullet-btn" title="Lista">•••</button>
+        </div>
+        <button type="button" class="notes-done-circle" id="notes-save-btn" title="Zapisz">✓</button>
+      </div>
+
+      <div class="notes-timestamp" id="notes-timestamp">22 Lis 2026 o 18:11</div>
+
+      <div class="notes-editor-scroll">
+        <input type="text" class="notes-title-input" id="notes-title-input" value="Test" aria-label="Tytuł notatki" />
+        <textarea id="notebook-area" class="notebook-textarea" placeholder="Zacznij pisać notatkę...">To jest, bez zaskoczenia, test
+
+⌄ Test 1
+Test
+
+Test 2</textarea>
+      </div>
+
+      <div class="notes-format-bar">
+        <button type="button" data-fmt="heading">≡◂</button>
+        <button type="button" data-fmt="bullet">•≡</button>
+        <button type="button" data-fmt="top">↑</button>
+        <button type="button" data-fmt="bottom">↓</button>
+        <button type="button" data-fmt="check">☑</button>
+        <button type="button" data-fmt="list">☰</button>
+      </div>
+
+      <div class="ios-keyboard" id="notes-keyboard">
+        <div class="kb-row">
+          <button type="button" data-key="q">q</button><button type="button" data-key="w">w</button><button type="button" data-key="e">e</button><button type="button" data-key="r">r</button><button type="button" data-key="t">t</button><button type="button" data-key="y">y</button><button type="button" data-key="u">u</button><button type="button" data-key="i">i</button><button type="button" data-key="o">o</button><button type="button" data-key="p">p</button>
+        </div>
+        <div class="kb-row kb-mid">
+          <button type="button" data-key="a">a</button><button type="button" data-key="s">s</button><button type="button" data-key="d">d</button><button type="button" data-key="f">f</button><button type="button" data-key="g">g</button><button type="button" data-key="h">h</button><button type="button" data-key="j">j</button><button type="button" data-key="k">k</button><button type="button" data-key="l">l</button>
+        </div>
+        <div class="kb-row">
+          <button type="button" class="kb-fn" data-key="SHIFT">⇧</button>
+          <button type="button" data-key="z">z</button><button type="button" data-key="x">x</button><button type="button" data-key="c">c</button><button type="button" data-key="v">v</button><button type="button" data-key="b">b</button><button type="button" data-key="n">n</button><button type="button" data-key="m">m</button>
+          <button type="button" class="kb-fn" data-key="BACK">⌫</button>
+        </div>
+        <div class="kb-row kb-bottom">
+          <button type="button" class="kb-fn wide" data-key="123">123</button>
+          <button type="button" class="kb-space" data-key=" ">spacja</button>
+          <button type="button" class="kb-fn wide" data-key="ENTER">↵</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- APLIKACJA: PLIKI (styl Browse / Locations / Tags) -->
+    <section class="app-view light-app-theme" id="app-files" aria-label="Pliki ZeniOS">
+      <div class="files-top-bar">
+        <div class="files-nav-pill">
+          <button type="button" id="files-nav-back">‹</button>
+          <button type="button" id="files-nav-fwd">›</button>
+        </div>
+        <button type="button" class="files-more-circle">•••</button>
+      </div>
+
+      <div class="files-header-area">
+        <h1 class="files-big-title" id="files-page-title">Przeglądaj</h1>
+        <div class="files-search-box">
+          <span>🔍</span>
+          <input type="search" id="files-search-input" placeholder="Szukaj" autocomplete="off" />
+          <span>🎤</span>
+        </div>
+      </div>
+
+      <div class="files-scroll" id="files-scroll-body">
+        <div class="files-section-label">Lokalizacje <span class="blue-chevron">⌄</span></div>
+        <div class="files-card-list" id="files-locations-list">
+          <div class="files-row" data-file-item="zeni-cloud drive">
+            <span class="files-ico blue">☁</span>
+            <span class="files-row-name">ZeniCloud Drive</span>
+            <span class="files-chevron">›</span>
+          </div>
+          <div class="files-row" data-file-item="na moim zenios">
+            <span class="files-ico blue">📱</span>
+            <span class="files-row-name">Na moim ZeniOS</span>
+            <span class="files-chevron">›</span>
+          </div>
+          <div class="files-row" data-file-item="ostatnio usuniete">
+            <span class="files-ico blue">🗑</span>
+            <span class="files-row-name">Ostatnio usunięte</span>
+            <span class="files-chevron">›</span>
+          </div>
+        </div>
+
+        <div class="files-section-label">Tagi <span class="blue-chevron">⌄</span></div>
+        <div class="files-card-list" id="files-tags-list">
+          <div class="files-row" data-file-item="czerwony red">
+            <span class="tag-dot" style="background:#ff3b30;"></span>
+            <span class="files-row-name">Czerwony</span>
+            <span class="files-chevron">›</span>
+          </div>
+          <div class="files-row" data-file-item="pomaranczowy orange">
+            <span class="tag-dot" style="background:#ff9500;"></span>
+            <span class="files-row-name">Pomarańczowy</span>
+            <span class="files-chevron">›</span>
+          </div>
+          <div class="files-row" data-file-item="zolty yellow">
+            <span class="tag-dot" style="background:#ffcc00;"></span>
+            <span class="files-row-name">Żółty</span>
+            <span class="files-chevron">›</span>
+          </div>
+          <div class="files-row" data-file-item="zielony green">
+            <span class="tag-dot" style="background:#34c759;"></span>
+            <span class="files-row-name">Zielony</span>
+            <span class="files-chevron">›</span>
+          </div>
+          <div class="files-row" data-file-item="niebieski blue">
+            <span class="tag-dot" style="background:#007aff;"></span>
+            <span class="files-row-name">Niebieski</span>
+            <span class="files-chevron">›</span>
+          </div>
+          <div class="files-row" data-file-item="fioletowy purple">
+            <span class="tag-dot" style="background:#af52de;"></span>
+            <span class="files-row-name">Fioletowy</span>
+            <span class="files-chevron">›</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="files-floating-tabs">
+        <button type="button" class="files-tab-btn" data-files-tab="Ostatnie">
+          <span>🕒</span>
+          <small>Ostatnie</small>
+        </button>
+        <button type="button" class="files-tab-btn" data-files-tab="Udostępnione">
+          <span>👥</span>
+          <small>Udostępnione</small>
+        </button>
+        <button type="button" class="files-tab-btn active" data-files-tab="Przeglądaj">
+          <span>📁</span>
+          <small>Przeglądaj</small>
+        </button>
+      </div>
+    </section>
+
+    <!-- APLIKACJA: KALENDARZ (siatka miesiąca / roku z czerwonymi akcentami) -->
+    <section class="app-view light-app-theme" id="app-calendar" aria-label="Kalendarz ZeniOS">
+      <div class="cal-top-bar">
+        <button type="button" class="cal-red-btn" id="cal-year-toggle">‹ 2026</button>
+        <div class="cal-top-icons">
+          <button type="button" class="cal-red-btn" id="cal-add-event-btn">＋</button>
+        </div>
+      </div>
+
+      <div class="cal-weekdays-row" id="cal-weekdays-row">
+        <span>P</span><span>W</span><span>Ś</span><span>C</span><span>P</span><span>S</span><span>N</span>
+      </div>
+
+      <div class="cal-scroll-area" id="cal-month-view">
+        <div class="cal-month-heading" id="cal-month-heading">Lis</div>
+        <div class="cal-days-grid" id="cal-days-grid"></div>
+        <div class="cal-events-box" id="cal-events-box">
+          <strong>Wydarzenia — 22 Lis</strong>
+          <span>Brak zaplanowanych wydarzeń na wybrany dzień.</span>
+        </div>
+      </div>
+
+      <div class="cal-scroll-area cal-year-grid" id="cal-year-view" style="display:none;"></div>
+
+      <div class="cal-bottom-bar">
+        <button type="button" class="cal-red-btn" id="cal-today-btn">Dzisiaj</button>
+        <button type="button" class="cal-red-btn" id="cal-calendars-btn">Kalendarze</button>
+        <button type="button" class="cal-red-btn" id="cal-inbox-btn">Przychodzące</button>
+      </div>
+    </section>
+
+    <!-- APLIKACJA: ZEGAR (Alarmy, Zegary świata, Stoper, Minutniki + Dodaj alarm) -->
+    <section class="app-view clock-app-theme" id="app-clock" aria-label="Zegar ZeniOS">
+      <div class="clock-top-bar">
+        <button type="button" class="clock-orange-btn" id="clock-edit-btn">Edycja</button>
+        <button type="button" class="clock-orange-btn big-plus" id="clock-add-alarm-btn">+</button>
+      </div>
+
+      <div class="clock-scroll-area">
+        <h1 class="clock-big-title" id="clock-tab-title">Alarmy</h1>
+
+        <!-- Zakładka Alarmy -->
+        <div class="clock-pane active" id="clock-pane-alarms">
+          <div class="clock-sleep-head">🛏 Sen | Pobudka</div>
+          <div class="clock-sleep-row">
+            <span>Brak alarmu</span>
+            <button type="button" class="clock-change-pill" id="clock-sleep-change">ZMIEŃ</button>
+          </div>
+
+          <div class="clock-sub-head">Inne</div>
+          <div class="clock-alarms-list" id="clock-alarms-list"></div>
+        </div>
+
+        <!-- Zakładka Zegary świata -->
+        <div class="clock-pane" id="clock-pane-world">
+          <div class="clock-alarms-list">
+            <div class="clock-alarm-item">
+              <div><small>Dzisiaj, +0 godz.</small><div class="alarm-time">Warszawa</div></div>
+              <div class="alarm-time" id="world-clock-waw">18:11</div>
+            </div>
+            <div class="clock-alarm-item">
+              <div><small>Dzisiaj, -1 godz.</small><div class="alarm-time">Londyn</div></div>
+              <div class="alarm-time" id="world-clock-lon">17:11</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Zakładka Stoper -->
+        <div class="clock-pane" id="clock-pane-stopwatch">
+          <div class="stopwatch-box">
+            <div class="stopwatch-readout" id="stopwatch-readout">00:00,00</div>
+            <div class="stopwatch-btns">
+              <button type="button" class="sw-btn reset" id="sw-reset-btn">Zeruj</button>
+              <button type="button" class="sw-btn start" id="sw-start-btn">Start</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Zakładka Minutniki -->
+        <div class="clock-pane" id="clock-pane-timer">
+          <div class="stopwatch-box">
+            <div class="stopwatch-readout" id="timer-readout">05:00</div>
+            <div class="stopwatch-btns">
+              <button type="button" class="sw-btn reset" id="timer-reset-btn">Anuluj</button>
+              <button type="button" class="sw-btn start" id="timer-start-btn">Start</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Dodaj alarm -->
+      <div class="add-alarm-modal" id="add-alarm-modal">
+        <div class="modal-top-bar">
+          <button type="button" class="clock-orange-btn" id="cancel-alarm-modal">Anuluj</button>
+          <strong>Dodaj alarm</strong>
+          <button type="button" class="clock-orange-btn" id="save-alarm-modal">Zachowaj</button>
+        </div>
+
+        <div class="alarm-wheel-box">
+          <select id="alarm-hour-select" class="alarm-select" aria-label="Godzina"></select>
+          <span class="wheel-colon">:</span>
+          <select id="alarm-min-select" class="alarm-select" aria-label="Minuta"></select>
+        </div>
+
+        <div class="alarm-options-card">
+          <div class="alarm-opt-row"><span>Powtarzaj</span><span class="muted">dni robocze ›</span></div>
+          <div class="alarm-opt-row"><span>Etykieta</span><input type="text" id="alarm-label-input" value="Alarm" /></div>
+          <div class="alarm-opt-row"><span>Dźwięk</span><span class="muted">Kręgi ›</span></div>
+          <div class="alarm-opt-row">
+            <span>Drzemka</span>
+            <label class="ios-switch">
+              <input type="checkbox" checked />
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="clock-bottom-tabs">
+        <button type="button" class="clock-tab-btn" data-clock-tab="world"><span>🌐</span><small>Zegary świata</small></button>
+        <button type="button" class="clock-tab-btn active" data-clock-tab="alarms"><span>⏰</span><small>Alarmy</small></button>
+        <button type="button" class="clock-tab-btn" data-clock-tab="stopwatch"><span>⏱</span><small>Stoper</small></button>
+        <button type="button" class="clock-tab-btn" data-clock-tab="timer"><span>⏲</span><small>Minutniki</small></button>
+      </div>
     </section>
 
     <!-- Aplikacja Galeria ZeniOS -->
@@ -702,7 +1088,7 @@
             <span class="row-badge badge-green">Z</span>
             <div class="option-text-col">
               <span class="row-title">ZeniOS System</span>
-              <span class="option-sub">Witaj w nowej wersji pulpitu z widżetami.</span>
+              <span class="option-sub">Przeciągnij z góry w dół, aby otworzyć Centrum sterowania.</span>
             </div>
             <span class="row-value">Teraz</span>
           </div>
@@ -710,133 +1096,15 @@
             <span class="row-badge badge-blue">W</span>
             <div class="option-text-col">
               <span class="row-title">Wskazówka</span>
-              <span class="option-sub">Przytrzymaj pulpit lub ikonę, aby zmieniać układ i widżety.</span>
+              <span class="option-sub">Przytrzymaj pulpit lub ikonę, aby edytować widżety i ikony.</span>
             </div>
-            <span class="row-value">16:20</span>
+            <span class="row-value">18:11</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Aplikacja Kalkulator ZeniOS -->
-    <section class="app-view" id="app-calculator" aria-label="Kalkulator ZeniOS">
-      <header class="app-header">
-        <div class="app-title-row">
-          <h1 class="app-title">Kalkulator</h1>
-        </div>
-      </header>
-      <div class="app-scroll calc-body">
-        <div class="calc-display" id="calc-display">0</div>
-        <div class="calc-pad" id="calc-pad">
-          <button type="button" class="calc-btn fn" data-calc="C">C</button>
-          <button type="button" class="calc-btn fn" data-calc="±">±</button>
-          <button type="button" class="calc-btn fn" data-calc="%">%</button>
-          <button type="button" class="calc-btn op" data-calc="/">÷</button>
-
-          <button type="button" class="calc-btn" data-calc="7">7</button>
-          <button type="button" class="calc-btn" data-calc="8">8</button>
-          <button type="button" class="calc-btn" data-calc="9">9</button>
-          <button type="button" class="calc-btn op" data-calc="*">×</button>
-
-          <button type="button" class="calc-btn" data-calc="4">4</button>
-          <button type="button" class="calc-btn" data-calc="5">5</button>
-          <button type="button" class="calc-btn" data-calc="6">6</button>
-          <button type="button" class="calc-btn op" data-calc="-">−</button>
-
-          <button type="button" class="calc-btn" data-calc="1">1</button>
-          <button type="button" class="calc-btn" data-calc="2">2</button>
-          <button type="button" class="calc-btn" data-calc="3">3</button>
-          <button type="button" class="calc-btn op" data-calc="+">+</button>
-
-          <button type="button" class="calc-btn zero" data-calc="0">0</button>
-          <button type="button" class="calc-btn" data-calc=".">.</button>
-          <button type="button" class="calc-btn op" data-calc="=">=</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Aplikacja Kalendarz ZeniOS -->
-    <section class="app-view" id="app-calendar" aria-label="Kalendarz ZeniOS">
-      <header class="app-header">
-        <div class="app-title-row">
-          <h1 class="app-title">Kalendarz</h1>
-        </div>
-      </header>
-      <div class="app-scroll">
-        <div class="settings-group">
-          <div class="settings-row">
-            <span class="row-badge badge-red">KAL</span>
-            <div class="option-text-col">
-              <span class="row-title" id="calendar-app-date">Dzisiaj</span>
-              <span class="option-sub">Harmonogram dnia w ZeniOS</span>
-            </div>
-          </div>
-          <div class="settings-row">
-            <span class="row-badge badge-blue">18:00</span>
-            <div class="option-text-col">
-              <span class="row-title">Przegląd interfejsu ZeniOS</span>
-              <span class="option-sub">Widżety, układ ikon oraz wyszukiwanie</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Aplikacja Zegar ZeniOS -->
-    <section class="app-view" id="app-clock" aria-label="Zegar ZeniOS">
-      <header class="app-header">
-        <div class="app-title-row">
-          <h1 class="app-title">Zegar</h1>
-        </div>
-      </header>
-      <div class="app-scroll phone-placeholder">
-        <strong id="clock-app-big" style="font-size: 46px; font-variant-numeric: tabular-nums;">16:26</strong>
-        <p id="clock-app-sub">Czas lokalny urządzenia</p>
-      </div>
-    </section>
-
-    <!-- Aplikacja Pliki ZeniOS -->
-    <section class="app-view" id="app-files" aria-label="Pliki ZeniOS">
-      <header class="app-header">
-        <div class="app-title-row">
-          <h1 class="app-title">Pliki</h1>
-        </div>
-      </header>
-      <div class="app-scroll">
-        <div class="settings-group">
-          <div class="settings-row">
-            <span class="row-badge badge-blue">DIR</span>
-            <div class="option-text-col">
-              <span class="row-title">Icons</span>
-              <span class="option-sub">Ikony aplikacji systemowych ZeniOS</span>
-            </div>
-            <span class="row-value">Folder</span>
-          </div>
-          <div class="settings-row">
-            <span class="row-badge badge-teal">IMG</span>
-            <div class="option-text-col">
-              <span class="row-title">default_wallpapers</span>
-              <span class="option-sub">Tapety ekranu blokady i pulpitu</span>
-            </div>
-            <span class="row-value">7</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Aplikacja Notatnik ZeniOS -->
-    <section class="app-view" id="app-notebook" aria-label="Notatnik ZeniOS">
-      <header class="app-header">
-        <div class="app-title-row">
-          <h1 class="app-title">Notatnik</h1>
-        </div>
-      </header>
-      <div class="app-scroll">
-        <textarea id="notebook-area" class="notebook-textarea" placeholder="Wpisz notatkę w ZeniOS...">Pomysły na układ pulpitu i widżety ZeniOS...</textarea>
-      </div>
-    </section>
-
-    <!-- Dolna nawigacja systemowa: pulpit oraz aplikacje -->
+    <!-- Dolna nawigacja systemowa -->
     <div class="system-nav-overlay mode-gestures" id="system-nav-overlay">
       <button type="button" class="gesture-handle" id="gesture-home-btn" aria-label="Pulpit"></button>
       <div class="sys-buttons-row" id="sys-buttons-row">
