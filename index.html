@@ -8,6 +8,17 @@
 </head>
 <body>
   <div class="phone-screen">
+    <!-- Górny pasek statusu: godzina po lewej, ikona baterii po prawej (bez tekstu procentów) -->
+    <div class="status-bar-overlay" id="status-bar-overlay" aria-hidden="true">
+      <span class="status-clock" id="status-clock">16:26</span>
+      <span class="status-battery" id="status-battery" data-level="94">
+        <span class="battery-body">
+          <span class="battery-fill" id="battery-fill" style="width: 94%;"></span>
+        </span>
+        <span class="battery-cap"></span>
+      </span>
+    </div>
+
     <!-- Ekran ładowania ZeniOS -->
     <section class="layer active" id="still-layer">
       <img id="loading-still" src="Boot_Loading/Zenios_loading.png" alt="Zenios_loading" />
@@ -299,7 +310,7 @@
               <span class="chevron">›</span>
             </div>
 
-            <div class="settings-row" data-search="bateria zasilanie battery">
+            <div class="settings-row" id="battery-cycle-row" data-search="bateria zasilanie battery">
               <span class="row-badge badge-green">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="7" width="16" height="10" rx="2" />
@@ -308,7 +319,7 @@
                 </svg>
               </span>
               <span class="row-title">Bateria</span>
-              <span class="row-value">94%</span>
+              <span class="row-value" id="battery-setting-state">94%</span>
               <span class="chevron">›</span>
             </div>
           </div>
