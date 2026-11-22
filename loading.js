@@ -1,4 +1,5 @@
 const LOAD_DURATION_MS = 5000;
+const LONG_PRESS_MS = 450;
 
 const ZENIOS_WALLPAPERS = [
   'default_wallpapers/default_wallpaper_1',
@@ -8,6 +9,48 @@ const ZENIOS_WALLPAPERS = [
   'default_wallpapers/default_wallpaper_5',
   'default_wallpapers/default_wallpaper_6',
   'default_wallpapers/default_wallpaper_7'
+];
+
+const INSTALLED_APPS = [
+  { id: 'app-messages', title: 'Wiadomości', icon: 'Icons/Messages_icon.png', badge: 'W' },
+  { id: 'app-phone', title: 'Telefon', icon: 'Icons/Phone_Icon.png', badge: 'T' },
+  { id: 'app-gallery', title: 'Galeria', icon: 'Icons/gallery_icon.png', badge: 'G' },
+  { id: 'app-settings', title: 'Ustawienia', icon: 'Icons/Settings_Icon.png', badge: 'U', scaleIcon: true },
+  { id: 'app-calculator', title: 'Kalkulator', icon: 'Icons/calculator_icon.png', badge: 'K' },
+  { id: 'app-calendar', title: 'Kalendarz', icon: 'Icons/calendar_icon.png', badge: 'KAL' },
+  { id: 'app-clock', title: 'Zegar', icon: 'Icons/clock_icons.png', badge: 'Z' },
+  { id: 'app-files', title: 'Pliki', icon: 'Icons/files_icons.png', badge: 'P' },
+  { id: 'app-notebook', title: 'Notatnik', icon: 'Icons/notebook_icon.png', badge: 'N' }
+];
+
+const AVAILABLE_WIDGETS = [
+  {
+    id: 'music',
+    name: 'Muzyka',
+    subtitle: 'Chromatica • Lady Gaga',
+    caption: 'Music',
+    theme: 'music-widget',
+    artText: '♪',
+    badge: '♫'
+  },
+  {
+    id: 'calendar',
+    name: 'Kalendarz',
+    subtitle: 'Wydarzenia i data',
+    caption: 'Calendar',
+    theme: 'calendar-widget',
+    artText: '22',
+    badge: 'KAL'
+  },
+  {
+    id: 'weather',
+    name: 'Pogoda',
+    subtitle: '14°C • Bezchmurnie',
+    caption: 'Weather',
+    theme: 'weather-widget',
+    artText: '14°',
+    badge: '☀'
+  }
 ];
 
 const DEFAULT_WALLPAPER_INDEX = 6;
@@ -28,6 +71,12 @@ let currentBatteryLevel = 94;
 let batteryPresetIndex = 0;
 let gestureStartY = null;
 let lockSwipeStartY = null;
+let homeSwipeStartX = null;
+let homeSwipeStartY = null;
+let longPressTimer = null;
+let longPressTriggered = false;
+let isHomeEditMode = false;
+let selectedSwapAppId = null;
 let isLocked = false;
 let currentLockMethod = 'swipe';
 let pinCode = '1234';
@@ -37,6 +86,16 @@ let enteredPin = '';
 let enteredPattern = [];
 let pendingAppAfterUnlock = null;
 let domRefs = {};
+
+let homeAppOrder = INSTALLED_APPS.map((a) => a.id);
+let activeWidgets = [
+  { id: 'music', wide: false },
+  { id: 'calendar', wide: false }
+];
+
+/* Stan kalkulatora */
+let calcExpression = '0';
+let calcResetNext = false;
 
 function formatCurrentClock() {
   const now = new Date();
@@ -54,15 +113,13 @@ function formatCurrentLockDate() {
 
 function updateClock() {
   const timeText = formatCurrentClock();
-  if (domRefs.statusClock) {
-    domRefs.statusClock.textContent = timeText;
-  }
-  if (domRefs.lockClock) {
-    domRefs.lockClock.textContent = timeText;
-  }
-  if (domRefs.lockDate) {
-    domRefs.lockDate.textContent = formatCurrentLockDate();
-  }
+  const dateText = formatCurrentLockDate();
+  if (domRefs.statusClock) domRefs.statusClock.textContent = timeText;
+  if (domRefs.lockClock) domRefs.lockClock.textContent = timeText;
+  if (domRefs.lockDate) domRefs.lockDate.textContent = dateText;
+  if (domRefs.clockAppBig) domRefs.clockAppBig.textContent = timeText;
+  if (domRefs.clockAppSub) domRefs.clockAppSub.textContent = dateText;
+  if (domRefs.calendarAppDate) domRefs.calendarAppDate.textContent = dateText;
 }
 
 function applyBatteryLevel(level) {
@@ -129,27 +186,30 @@ function loadImageWithFallback(imgEl, basePath) {
   tryNext();
 }
 
+function attachAppIconFallback(imgEl, badgeText) {
+  if (!imgEl) return;
+  imgEl.onerror = () => {
+    const parent = imgEl.parentElement;
+    if (!parent) return;
+    imgEl.remove();
+    const span = document.createElement('span');
+    span.className = 'home-app-fallback';
+    span.textContent = badgeText;
+    parent.appendChild(span);
+  };
+}
+
 function setWallpaper(index) {
   if (index < 0 || index >= ZENIOS_WALLPAPERS.length) return;
   currentWallpaperIndex = index;
   const wpName = `default_wallpaper_${index + 1}`;
   const basePath = ZENIOS_WALLPAPERS[index];
 
-  if (domRefs.systemWallpaper) {
-    loadImageWithFallback(domRefs.systemWallpaper, basePath);
-  }
-  if (domRefs.lockWallpaper) {
-    loadImageWithFallback(domRefs.lockWallpaper, basePath);
-  }
-  if (domRefs.currentWpLabel) {
-    domRefs.currentWpLabel.textContent = wpName;
-  }
-  if (domRefs.wallpaperPreviewImg) {
-    loadImageWithFallback(domRefs.wallpaperPreviewImg, basePath);
-  }
-  if (domRefs.wallpaperPreviewName) {
-    domRefs.wallpaperPreviewName.textContent = wpName;
-  }
+  if (domRefs.systemWallpaper) loadImageWithFallback(domRefs.systemWallpaper, basePath);
+  if (domRefs.lockWallpaper) loadImageWithFallback(domRefs.lockWallpaper, basePath);
+  if (domRefs.currentWpLabel) domRefs.currentWpLabel.textContent = wpName;
+  if (domRefs.wallpaperPreviewImg) loadImageWithFallback(domRefs.wallpaperPreviewImg, basePath);
+  if (domRefs.wallpaperPreviewName) domRefs.wallpaperPreviewName.textContent = wpName;
   renderWallpaperPicker();
 }
 
@@ -175,6 +235,377 @@ function renderWallpaperPicker() {
 
     btn.appendChild(thumb);
     wpGrid.appendChild(btn);
+  });
+}
+
+/* Widżety i tryb przytrzymania na pulpicie */
+function renderWidgets() {
+  const grid = domRefs.widgetsGrid;
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  activeWidgets.forEach((entry, index) => {
+    const meta = AVAILABLE_WIDGETS.find((w) => w.id === entry.id);
+    if (!meta) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = `zen-widget ${meta.theme}${entry.wide ? ' wide' : ''}`;
+
+    const topRow = document.createElement('div');
+    topRow.className = 'widget-top-row';
+
+    const art = document.createElement('div');
+    art.className = 'widget-art';
+    art.textContent = meta.artText;
+
+    const badge = document.createElement('span');
+    badge.className = 'widget-badge-icon';
+    badge.textContent = meta.badge;
+
+    topRow.appendChild(art);
+    topRow.appendChild(badge);
+
+    const infoCol = document.createElement('div');
+    const titleEl = document.createElement('div');
+    titleEl.className = 'widget-title';
+    titleEl.textContent = meta.id === 'calendar' ? `${new Date().getDate()} ${formatCurrentLockDate().split(',')[1] || ''}` : meta.name;
+
+    const subEl = document.createElement('div');
+    subEl.className = 'widget-sub';
+    subEl.textContent = meta.subtitle;
+
+    infoCol.appendChild(titleEl);
+    infoCol.appendChild(subEl);
+
+    const editBar = document.createElement('div');
+    editBar.className = 'widget-edit-bar';
+
+    const sizeBtn = document.createElement('button');
+    sizeBtn.type = 'button';
+    sizeBtn.className = 'widget-mini-btn';
+    sizeBtn.textContent = entry.wide ? 'Mały' : 'Szeroki';
+    sizeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      activeWidgets[index].wide = !activeWidgets[index].wide;
+      renderWidgets();
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'widget-mini-btn';
+    delBtn.textContent = 'Usuń';
+    delBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      activeWidgets.splice(index, 1);
+      renderWidgets();
+    });
+
+    editBar.appendChild(sizeBtn);
+    editBar.appendChild(delBtn);
+
+    const caption = document.createElement('div');
+    caption.className = 'widget-caption';
+    caption.textContent = meta.caption;
+
+    wrap.appendChild(topRow);
+    wrap.appendChild(infoCol);
+    wrap.appendChild(editBar);
+    wrap.appendChild(caption);
+
+    wrap.addEventListener('click', () => {
+      if (longPressTriggered || isHomeEditMode) return;
+      if (meta.id === 'calendar') openApp('app-calendar');
+    });
+
+    grid.appendChild(wrap);
+  });
+
+  renderWidgetPicker();
+}
+
+function renderWidgetPicker() {
+  const list = domRefs.widgetPickerList;
+  if (!list) return;
+  list.innerHTML = '';
+
+  AVAILABLE_WIDGETS.forEach((w) => {
+    const exists = activeWidgets.some((item) => item.id === w.id);
+    const row = document.createElement('div');
+    row.className = 'widget-picker-item';
+
+    const col = document.createElement('div');
+    col.className = 'option-text-col';
+    col.innerHTML = `<span class="row-title">${w.name}</span><span class="option-sub">${w.subtitle}</span>`;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `glass-action-btn ${exists ? '' : 'primary'}`;
+    btn.textContent = exists ? 'Usuń' : 'Dodaj';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (exists) {
+        activeWidgets = activeWidgets.filter((item) => item.id !== w.id);
+      } else {
+        activeWidgets.push({ id: w.id, wide: false });
+      }
+      renderWidgets();
+    });
+
+    row.appendChild(col);
+    row.appendChild(btn);
+    list.appendChild(row);
+  });
+}
+
+function renderHomeApps() {
+  const grid = domRefs.homeAppsGrid;
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  homeAppOrder.forEach((appId) => {
+    const app = INSTALLED_APPS.find((item) => item.id === appId);
+    if (!app) return;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `home-app-tile${selectedSwapAppId === app.id ? ' swap-selected' : ''}`;
+    btn.setAttribute('data-app-id', app.id);
+
+    const iconBox = document.createElement('div');
+    iconBox.className = 'home-app-icon-box';
+
+    const img = document.createElement('img');
+    img.src = app.icon;
+    img.alt = app.title;
+    if (app.scaleIcon) img.style.transform = 'scale(1.24)';
+    attachAppIconFallback(img, app.badge);
+
+    const label = document.createElement('span');
+    label.className = 'home-app-label';
+    label.textContent = app.title;
+
+    iconBox.appendChild(img);
+    btn.appendChild(iconBox);
+    btn.appendChild(label);
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (longPressTriggered) return;
+
+      if (isHomeEditMode) {
+        if (!selectedSwapAppId) {
+          selectedSwapAppId = app.id;
+          if (domRefs.homeEditStatus) domRefs.homeEditStatus.textContent = `Wybrano: ${app.title} — kliknij inne`;
+          renderHomeApps();
+        } else if (selectedSwapAppId === app.id) {
+          selectedSwapAppId = null;
+          if (domRefs.homeEditStatus) domRefs.homeEditStatus.textContent = 'Tryb edycji — kliknij 2 ikony';
+          renderHomeApps();
+        } else {
+          const i1 = homeAppOrder.indexOf(selectedSwapAppId);
+          const i2 = homeAppOrder.indexOf(app.id);
+          if (i1 !== -1 && i2 !== -1) {
+            [homeAppOrder[i1], homeAppOrder[i2]] = [homeAppOrder[i2], homeAppOrder[i1]];
+          }
+          selectedSwapAppId = null;
+          if (domRefs.homeEditStatus) domRefs.homeEditStatus.textContent = 'Zamieniono miejscami';
+          renderHomeApps();
+        }
+        return;
+      }
+
+      openApp(app.id);
+    });
+
+    grid.appendChild(btn);
+  });
+}
+
+function setHomeEditMode(enabled) {
+  isHomeEditMode = Boolean(enabled);
+  selectedSwapAppId = null;
+  domRefs.wallpaperLayer?.classList.toggle('editing', isHomeEditMode);
+  if (!isHomeEditMode) {
+    domRefs.widgetPickerSheet?.classList.remove('open');
+  } else if (domRefs.homeEditStatus) {
+    domRefs.homeEditStatus.textContent = 'Widżety i zamiana pozycji ikon';
+  }
+  renderWidgets();
+  renderHomeApps();
+}
+
+function renderInstalledAppsSearch(query = '') {
+  const list = domRefs.installedAppsList;
+  if (!list) return;
+  const q = query.trim().toLowerCase();
+  list.innerHTML = '';
+
+  const filtered = INSTALLED_APPS.filter((app) => !q || app.title.toLowerCase().includes(q));
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-label" style="text-align:center;padding:18px;">Brak zainstalowanej aplikacji</div>';
+    return;
+  }
+
+  filtered.forEach((app) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'installed-app-item';
+
+    const thumb = document.createElement('div');
+    thumb.className = 'installed-app-thumb';
+    const img = document.createElement('img');
+    img.src = app.icon;
+    img.alt = app.title;
+    attachAppIconFallback(img, app.badge);
+    thumb.appendChild(img);
+
+    const name = document.createElement('span');
+    name.className = 'row-title';
+    name.textContent = app.title;
+
+    const tag = document.createElement('span');
+    tag.className = 'row-value';
+    tag.textContent = 'Zainstalowana';
+
+    item.appendChild(thumb);
+    item.appendChild(name);
+    item.appendChild(tag);
+
+    item.addEventListener('click', () => {
+      closeSearchDrawer();
+      openApp(app.id);
+    });
+
+    list.appendChild(item);
+  });
+}
+
+function openSearchDrawer() {
+  if (isHomeEditMode) return;
+  domRefs.appSearchDrawer?.classList.add('open');
+  renderInstalledAppsSearch(domRefs.installedAppsSearch?.value || '');
+  setTimeout(() => domRefs.installedAppsSearch?.focus(), 60);
+}
+
+function closeSearchDrawer() {
+  domRefs.appSearchDrawer?.classList.remove('open');
+}
+
+function bindHomeGesturesAndLongPress() {
+  const home = domRefs.wallpaperLayer;
+  if (!home) return;
+
+  home.addEventListener('pointerdown', (e) => {
+    if (isLocked || isAnyAppOpen()) return;
+    if (e.target.closest('.widget-picker-sheet') || e.target.closest('.app-search-drawer') || e.target.closest('.liquid-dock')) {
+      return;
+    }
+
+    homeSwipeStartX = e.clientX;
+    homeSwipeStartY = e.clientY;
+    longPressTriggered = false;
+
+    clearTimeout(longPressTimer);
+    longPressTimer = setTimeout(() => {
+      longPressTriggered = true;
+      setHomeEditMode(true);
+    }, LONG_PRESS_MS);
+  });
+
+  home.addEventListener('pointermove', (e) => {
+    if (homeSwipeStartX === null || homeSwipeStartY === null) return;
+    if (Math.hypot(e.clientX - homeSwipeStartX, e.clientY - homeSwipeStartY) > 10) {
+      clearTimeout(longPressTimer);
+    }
+  });
+
+  home.addEventListener('pointerup', (e) => {
+    clearTimeout(longPressTimer);
+    if (homeSwipeStartX === null || homeSwipeStartY === null) return;
+
+    const dx = e.clientX - homeSwipeStartX;
+    const dy = e.clientY - homeSwipeStartY;
+    homeSwipeStartX = null;
+    homeSwipeStartY = null;
+
+    if (longPressTriggered || isHomeEditMode) return;
+
+    /* Przesunięcie z prawej do lewej -> otwiera wyszukiwanie zainstalowanych aplikacji */
+    if (dx <= -45 && Math.abs(dx) > Math.abs(dy)) {
+      openSearchDrawer();
+    } else if (dx >= 45 && Math.abs(dx) > Math.abs(dy) && domRefs.appSearchDrawer?.classList.contains('open')) {
+      closeSearchDrawer();
+    }
+  });
+
+  home.addEventListener('pointercancel', () => {
+    clearTimeout(longPressTimer);
+    homeSwipeStartX = null;
+    homeSwipeStartY = null;
+  });
+
+  domRefs.openWidgetDrawerBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    domRefs.widgetPickerSheet?.classList.toggle('open');
+  });
+
+  domRefs.closeWidgetDrawerBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    domRefs.widgetPickerSheet?.classList.remove('open');
+  });
+
+  domRefs.doneEditModeBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setHomeEditMode(false);
+  });
+
+  domRefs.closeSearchDrawerBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeSearchDrawer();
+  });
+
+  domRefs.installedAppsSearch?.addEventListener('input', () => {
+    renderInstalledAppsSearch(domRefs.installedAppsSearch.value);
+  });
+}
+
+function bindCalculator() {
+  domRefs.calcPad?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-calc]');
+    if (!btn || !domRefs.calcDisplay) return;
+    const token = btn.getAttribute('data-calc');
+
+    if (token === 'C') {
+      calcExpression = '0';
+      calcResetNext = false;
+    } else if (token === '±') {
+      calcExpression = calcExpression.startsWith('-') ? calcExpression.slice(1) : `-${calcExpression}`;
+    } else if (token === '%') {
+      const num = parseFloat(calcExpression);
+      calcExpression = Number.isNaN(num) ? '0' : String(num / 100);
+    } else if (token === '=') {
+      try {
+        const safeExpr = calcExpression.replace(/[^0-9+\-*/.]/g, '');
+        const res = Function(`"use strict"; return (${safeExpr || 0});`)();
+        calcExpression = String(res);
+        calcResetNext = true;
+      } catch {
+        calcExpression = 'Błąd';
+        calcResetNext = true;
+      }
+    } else {
+      if (calcResetNext && /[0-9.]/.test(token)) {
+        calcExpression = token;
+        calcResetNext = false;
+      } else if (calcExpression === '0' && /[0-9]/.test(token)) {
+        calcExpression = token;
+        calcResetNext = false;
+      } else {
+        calcExpression += token;
+        calcResetNext = false;
+      }
+    }
+    domRefs.calcDisplay.textContent = calcExpression;
   });
 }
 
@@ -247,6 +678,8 @@ function resetUnlockInputs() {
 
 function lockScreen() {
   isLocked = true;
+  setHomeEditMode(false);
+  closeSearchDrawer();
   closeAllApps();
   hideAllUnlockPanels();
   resetUnlockInputs();
@@ -557,6 +990,8 @@ function openApp(appId) {
     requestUnlockChallenge(appId);
     return;
   }
+  closeSearchDrawer();
+  setHomeEditMode(false);
   if (appId === 'app-settings') {
     openSettingsSubscreen('settings-main');
   }
@@ -617,6 +1052,7 @@ function bindAppNavigation() {
 
   domRefs.sysBtnHome?.addEventListener('click', (e) => {
     e.stopPropagation();
+    closeSearchDrawer();
     closeAllApps();
   });
 
@@ -627,6 +1063,10 @@ function bindAppNavigation() {
 
   domRefs.sysBtnBack?.addEventListener('click', (e) => {
     e.stopPropagation();
+    if (domRefs.appSearchDrawer?.classList.contains('open') && !isAnyAppOpen()) {
+      closeSearchDrawer();
+      return;
+    }
     handleBackAction();
   });
 }
@@ -858,6 +1298,23 @@ function cacheDom() {
     wallpaperLayer: document.getElementById('wallpaper-layer'),
     loadingStill: document.getElementById('loading-still'),
     systemWallpaper: document.getElementById('system-wallpaper'),
+    widgetsGrid: document.getElementById('widgets-grid'),
+    homeAppsGrid: document.getElementById('home-apps-grid'),
+    homeEditStatus: document.getElementById('home-edit-status'),
+    openWidgetDrawerBtn: document.getElementById('open-widget-drawer-btn'),
+    closeWidgetDrawerBtn: document.getElementById('close-widget-drawer-btn'),
+    doneEditModeBtn: document.getElementById('done-edit-mode-btn'),
+    widgetPickerSheet: document.getElementById('widget-picker-sheet'),
+    widgetPickerList: document.getElementById('widget-picker-list'),
+    appSearchDrawer: document.getElementById('app-search-drawer'),
+    closeSearchDrawerBtn: document.getElementById('close-search-drawer-btn'),
+    installedAppsSearch: document.getElementById('installed-apps-search'),
+    installedAppsList: document.getElementById('installed-apps-list'),
+    calcDisplay: document.getElementById('calc-display'),
+    calcPad: document.getElementById('calc-pad'),
+    calendarAppDate: document.getElementById('calendar-app-date'),
+    clockAppBig: document.getElementById('clock-app-big'),
+    clockAppSub: document.getElementById('clock-app-sub'),
     liquidDock: document.getElementById('liquid-dock'),
     appViews: document.querySelectorAll('.app-view'),
     settingsView: document.getElementById('app-settings'),
@@ -915,6 +1372,11 @@ function initSystem() {
   bindAppNavigation();
   bindGalleryFeatures();
   bindSettingsFeatures();
+  bindHomeGesturesAndLongPress();
+  bindCalculator();
+  renderWidgets();
+  renderHomeApps();
+  renderInstalledAppsSearch('');
   setWallpaper(DEFAULT_WALLPAPER_INDEX);
   setSystemNavMode(currentNavMode);
   setLockMethod(currentLockMethod);
