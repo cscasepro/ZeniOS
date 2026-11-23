@@ -50,6 +50,9 @@
         <div class="lock-clock" id="lock-clock">16:37</div>
       </div>
 
+      <!-- Warstwa 3: pierwszy plan tapety (efekt głębi), nie przechwytuje gestów -->
+      <canvas class="lk-depth" id="lock-depth" aria-hidden="true"></canvas>
+
       <!-- Panel odblokowania: PIN -->
       <div class="unlock-panel" id="unlock-pin-panel">
         <div class="unlock-title">Wpisz PIN</div>
@@ -565,6 +568,18 @@
               <span class="row-value" id="current-wp-label">default_wallpaper_7</span>
               <span class="chevron">›</span>
             </div>
+
+            <div class="settings-row" id="open-lockscreen-picker" data-search="ekran blokady personalizacja zegar tapeta glebia lock screen depth">
+              <span class="row-badge badge-purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="5" y="10.5" width="14" height="10" rx="2.5" />
+                  <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+                </svg>
+              </span>
+              <span class="row-title">Ekran blokady</span>
+              <span class="row-value" id="lk-row-value">Smukły · Głębia</span>
+              <span class="chevron">›</span>
+            </div>
           </div>
         </div>
       </div>
@@ -660,6 +675,89 @@
           </div>
 
           <div class="wp-grid" id="wp-grid"></div>
+        </div>
+      </div>
+
+      <!-- Podwidok: Personalizacja ekranu blokady (zegar + efekt głębi) -->
+      <div class="subscreen" id="settings-lockscreen">
+        <header class="app-header">
+          <div class="app-title-row">
+            <button class="back-btn" type="button" data-settings-back>‹ Ustawienia</button>
+            <h1 class="app-title sub-title">Ekran blokady</h1>
+            <span class="header-spacer"></span>
+          </div>
+        </header>
+
+        <div class="app-scroll">
+          <!-- podgląd na żywo: ta sama warstwowa scena co prawdziwy ekran blokady -->
+          <div class="lk-preview">
+            <div class="lk-frame">
+              <div class="lk-stage" id="lk-stage" aria-hidden="true">
+                <img class="lk-wall" id="lk-prev-wall" alt="" />
+                <div class="lock-scrim"></div>
+                <div class="lock-top-block" id="lk-prev-top">
+                  <div class="lock-date" id="lk-prev-date">Niedziela, 22 Lis</div>
+                  <div class="lock-clock" id="lk-prev-clock">16:37</div>
+                </div>
+                <canvas class="lk-depth" id="lk-prev-depth"></canvas>
+                <div class="lk-fake-bottom">
+                  <div class="lk-fake-row"><span class="lk-fake-btn"></span><span class="lk-fake-btn"></span></div>
+                  <div class="lock-home-bar"></div>
+                </div>
+              </div>
+            </div>
+            <p class="lk-note" id="lk-depth-note" data-state="off"></p>
+            <button type="button" class="glass-action-btn primary lk-show-btn" id="lk-show-lock">Pokaż na ekranie blokady</button>
+          </div>
+
+          <div class="section-head"><h2>Zegar</h2></div>
+          <div class="settings-group lk-group">
+            <div class="lk-block">
+              <span class="lk-label">Styl</span>
+              <div class="lk-chips lk-chips-4" id="lk-style-row"></div>
+            </div>
+            <div class="lk-block">
+              <span class="lk-label">Kolor i wykończenie</span>
+              <div class="lk-chips lk-chips-3" id="lk-finish-row"></div>
+            </div>
+            <div class="lk-block lk-slider-row">
+              <div class="lk-label-row"><span class="lk-label">Rozmiar</span><span class="lk-val" id="lk-size-val">100%</span></div>
+              <input class="lk-range" id="lk-size" type="range" min="0.7" max="1.3" step="0.05" value="1" />
+            </div>
+            <div class="lk-block lk-slider-row">
+              <div class="lk-label-row"><span class="lk-label">Wysokość cyfr</span><span class="lk-val" id="lk-stretch-val">100%</span></div>
+              <input class="lk-range" id="lk-stretch" type="range" min="0.8" max="1.5" step="0.05" value="1" />
+            </div>
+            <div class="lk-block">
+              <div class="lk-label-row"><span class="lk-label">Położenie</span></div>
+              <div class="segmented-bar lk-seg" role="tablist">
+                <button class="seg-btn active" type="button" data-lk-pos="auto">Auto (dopasuj do tapety)</button>
+                <button class="seg-btn" type="button" data-lk-pos="manual">Ręcznie</button>
+              </div>
+            </div>
+            <div class="lk-block lk-slider-row disabled">
+              <div class="lk-label-row"><span class="lk-label">Wysokość położenia</span><span class="lk-val" id="lk-posy-val">20%</span></div>
+              <input class="lk-range" id="lk-posy" type="range" min="0.04" max="0.75" step="0.01" value="0.2" disabled />
+            </div>
+          </div>
+
+          <div class="section-head"><h2>Tapeta i głębia</h2></div>
+          <div class="settings-group lk-group">
+            <div class="settings-row">
+              <span class="row-title">Efekt głębi</span>
+              <label class="ios-switch">
+                <input type="checkbox" id="lk-depth-toggle" checked />
+                <span class="ios-slider"></span>
+              </label>
+            </div>
+            <div class="lk-block">
+              <span class="lk-label">Tapeta ekranu blokady</span>
+              <div class="lk-wp-grid" id="lk-wp-grid"></div>
+              <input type="file" id="lk-upload" accept="image/*" hidden />
+            </div>
+          </div>
+
+          <button type="button" class="glass-action-btn lk-reset-btn" id="lk-reset">Przywróć domyślne</button>
         </div>
       </div>
 
@@ -1064,5 +1162,6 @@
 
   <script src="loading.js"></script>
   <script src="zeni-system.js"></script>
+  <script src="zeni-lockscreen.js"></script>
 </body>
 </html>
