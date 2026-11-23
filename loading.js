@@ -224,7 +224,8 @@ function setWallpaper(index) {
   const basePath = ZENIOS_WALLPAPERS[index];
 
   if (domRefs.systemWallpaper) loadImageWithFallback(domRefs.systemWallpaper, basePath);
-  if (domRefs.lockWallpaper) loadImageWithFallback(domRefs.lockWallpaper, basePath);
+  if (window.ZeniLock) window.ZeniLock.syncSystemWallpaper(basePath);   // tapetą ekranu blokady zarządza ZeniLock
+  else if (domRefs.lockWallpaper) loadImageWithFallback(domRefs.lockWallpaper, basePath);
   if (domRefs.currentWpLabel) domRefs.currentWpLabel.textContent = wpName;
   if (domRefs.wallpaperPreviewImg) loadImageWithFallback(domRefs.wallpaperPreviewImg, basePath);
   if (domRefs.wallpaperPreviewName) domRefs.wallpaperPreviewName.textContent = wpName;
@@ -1035,7 +1036,8 @@ function openSettingsSubscreen(screenId) {
     domRefs.settingsMain,
     domRefs.settingsWallpaper,
     domRefs.settingsSystemNav,
-    domRefs.settingsPasscode
+    domRefs.settingsPasscode,
+    document.getElementById('settings-lockscreen')
   ].forEach((el) => {
     if (!el) return;
     el.classList.toggle('active', el.id === screenId);
@@ -1061,7 +1063,8 @@ function handleBackAction() {
   const subscreenActive =
     domRefs.settingsWallpaper?.classList.contains('active') ||
     domRefs.settingsSystemNav?.classList.contains('active') ||
-    domRefs.settingsPasscode?.classList.contains('active');
+    domRefs.settingsPasscode?.classList.contains('active') ||
+    document.getElementById('settings-lockscreen')?.classList.contains('active');
 
   if (settingsOpen && subscreenActive) {
     openSettingsSubscreen('settings-main');
