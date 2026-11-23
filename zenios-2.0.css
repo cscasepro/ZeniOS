@@ -1,0 +1,1 @@
+.z2-no-motion *, .z2-no-motion *::before, .z2-no-motion *::after { animation-duration:0.001ms!important; transition-duration:0.001ms!important; scroll-behavior:auto!important; }
