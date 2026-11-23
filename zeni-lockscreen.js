@@ -537,7 +537,7 @@
     grid.textContent = '';
     const tile = (id, label, src, badge) => {
       const b = el('button', 'lk-wp' + (cfg.wallpaper === id ? ' active' : '')); b.type = 'button';
-      if (src) { const i = el('img'); i.alt = label; i.src = src; b.appendChild(i); }
+      if (src) { const i = el('img'); i.alt = label; i.onerror = () => i.remove(); i.src = src; b.appendChild(i); }
       b.appendChild(el('span', 'lk-wp-label', label));
       if (badge) b.appendChild(el('span', 'lk-wp-badge', badge));
       return b;
