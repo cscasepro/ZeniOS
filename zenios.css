@@ -198,6 +198,7 @@ html, body {
 
 /* Ekran blokady */
 .lockscreen-layer {
+  container-type: inline-size;
   z-index: 25;
   background: #05060a;
   display: flex;
@@ -236,6 +237,9 @@ html, body {
   align-items: center;
   text-align: center;
   pointer-events: none;
+  transform: translateY(var(--lk-ty, 0px));
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 }
 
 .lock-date {
@@ -247,19 +251,18 @@ html, body {
   margin-bottom: 4px;
 }
 
+/* Zegar: styl, rozmiar i wykończenie z personalizacji (--lk-*) */
 .lock-clock {
+  font-family: var(--lk-font, system-ui, sans-serif);
+  font-weight: var(--lk-weight, 600);
   font-size: clamp(78px, 21vw, 108px);
-  font-weight: 600;
+  font-size: calc(var(--lk-size, 1) * 25.7cqw);
   line-height: 0.88;
-  letter-spacing: -3px;
-  transform: scaleX(0.84) scaleY(1.14);
+  letter-spacing: var(--lk-ls, -0.03em);
+  transform: scale(var(--lk-sx, 0.84), var(--lk-sy, 1.14));
   transform-origin: center top;
-  background: linear-gradient(
-    165deg,
-    rgba(255, 248, 236, 0.96) 0%,
-    rgba(232, 212, 186, 0.82) 48%,
-    rgba(255, 255, 255, 0.92) 100%
-  );
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), letter-spacing 0.3s ease;
+  background: var(--lk-fill, linear-gradient(165deg, #fff8ec 0%, #e8d4ba 38%, #fffdf8 54%, #d2b48c 100%));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -269,9 +272,23 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Warstwa 3: pierwszy plan tapety nad zegarem, pod przyciskami i panelami odblokowania */
+.lk-depth {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  display: block;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+
 .lock-bottom-area {
   position: relative;
-  z-index: 2;
+  z-index: 5;
+  margin-top: auto;
   padding: 0 24px 10px;
   display: flex;
   flex-direction: column;
@@ -3076,3 +3093,139 @@ body.zenios-in-app .app-bottom-tabs {
   width: 34px; height: 34px; border-radius: 50%; border: none; flex-shrink: 0;
   background: var(--chat-accent); color: #fff; font-size: 18px; font-weight: 700; cursor: pointer;
 }
+
+
+/* =====================================================================
+   Personalizacja ekranu blokady (Ustawienia)
+   ===================================================================== */
+.lk-preview { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0 14px; }
+
+.lk-frame {
+  position: relative;
+  width: 190px;
+  height: 380px;
+  border-radius: 30px;
+  overflow: hidden;
+  background: #05060a;
+  box-shadow: 0 0 0 3px var(--sep, rgba(255, 255, 255, 0.18)), 0 14px 34px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+}
+
+/* scena w skali 1:1 (420×840), pomniejszona — te same proporcje co prawdziwy ekran */
+.lk-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 420px;
+  height: 840px;
+  transform: scale(0.4524);
+  transform-origin: 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  container-type: inline-size;
+  overflow: hidden;
+  pointer-events: none;
+  background: #05060a;
+}
+
+.lk-wall { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.lk-fake-bottom {
+  position: relative;
+  z-index: 5;
+  margin-top: auto;
+  padding: 0 24px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.lk-fake-row { width: 100%; display: flex; justify-content: space-between; }
+.lk-fake-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(20, 22, 28, 0.48);
+}
+
+.lk-note {
+  margin: 0;
+  max-width: 300px;
+  min-height: 34px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--sub, #8e8e93);
+}
+.lk-note[data-state="active"] { color: #30d158; }
+.lk-note[data-state="faded"],
+.lk-note[data-state="unavailable"],
+.lk-note[data-state="nocontact"] { color: #ff9f0a; }
+
+.lk-show-btn { padding: 8px 16px; font-size: 13px; }
+
+.lk-group { padding-bottom: 4px; }
+.lk-block { padding: 12px 16px; border-bottom: 1px solid var(--sep, rgba(255, 255, 255, 0.08)); display: flex; flex-direction: column; gap: 8px; }
+.lk-block:last-child { border-bottom: none; }
+.lk-label { font-size: 13px; font-weight: 600; color: var(--text, #fff); }
+.lk-label-row { display: flex; align-items: baseline; justify-content: space-between; }
+.lk-val { font-size: 12px; color: var(--sub, #8e8e93); font-variant-numeric: tabular-nums; }
+
+.lk-chips { display: grid; gap: 8px; }
+.lk-chips-4 { grid-template-columns: repeat(4, 1fr); }
+.lk-chips-3 { grid-template-columns: repeat(3, 1fr); }
+
+.lk-chip {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: var(--fill, rgba(118, 118, 128, 0.24));
+  color: var(--text, #fff);
+  padding: 9px 2px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.12s ease;
+}
+.lk-chip:active { transform: scale(0.96); }
+.lk-chip.active { border-color: var(--accent, #0a84ff); }
+.lk-chip-sample { display: inline-block; font-size: 17px; line-height: 1.1; transform-origin: center; }
+.lk-swatch { width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.3); }
+
+.lk-range { width: 100%; accent-color: var(--accent, #0a84ff); }
+.lk-slider-row.disabled { opacity: 0.45; }
+.lk-seg { grid-template-columns: 1.6fr 1fr; }
+
+.lk-wp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.lk-wp {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  aspect-ratio: 9 / 16;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  background: #1c1c20;
+  padding: 0;
+  cursor: pointer;
+}
+.lk-wp.active { border-color: var(--accent, #0a84ff); }
+.lk-wp img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lk-wp-label {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 4px 5px;
+  font-size: 10.5px; font-weight: 600; color: #fff; text-align: center;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.65));
+}
+.lk-wp-badge {
+  position: absolute; top: 5px; right: 5px; padding: 2px 6px; border-radius: 999px;
+  font-size: 9px; font-weight: 700; color: #fff; background: rgba(10, 132, 255, 0.9);
+}
+.lk-wp.empty { display: flex; align-items: center; justify-content: center; border: 2px dashed var(--sep, rgba(255, 255, 255, 0.25)); background: var(--fill, rgba(118, 118, 128, 0.2)); }
+.lk-wp-plus { font-size: 30px; font-weight: 300; color: var(--sub, #8e8e93); }
+
+.lk-reset-btn { margin: 14px auto 24px; display: block; padding: 8px 16px; font-size: 13px; }
