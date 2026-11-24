@@ -545,7 +545,7 @@
       renderList();
     }
 
-    /* ----------------------------- lista rozmów ----------------------------- */
+    /* ----2------------------------- lista rozmów ----------------------------- */
     function renderList() {
       const list = $('msg-conv-list');
       if (!list) return;
