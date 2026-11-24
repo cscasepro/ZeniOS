@@ -764,6 +764,7 @@ function resetUnlockInputs() {
 }
 
 function lockScreen() {
+  if (window.ZeniCamera) window.ZeniCamera.close();
   isLocked = true;
   setHomeEditMode(false);
   closeSearchDrawer();
@@ -970,7 +971,9 @@ function bindLockscreenFeatures() {
 
   domRefs.lockCameraBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
-    requestUnlockChallenge('app-gallery');
+    /* jak w iPhonie: aparat ze ekranu blokady otwiera się bez odblokowania,
+       a galeria pozostaje zablokowana */
+    if (window.ZeniCamera) window.ZeniCamera.open();
   });
 
   domRefs.pinKeys?.forEach((btn) => {
@@ -1037,7 +1040,9 @@ function openSettingsSubscreen(screenId) {
     domRefs.settingsWallpaper,
     domRefs.settingsSystemNav,
     domRefs.settingsPasscode,
-    document.getElementById('settings-lockscreen')
+    document.getElementById('settings-lockscreen'),
+    document.getElementById('settings-wifi'),
+    document.getElementById('settings-bluetooth')
   ].forEach((el) => {
     if (!el) return;
     el.classList.toggle('active', el.id === screenId);
@@ -2436,7 +2441,10 @@ function initControlCenter() {
   $z('cc-theme').addEventListener('click', () => setTheme(currentTheme === 'dark' ? 'light' : 'dark'));
   $z('cc-record').addEventListener('click', () => { const on = toggle('cc-record', 'on-red'); zeniToast(on ? 'Nagrywanie ekranu…' : 'Nagranie zapisane w Galerii'); });
   $z('cc-battery').addEventListener('click', () => zeniToast(`Bateria: ${typeof currentBatteryLevel === 'number' ? currentBatteryLevel : 94}%`));
-  $z('cc-camera').addEventListener('click', () => zeniToast('Aparat — wkrótce'));
+  $z('cc-camera').addEventListener('click', () => {
+    closeControlCenter();
+    if (window.ZeniCamera) window.ZeniCamera.open();
+  });
   const goApp = (id) => { closeControlCenter(); openApp(id); };
   $z('cc-alarm').addEventListener('click', () => goApp('app-clock'));
   $z('cc-calc').addEventListener('click', () => goApp('app-calculator'));
