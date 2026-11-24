@@ -13,16 +13,16 @@
 (function () {
   'use strict';
 
-  const STORE_KEY = 'zenios.lockscreen.v1';
+  const STORE_KEY = 'zenios.lockscreen.v2';
   const HIDE_FRACTION = 0.36;   // jaka część cyfr ma wejść pod pierwszy plan (tryb Auto)
   const COV_OK = 0.45;          // do tego pokrycia cyfr maska jest w pełni widoczna
   const COV_MAX = 0.62;         // powyżej tego pokrycia maska jest całkiem schowana
 
   /* ------------------------------ konfiguracja ------------------------------ */
   const DEFAULTS = {
-    clockStyle: 'slim',      // slim | classic | bold | serif
-    finish: 'metal',         // light | metal | match
-    size: 1,                 // 0.7 – 1.3
+    clockStyle: 'ios',       // ios | classic | bold | serif
+    finish: 'light',         // light | metal | match
+    size: 1.05,              // 0.7 – 1.3
     stretch: 1,              // 0.8 – 1.5 (wysokość cyfr)
     posMode: 'auto',         // auto | manual
     posY: 0.2,               // manual: górna krawędź zegara jako ułamek wysokości ekranu
@@ -32,15 +32,15 @@
   };
 
   const CLOCK_STYLES = {
-    slim:    { name: 'Smukły',      font: '"Helvetica Neue","SF Pro Display","Segoe UI",system-ui,sans-serif', weight: 200, ls: '-0.045em', sx: 0.8,  sy: 1.5 },
-    classic: { name: 'Klasyczny',   font: '"Helvetica Neue","SF Pro Display","Segoe UI",system-ui,sans-serif', weight: 500, ls: '-0.03em',  sx: 0.9,  sy: 1.08 },
-    bold:    { name: 'Pogrubiony',  font: 'ui-rounded,"SF Pro Rounded","Segoe UI",system-ui,sans-serif',       weight: 800, ls: '-0.04em',  sx: 0.88, sy: 1.05 },
-    serif:   { name: 'Elegancki',   font: '"Iowan Old Style","Palatino Linotype",Georgia,serif',               weight: 400, ls: '-0.03em',  sx: 0.95, sy: 1.12 }
+    ios:     { name: 'iOS',         font: '"SF Pro Display","SF Pro Text","Helvetica Neue",-apple-system,"Segoe UI",system-ui,sans-serif', weight: 600, ls: '-0.025em', sx: 0.98, sy: 1 },
+    classic: { name: 'Klasyczny',   font: '"Helvetica Neue","SF Pro Display","Segoe UI",system-ui,sans-serif', weight: 500, ls: '-0.02em',  sx: 0.94, sy: 1.02 },
+    bold:    { name: 'Pogrubiony',  font: 'ui-rounded,"SF Pro Rounded","Segoe UI",system-ui,sans-serif',       weight: 800, ls: '-0.03em',  sx: 0.92, sy: 0.98 },
+    serif:   { name: 'Elegancki',   font: '"Iowan Old Style","Palatino Linotype",Georgia,serif',               weight: 400, ls: '-0.02em',  sx: 0.96, sy: 1.04 }
   };
 
   const FINISHES = {
-    light: { name: 'Jasny',       fill: 'linear-gradient(180deg,#ffffff 0%,rgba(255,255,255,0.8) 100%)' },
-    metal: { name: 'Metaliczny',  fill: 'linear-gradient(165deg,#fff8ec 0%,#e8d4ba 38%,#fffdf8 54%,#d2b48c 100%)' },
+    light: { name: 'Jasny',       fill: 'linear-gradient(180deg,#ffffff 0%,#f4f4f7 100%)' },
+    metal: { name: 'Ciepły',      fill: 'linear-gradient(170deg,#ffffff 0%,#f6ecdd 55%,#e6d3b6 100%)' },
     match: { name: 'Z tapety',    fill: null }   // liczone z palety tapety
   };
 
@@ -249,7 +249,7 @@
   /* refs: { root, img, block, date, clock, canvas }, opts: { dpr } */
   function renderScene(S, cfg, res) {
     const root = S.root;
-    const st = CLOCK_STYLES[cfg.clockStyle] || CLOCK_STYLES.slim;
+    const st = CLOCK_STYLES[cfg.clockStyle] || CLOCK_STYLES.ios;
     const sx = st.sx, sy = st.sy * cfg.stretch;
 
     root.style.setProperty('--lk-font', st.font);
@@ -264,7 +264,7 @@
       const p = res && res.palette;
       fill = p
         ? `linear-gradient(170deg,hsl(${p.h},${p.s}%,90%) 0%,hsl(${p.h},${Math.min(95, p.s + 10)}%,74%) 100%)`
-        : FINISHES.metal.fill;
+        : FINISHES.light.fill;
     }
     root.style.setProperty('--lk-fill', fill);
 
