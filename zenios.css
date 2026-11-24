@@ -3229,3 +3229,506 @@ body.zenios-in-app .app-bottom-tabs {
 .lk-wp-plus { font-size: 30px; font-weight: 300; color: var(--sub, #8e8e93); }
 
 .lk-reset-btn { margin: 14px auto 24px; display: block; padding: 8px 16px; font-size: 13px; }
+
+/* =====================================================================
+   ZeniOS — iOS-owe wykończenie interfejsu
+   Ustawienia: czytelna hierarchia, miękkie karty, hairline separatory
+   ===================================================================== */
+
+.phone-screen {
+  --r-group: 18px;
+  --r-control: 12px;
+  --hairline: rgba(120, 120, 128, 0.32);
+  --seg-thumb: #636366;
+  --press: rgba(120, 120, 128, 0.16);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.phone-screen[data-theme="light"] {
+  --hairline: rgba(60, 60, 67, 0.18);
+  --seg-thumb: #ffffff;
+  --press: rgba(120, 120, 128, 0.1);
+}
+
+#app-settings { background: var(--bg); }
+
+#app-settings .app-header {
+  padding: 38px 16px 10px;
+  background: var(--hdr);
+  border-bottom: none;
+}
+
+#app-settings .app-title {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  line-height: 1.15;
+}
+
+#app-settings .app-title.sub-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+#app-settings .search-field {
+  border: none;
+  border-radius: var(--r-control);
+  padding: 9px 12px;
+  gap: 7px;
+  background: var(--fill);
+  transition: background-color 0.2s ease;
+}
+
+#app-settings .search-field input { font-size: 15px; }
+#app-settings .search-field:focus-within { background: var(--press); }
+
+#app-settings .back-btn {
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+}
+
+#app-settings .app-scroll {
+  gap: 18px;
+  padding: 8px 16px 56px;
+}
+
+#app-settings .app-scroll::-webkit-scrollbar { width: 0; }
+
+#app-settings .settings-group {
+  border: none;
+  border-radius: var(--r-group);
+  background: var(--card);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+}
+
+#app-settings .section-head {
+  padding: 0 4px;
+  margin-bottom: -8px;
+}
+
+#app-settings .section-head h2 {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sub);
+}
+
+/* ---------- wiersze ---------- */
+#app-settings .settings-row {
+  position: relative;
+  gap: 12px;
+  min-height: 50px;
+  padding: 9px 16px;
+  border-bottom: none;
+  transition: background-color 0.18s ease;
+}
+
+#app-settings .settings-row:hover,
+#app-settings .settings-row:active {
+  background: var(--press);
+}
+
+/* separator zaczyna się za ikoną, jak w iOS */
+#app-settings .settings-row:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 58px;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--hairline);
+  transform: scaleY(0.5);
+  transform-origin: bottom;
+  pointer-events: none;
+}
+
+#app-settings .settings-row[style]::after { left: 16px; }
+
+#app-settings .row-badge {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+#app-settings .row-badge svg { width: 17px; height: 17px; }
+
+#app-settings .row-title {
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: -0.1px;
+}
+
+#app-settings .row-value {
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: -0.1px;
+}
+
+#app-settings .chevron {
+  font-size: 19px;
+  font-weight: 400;
+  color: var(--sub);
+  opacity: 0.55;
+  margin-left: -2px;
+}
+
+#app-settings .option-sub {
+  font-size: 12px;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+#app-settings .option-check {
+  color: var(--accent);
+  font-size: 16px;
+}
+
+#app-settings .profile-card {
+  padding: 14px 16px;
+  gap: 14px;
+}
+
+#app-settings .avatar-circle {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(160deg, #a2a2aa, #6f6f77);
+}
+
+#app-settings .profile-meta strong { font-size: 16px; font-weight: 600; }
+#app-settings .profile-meta span { font-size: 12.5px; }
+
+/* ---------- kontrolki ---------- */
+.phone-screen .ios-switch {
+  width: 51px;
+  height: 31px;
+}
+
+.phone-screen .ios-slider {
+  background: var(--switch-off);
+  transition: background-color 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.phone-screen .ios-slider::before {
+  width: 27px;
+  height: 27px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.22), 0 0 1px rgba(0, 0, 0, 0.12);
+  transition: transform 0.3s cubic-bezier(0.32, 1.35, 0.5, 1);
+}
+
+.phone-screen .ios-switch input:checked + .ios-slider { background: #34c759; }
+.phone-screen .ios-switch input:checked + .ios-slider::before { transform: translateX(20px); }
+
+#app-settings .theme-seg {
+  border-radius: 10px;
+  padding: 2px;
+}
+
+#app-settings .theme-seg button {
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 8px;
+  transition: background-color 0.22s ease, color 0.22s ease;
+}
+
+#app-settings .theme-seg button.active {
+  background: var(--seg-thumb);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+}
+
+#app-settings .segmented-bar {
+  border-radius: var(--r-control);
+  padding: 2px;
+}
+
+#app-settings .seg-btn {
+  border-radius: 10px;
+  font-size: 12.5px;
+  padding: 7px 6px;
+}
+
+#app-settings .secret-edit-input {
+  border-radius: var(--r-control);
+  padding: 10px 12px;
+  font-size: 15px;
+  background: var(--fill);
+  border: 1px solid var(--hairline);
+}
+
+#app-settings .mini-save-btn,
+#app-settings .mini-lock-btn {
+  border-radius: 999px;
+  padding: 9px 15px;
+  font-size: 13px;
+}
+
+#app-settings .mini-save-btn { background: var(--accent); }
+#app-settings .mini-lock-btn { background: var(--fill); color: var(--text); }
+
+#app-settings .wallpaper-preview-box {
+  border: none;
+  border-radius: var(--r-group);
+  padding: 12px 14px;
+}
+
+#app-settings .wallpaper-preview-box img { border-radius: 12px; }
+
+#app-settings .wp-choice,
+#app-settings .lk-wp {
+  border-radius: 12px;
+  border-width: 2px;
+  transition: transform 0.16s ease, border-color 0.16s ease;
+}
+
+#app-settings .wp-choice:active,
+#app-settings .lk-wp:active { transform: scale(0.97); }
+
+#app-settings .lk-chip {
+  border-radius: 13px;
+  padding: 10px 2px 8px;
+  transition: transform 0.14s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+#app-settings .lk-chip.active {
+  background: var(--press);
+  border-color: var(--accent);
+}
+
+#app-settings .lk-label { font-size: 14px; font-weight: 500; }
+#app-settings .lk-val { font-size: 12.5px; }
+
+#app-settings .lk-range {
+  height: 28px;
+  accent-color: var(--accent);
+}
+
+#app-settings .lk-reset-btn {
+  border-radius: 999px;
+  padding: 10px 18px;
+}
+
+#app-settings .subscreen.active {
+  animation: zeniSubIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes zeniSubIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* =====================================================================
+   ZeniOS — ekran blokady w stylu iPhone'a
+   ===================================================================== */
+
+.lock-top-block { padding-top: 52px; }
+
+.lock-date {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  color: rgba(255, 255, 255, 0.96);
+  margin-bottom: 3px;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* duża, czysta godzina — bez „cyber” gradientów, jak na iOS */
+.lock-clock {
+  font-size: calc(var(--lk-size, 1) * 26.5cqw);
+  line-height: 1;
+  font-weight: var(--lk-weight, 600);
+  letter-spacing: var(--lk-ls, -0.02em);
+  transform: scale(var(--lk-sx, 0.98), var(--lk-sy, 1));
+  background: var(--lk-fill, linear-gradient(180deg, #ffffff 0%, #f1f1f4 100%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.28));
+}
+
+.lock-circle-btn {
+  width: 50px;
+  height: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(28, 28, 30, 0.42);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+}
+
+.lock-circle-btn svg { width: 22px; height: 22px; }
+
+.lock-circle-btn.torch-on {
+  background: #ffffff;
+  color: #0b0b0d;
+  border-color: transparent;
+}
+
+.lock-bottom-area {
+  padding: 0 28px 8px;
+  gap: 12px;
+}
+
+.lock-swipe-prompt {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  color: rgba(255, 255, 255, 0.6);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+  transition: color 0.2s ease;
+}
+
+.lock-home-bar {
+  width: 134px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+/* panele odblokowania: iOS-owy arkusz bez „szklanej ramki” */
+.unlock-panel {
+  margin: auto 18px;
+  padding: 22px 18px 18px;
+  gap: 14px;
+  border-radius: 28px;
+  background: rgba(28, 28, 30, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(34px) saturate(1.6);
+  -webkit-backdrop-filter: blur(34px) saturate(1.6);
+  box-shadow: 0 24px 60px -22px rgba(0, 0, 0, 0.75);
+  animation: unlockPanelIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes unlockPanelIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.unlock-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  color: #ffffff;
+}
+
+.unlock-error {
+  min-height: 17px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #ff453a;
+  letter-spacing: -0.1px;
+}
+
+.pin-dots {
+  gap: 16px;
+  margin: 2px 0;
+}
+
+.pin-dots span {
+  width: 12px;
+  height: 12px;
+  border-width: 1.5px;
+  border-color: rgba(255, 255, 255, 0.9);
+  transition: background-color 0.18s ease, transform 0.18s ease;
+}
+
+.pin-dots span.filled {
+  background: #ffffff;
+  border-color: #ffffff;
+  transform: scale(1.06);
+}
+
+/* klawiatura PIN jak na iPhonie: okrągłe klawisze */
+.pin-keypad {
+  grid-template-columns: repeat(3, 17cqw);
+  gap: 2.6cqw;
+  margin-top: 2px;
+}
+
+.pin-key {
+  height: 17cqw;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 6.2cqw;
+  font-weight: 400;
+  letter-spacing: 0;
+  transition: background-color 0.18s ease, transform 0.12s ease;
+}
+
+.pin-key:active {
+  background: rgba(255, 255, 255, 0.34);
+  transform: scale(0.95);
+}
+
+.pin-key.pin-action {
+  background: transparent;
+  font-size: 3.4cqw;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.pin-key.pin-action:active { background: rgba(255, 255, 255, 0.14); }
+
+.password-input {
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.password-input::placeholder { color: rgba(255, 255, 255, 0.45); }
+
+.glass-action-btn {
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: transform 0.14s ease, background-color 0.2s ease;
+}
+
+.glass-action-btn:active { transform: scale(0.97); }
+
+.glass-action-btn.primary {
+  background: #0a84ff;
+  border-color: transparent;
+}
+
+.pattern-grid {
+  grid-template-columns: repeat(3, 16cqw);
+  gap: 3.4cqw;
+}
+
+.pattern-node {
+  width: 16cqw;
+  height: 16cqw;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pattern-node span {
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.pattern-node.selected {
+  border-color: #0a84ff;
+  background: rgba(10, 132, 255, 0.24);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #app-settings .subscreen.active,
+  .unlock-panel { animation: none; }
+  .lock-clock,
+  .lock-top-block { transition: none; }
+}
