@@ -325,7 +325,7 @@ function renderWidgets() {
     wrap.appendChild(infoCol);
     wrap.appendChild(editBar);
     wrap.appendChild(caption);
-    wrap.addEventListener('click', () => { if (longPressTriggered || isHomeEditMode) return; if (meta.id === 'calendar') openApp('app-calendar'); });
+    wrap.addEventListener('click', () => { if (longPressTriggered || isHomeEditMode) return; if (meta.id === 'calendar') window.openApp('app-calendar'); });
     grid.appendChild(wrap);
   });
   renderWidgetPicker();
@@ -404,7 +404,7 @@ function renderHomeApps() {
         }
         return;
       }
-      openApp(app.id);
+      window.openApp(app.id);
     });
     grid.appendChild(btn);
   });
@@ -450,7 +450,7 @@ function renderInstalledAppsSearch(query = '') {
     item.appendChild(thumb);
     item.appendChild(name);
     item.appendChild(tag);
-    item.addEventListener('click', () => { closeSearchDrawer(); openApp(app.id); });
+    item.addEventListener('click', () => { closeSearchDrawer(); window.openApp(app.id); });
     list.appendChild(item);
   });
 }
@@ -601,7 +601,7 @@ function updateLockHint() {
 
 function requestUnlockChallenge(targetAppId = null) {
   pendingAppAfterUnlock = targetAppId;
-  if (currentLockMethod === 'swipe') { unlockScreenNow(); if (targetAppId) openApp(targetAppId); return; }
+  if (currentLockMethod === 'swipe') { unlockScreenNow(); if (targetAppId) window.openApp(targetAppId); return; }
   hideAllUnlockPanels();
   resetUnlockInputs();
   if (domRefs.lockBottomArea) domRefs.lockBottomArea.classList.add('dimmed');
@@ -624,7 +624,7 @@ function handlePinDigit(digit) {
     if (enteredPin === pinCode) {
       const nextApp = pendingAppAfterUnlock;
       unlockScreenNow();
-      if (nextApp) openApp(nextApp);
+      if (nextApp) window.openApp(nextApp);
     } else {
       if (domRefs.pinError) domRefs.pinError.textContent = 'Nieprawidłowy PIN';
       setTimeout(() => { enteredPin = ''; updatePinDots(); }, 280);
@@ -637,7 +637,7 @@ function submitPasswordUnlock() {
   if (val === passwordCode) {
     const nextApp = pendingAppAfterUnlock;
     unlockScreenNow();
-    if (nextApp) openApp(nextApp);
+    if (nextApp) window.openApp(nextApp);
   } else if (domRefs.passwordError) { domRefs.passwordError.textContent = 'Nieprawidłowe hasło'; }
 }
 
@@ -656,7 +656,7 @@ function handlePatternNode(nodeEl) {
   if (seq === patternCode) {
     const nextApp = pendingAppAfterUnlock;
     unlockScreenNow();
-    if (nextApp) openApp(nextApp);
+    if (nextApp) window.openApp(nextApp);
   } else if (enteredPattern.length >= 9 || seq.length > patternCode.length) {
     if (domRefs.patternError) domRefs.patternError.textContent = 'Nieprawidłowy wzór';
     setTimeout(clearPatternNodes, 350);
@@ -709,7 +709,6 @@ function bindLockscreenFeatures() {
   domRefs.lockCameraBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     if (window.ZeniCamera) {
-      // Otwiera gotowy aparat z HTML
       window.ZeniCamera.open();
     }
   });
@@ -763,7 +762,7 @@ function bindAppNavigation() {
   domRefs.openAppTriggers.forEach((el) => {
     const targetId = el.getAttribute('data-open-app');
     if (!targetId) return;
-    el.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openApp(targetId); });
+    el.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); window.openApp(targetId); });
   });
   if (domRefs.gestureHandle) {
     domRefs.gestureHandle.addEventListener('pointerdown', (e) => { e.stopPropagation(); gestureStartY = e.clientY; });
@@ -977,7 +976,7 @@ function initSystem() {
 }
 
 /* =====================================================================
-   ZeniOS 2.0 — aplikacje
+   ZeniOS 2.0 — aplikacje (kalkulator, notatki, pliki, kalendarz, zegar)
    ===================================================================== */
 
 const $z = (id) => document.getElementById(id);
@@ -1688,81 +1687,10 @@ function initZeniApps() {
   initControlCenter();
   initNotifications();
   bindLockscreenExtras();
-  initGallery(); // <- DODANO GALERIĘ
-}
-
-function initGallery() {
-  const galleryApp = document.getElementById('app-gallery');
-  if (!galleryApp) return;
-
-  let grid = document.getElementById('gallery-grid');
-  if (!grid) {
-    grid = document.createElement('div');
-    grid.id = 'gallery-grid';
-    grid.className = 'gallery-grid';
-    grid.style.cssText = 'display:grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 0 10px 100px 10px; overflow-y: auto; height: 100%; box-sizing: border-box;';
-    galleryApp.appendChild(grid);
-  }
-
-  window.addEventListener('zeni:gallery-changed', () => {
-    renderGallery();
-  });
-
-  async function renderGallery() {
-    if (!window.ZeniGallery) return;
-    try {
-      const items = await window.ZeniGallery.all();
-      grid.innerHTML = '';
-      
-      const emptyState = galleryApp.querySelector('.empty-state');
-      if (emptyState) {
-        emptyState.style.display = items.length === 0 ? 'flex' : 'none';
-      }
-
-      if (items.length === 0) {
-        return;
-      }
-
-      items.reverse().forEach(item => {
-        if (item.type === 'photo') {
-          const imgWrap = document.createElement('div');
-          imgWrap.style.cssText = 'aspect-ratio: 1; overflow: hidden; background: #222;';
-          
-          const img = document.createElement('img');
-          img.src = URL.createObjectURL(item.blob);
-          img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
-          
-          imgWrap.onclick = () => {
-            const overlay = document.createElement('div');
-            overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; justify-content: center; align-items: center; flex-direction: column;';
-            const bigImg = document.createElement('img');
-            bigImg.src = img.src;
-            bigImg.style.cssText = 'max-width: 95%; max-height: 80%; object-fit: contain; border-radius: 8px;';
-            
-            const closeBtn = document.createElement('button');
-            closeBtn.textContent = 'Zamknij';
-            closeBtn.style.cssText = 'margin-top: 20px; padding: 10px 24px; background: #333; color: white; border: none; border-radius: 20px; font-size: 16px; cursor: pointer;';
-            closeBtn.onclick = () => overlay.remove();
-
-            overlay.appendChild(bigImg);
-            overlay.appendChild(closeBtn);
-            document.body.appendChild(overlay);
-          };
-
-          imgWrap.appendChild(img);
-          grid.appendChild(imgWrap);
-        }
-      });
-    } catch (e) {
-      console.error("Błąd podczas ładowania galerii:", e);
-    }
-  }
-
-  renderGallery();
 }
 
 function initControlCenter() {
-  const cc = $z('control-center');
+  const cc = $z('cc-layer');
   if (!cc) return;
   let startY = null;
   document.getElementById('status-bar-overlay')?.addEventListener('pointerdown', (e) => {
@@ -1772,28 +1700,29 @@ function initControlCenter() {
     if (startY !== null && e.clientY - startY > 30 && e.clientX > window.innerWidth - 60) {
       ccOpen = true;
       cc.classList.add('open');
-      $z('cc-scrim')?.classList.add('open');
     }
     startY = null;
   });
-  $z('cc-scrim')?.addEventListener('click', () => {
+  document.getElementById('cc-backdrop')?.addEventListener('click', () => {
     ccOpen = false;
     cc.classList.remove('open');
-    $z('cc-scrim')?.classList.remove('open');
   });
-  $z('cc-slider')?.addEventListener('input', (e) => {
+  $z('cc-volume')?.addEventListener('input', (e) => {
     sysVolume = e.target.value / 100;
     const fill = $z('cc-vol-fill');
     if(fill) fill.style.width = e.target.value + '%';
   });
   $z('cc-theme')?.addEventListener('click', () => { setTheme(currentTheme === 'dark' ? 'light' : 'dark'); });
   $z('cc-wifi')?.addEventListener('click', function() { this.classList.toggle('on-blue'); });
-  $z('cc-bt')?.addEventListener('click', function() { this.classList.toggle('on-blue'); });
+  $z('cc-bluetooth')?.addEventListener('click', function() { this.classList.toggle('on-blue'); });
   $z('cc-airplane')?.addEventListener('click', function() { this.classList.toggle('on-orange'); });
 }
 
 function initNotifications() {}
 function bindLockscreenExtras() {}
+
+// EKSPORT GLOBALNY
+window.openApp = openApp;
 
 document.addEventListener('DOMContentLoaded', () => {
   initSystem();
