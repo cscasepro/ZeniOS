@@ -253,7 +253,7 @@
 
     start(); refreshThumb();
     
-    // Tworzymy API i zapisujemy referencję
+    // Tworzymy API i zapisujekmy referencję
     const api = { 
       close() { 
         stop(); 
