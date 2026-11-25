@@ -2180,4 +2180,171 @@ function initClock() {
     refreshDraftUi();
     sheet.classList.add('open');
     scrim.classList.add('open');
-    setTimeout(() => { setWheel(alarmWheels[0], draft.h); setWheel(alarmWheels[1
+    setTimeout(() => { setWheel(alarmWheels[0], draft.h); setWheel(alarmWheels[1], draft.m); }, 50);
+  };
+  
+  /* reszta kodu zegara (stoper, minutnik itp.) - dokończenie funkcji */
+  const saveAlarm = () => {
+    draft.h = getWheel(alarmWheels[0]);
+    draft.m = getWheel(alarmWheels[1]);
+    draft.label = $z('alarm-label-input').value.trim() || 'Alarm';
+    draft.snooze = $z('alarm-snooze-input').checked;
+    if (editId) {
+      const i = alarms.findIndex((a) => a.id === editId);
+      if (i >= 0) alarms[i] = { ...draft, id: editId };
+    } else {
+      alarms.push({ ...draft, id: nextAlarmId++ });
+    }
+    closeAlarmSheet();
+    renderAlarms();
+  };
+
+  $z('alarm-save-btn').addEventListener('click', saveAlarm);
+  $z('alarm-cancel-btn').addEventListener('click', closeAlarmSheet);
+  scrim.addEventListener('click', closeAlarmSheet);
+  
+  $z('alarm-repeat-val').parentElement.addEventListener('click', () => {
+    const i = REPEATS.indexOf(draft.repeat);
+    draft.repeat = REPEATS[(i + 1) % REPEATS.length];
+    refreshDraftUi();
+  });
+  $z('alarm-sound-val').parentElement.addEventListener('click', () => {
+    const i = SOUNDS.indexOf(draft.sound);
+    draft.sound = SOUNDS[(i + 1) % SOUNDS.length];
+    refreshDraftUi();
+  });
+
+  /* Minutnik */
+  let timerRunning = false;
+  let timerEnd = 0;
+  let timerRemain = 0;
+  let timerInt = null;
+  
+  const updateTimerUi = () => {
+    const ms = timerRunning ? Math.max(0, timerEnd - Date.now()) : timerRemain;
+    const totalSec = Math.ceil(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    const el = $z('timer-display');
+    if (el) el.textContent = `${h > 0 ? pad2(h) + ':' : ''}${pad2(m)}:${pad2(s)}`;
+  };
+  
+  const startTimer = () => {
+    if (timerRunning) {
+      timerRunning = false;
+      timerRemain = Math.max(0, timerEnd - Date.now());
+      clearInterval(timerInt);
+      $z('timer-start-btn').textContent = 'Wznów';
+    } else {
+      const h = getWheel(timerWheels[0]);
+      const m = getWheel(timerWheels[1]);
+      const s = getWheel(timerWheels[2]);
+      let ms = (h * 3600 + m * 60 + s) * 1000;
+      if (timerRemain > 0) ms = timerRemain;
+      if (ms <= 0) return;
+      timerRunning = true;
+      timerEnd = Date.now() + ms;
+      timerRemain = 0;
+      $z('timer-start-btn').textContent = 'Wstrzymaj';
+      timerInt = setInterval(() => {
+        updateTimerUi();
+        if (Date.now() >= timerEnd) {
+          clearInterval(timerInt);
+          timerRunning = false;
+          timerRemain = 0;
+          $z('timer-start-btn').textContent = 'Start';
+          zeniToast('Minutnik zakończony');
+        }
+      }, 200);
+    }
+    updateTimerUi();
+  };
+  
+  $z('timer-start-btn').addEventListener('click', startTimer);
+  $z('timer-cancel-btn').addEventListener('click', () => {
+    clearInterval(timerInt);
+    timerRunning = false;
+    timerRemain = 0;
+    $z('timer-start-btn').textContent = 'Start';
+    updateTimerUi();
+  });
+
+  renderAlarms();
+  updateTimerUi();
+}
+
+/* ---------------- INICJALIZACJA ZENI APPS ---------------- */
+function initZeniApps() {
+  bindTheme();
+  initCalculator();
+  initNotes();
+  initFiles();
+  initCalendar();
+  initClock();
+  initControlCenter();
+  initNotifications();
+  bindLockscreenExtras();
+}
+
+/* ---------------- CENTRUM STEROWANIA ---------------- */
+function initControlCenter() {
+  const cc = $z('control-center');
+  if (!cc) return;
+  let startY = null;
+  
+  document.getElementById('status-bar-overlay')?.addEventListener('pointerdown', (e) => {
+    if (e.clientX > window.innerWidth - 60) {
+      startY = e.clientY;
+    }
+  });
+  
+  document.getElementById('status-bar-overlay')?.addEventListener('pointerup', (e) => {
+    if (startY !== null && e.clientY - startY > 30 && e.clientX > window.innerWidth - 60) {
+      ccOpen = true;
+      cc.classList.add('open');
+      $z('cc-scrim').classList.add('open');
+    }
+    startY = null;
+  });
+
+  $z('cc-scrim')?.addEventListener('click', () => {
+    ccOpen = false;
+    cc.classList.remove('open');
+    $z('cc-scrim').classList.remove('open');
+  });
+
+  $z('cc-slider')?.addEventListener('input', (e) => {
+    sysVolume = e.target.value / 100;
+    $z('cc-vol-fill').style.width = e.target.value + '%';
+  });
+  
+  $z('cc-theme')?.addEventListener('click', () => {
+    setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+  });
+  
+  $z('cc-wifi')?.addEventListener('click', function() {
+    this.classList.toggle('on-blue');
+  });
+  $z('cc-bt')?.addEventListener('click', function() {
+    this.classList.toggle('on-blue');
+  });
+  $z('cc-airplane')?.addEventListener('click', function() {
+    this.classList.toggle('on-orange');
+  });
+}
+
+/* ---------------- POWIADOMIENIA ---------------- */
+function initNotifications() {
+  // Prosta implementacja - można rozbudować
+}
+
+/* ---------------- EKSTRY EKRANU BLOKADY ---------------- */
+function bindLockscreenExtras() {
+  // Obsługa dodatkowych elementów ekranu blokady
+}
+
+// Uruchomienie systemu
+document.addEventListener('DOMContentLoaded', () => {
+  initSystem();
+});
