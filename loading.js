@@ -53,6 +53,7 @@ const AVAILABLE_WIDGETS = [
   }
 ];
 
+/* Wspólny stan muzyki (widżet + Centrum sterowania) */
 const zenMusic = { playing: false, title: 'Chromatica', artist: 'Lady Gaga' };
 let zenTodayEvents = () => [];
 
@@ -97,6 +98,7 @@ let activeWidgets = [
   { id: 'calendar', wide: false }
 ];
 
+/* Stan kalkulatora */
 let calcExpression = '0';
 let calcResetNext = false;
 
@@ -125,6 +127,7 @@ function updateClock() {
   if (domRefs.calendarAppDate) domRefs.calendarAppDate.textContent = dateText;
 }
 
+/* Wskaźnik baterii w stylu iOS. */
 function setBatteryLevel(percent, opts) {
   const clamped = Math.max(0, Math.min(100, Math.round(Number(percent)) || 0));
   currentBatteryLevel = clamped;
@@ -2082,6 +2085,7 @@ function initClock() {
   let activeTab = 'alarms';
 
   const buildWheel = (container, specs) => {
+    if (!container) return [];
     container.innerHTML = '';
     return specs.map(([count, unit]) => {
       const col = document.createElement('div');
@@ -2095,8 +2099,8 @@ function initClock() {
       return col;
     });
   };
-  const setWheel = (col, v) => { col.scrollTop = v * ROW; };
-  const getWheel = (col) => Math.max(0, Math.min(col.children.length - 1, Math.round(col.scrollTop / ROW)));
+  const setWheel = (col, v) => { if(col) col.scrollTop = v * ROW; };
+  const getWheel = (col) => col ? Math.max(0, Math.min(col.children.length - 1, Math.round(col.scrollTop / ROW))) : 0;
 
   const alarmWheels = buildWheel($z('alarm-wheels'), [[24], [60]]);
   const timerWheels = buildWheel($z('timer-wheels'), [[24, 'godz.'], [60, 'min'], [60, 's']]);
@@ -2114,9 +2118,11 @@ function initClock() {
 
   const zones = [['Warszawa', 'Europe/Warsaw'], ['Londyn', 'Europe/London'], ['Nowy Jork', 'America/New_York'], ['Los Angeles', 'America/Los_Angeles'], ['Tokio', 'Asia/Tokyo'], ['Sydney', 'Australia/Sydney']];
   const renderWorld = () => {
+    const el = $z('world-list');
+    if (!el) return;
     const now = new Date();
     const local = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' }));
-    $z('world-list').innerHTML = zones.map(([name, tz]) => {
+    el.innerHTML = zones.map(([name, tz]) => {
       const zd = new Date(now.toLocaleString('en-US', { timeZone: tz }));
       const diff = Math.round((zd - local) / 1800000) / 2;
       const dayDiff = zd.getDate() === local.getDate() ? 0 : zd > local ? 1 : -1;
@@ -2128,6 +2134,7 @@ function initClock() {
   const repeatLabel = (a) => (a.repeat === 'Nigdy' ? '' : `, ${a.repeat}`);
   const renderAlarms = () => {
     const el = $z('alarm-list');
+    if (!el) return;
     const sorted = [...alarms].sort((x, y) => x.h * 60 + x.m - (y.h * 60 + y.m));
     el.innerHTML = sorted.length ? '' : '<div class="clock-empty">Brak alarmów</div>';
     sorted.forEach((a) => {
@@ -2141,32 +2148,47 @@ function initClock() {
       el.appendChild(row);
     });
   };
+  
   const sheet = $z('alarm-sheet');
   const scrim = $z('alarm-scrim');
-  const closeAlarmSheet = () => { sheet.classList.remove('open'); scrim.classList.remove('open'); };
+  const closeAlarmSheet = () => { if(sheet) sheet.classList.remove('open'); if(scrim) scrim.classList.remove('open'); };
   const refreshDraftUi = () => {
-    $z('alarm-repeat-val').textContent = `${draft.repeat} ›`;
-    $z('alarm-sound-val').textContent = `${draft.sound} ›`;
+    if (!draft) return;
+    const rEl = $z('alarm-repeat-val');
+    const sEl = $z('alarm-sound-val');
+    if(rEl) rEl.textContent = `${draft.repeat} ›`;
+    if(sEl) sEl.textContent = `${draft.sound} ›`;
   };
+  
   const openAlarmSheet = (id) => {
     editId = id;
     const src = id ? alarms.find((a) => a.id === id) : null;
     const nowD = new Date();
     draft = src ? { ...src } : { h: nowD.getHours(), m: nowD.getMinutes(), label: 'Alarm', on: true, repeat: 'dni robocze', sound: 'Kręgi', snooze: true };
-    $z('alarm-sheet-title').textContent = id ? 'Edytuj alarm' : 'Dodaj alarm';
-    $z('alarm-label-input').value = draft.label === 'Alarm' ? '' : draft.label;
-    $z('alarm-snooze-input').checked = draft.snooze;
+    
+    const titleEl = $z('alarm-sheet-title');
+    if(titleEl) titleEl.textContent = id ? 'Edytuj alarm' : 'Dodaj alarm';
+    const labelInput = $z('alarm-label-input');
+    if(labelInput) labelInput.value = draft.label === 'Alarm' ? '' : draft.label;
+    const snoozeInput = $z('alarm-snooze-input');
+    if(snoozeInput) snoozeInput.checked = draft.snooze;
+    
     refreshDraftUi();
-    sheet.classList.add('open');
-    scrim.classList.add('open');
+    if(sheet) sheet.classList.add('open');
+    if(scrim) scrim.classList.add('open');
+    
     setTimeout(() => { setWheel(alarmWheels[0], draft.h); setWheel(alarmWheels[1], draft.m); }, 50);
   };
   
   const saveAlarm = () => {
+    if (!draft) return;
     draft.h = getWheel(alarmWheels[0]);
     draft.m = getWheel(alarmWheels[1]);
-    draft.label = $z('alarm-label-input').value.trim() || 'Alarm';
-    draft.snooze = $z('alarm-snooze-input').checked;
+    const labelInput = $z('alarm-label-input');
+    draft.label = labelInput ? (labelInput.value.trim() || 'Alarm') : 'Alarm';
+    const snoozeInput = $z('alarm-snooze-input');
+    draft.snooze = snoozeInput ? snoozeInput.checked : false;
+    
     if (editId) {
       const i = alarms.findIndex((a) => a.id === editId);
       if (i >= 0) alarms[i] = { ...draft, id: editId };
@@ -2177,16 +2199,18 @@ function initClock() {
     renderAlarms();
   };
 
-  $z('alarm-save-btn').addEventListener('click', saveAlarm);
-  $z('alarm-cancel-btn').addEventListener('click', closeAlarmSheet);
-  scrim.addEventListener('click', closeAlarmSheet);
+  $z('alarm-save-btn')?.addEventListener('click', saveAlarm);
+  $z('alarm-cancel-btn')?.addEventListener('click', closeAlarmSheet);
+  scrim?.addEventListener('click', closeAlarmSheet);
   
-  $z('alarm-repeat-val').parentElement.addEventListener('click', () => {
+  $z('alarm-repeat-val')?.parentElement?.addEventListener('click', () => {
+    if(!draft) return;
     const i = REPEATS.indexOf(draft.repeat);
     draft.repeat = REPEATS[(i + 1) % REPEATS.length];
     refreshDraftUi();
   });
-  $z('alarm-sound-val').parentElement.addEventListener('click', () => {
+  $z('alarm-sound-val')?.parentElement?.addEventListener('click', () => {
+    if(!draft) return;
     const i = SOUNDS.indexOf(draft.sound);
     draft.sound = SOUNDS[(i + 1) % SOUNDS.length];
     refreshDraftUi();
@@ -2212,7 +2236,8 @@ function initClock() {
       timerRunning = false;
       timerRemain = Math.max(0, timerEnd - Date.now());
       clearInterval(timerInt);
-      $z('timer-start-btn').textContent = 'Wznów';
+      const btn = $z('timer-start-btn');
+      if(btn) btn.textContent = 'Wznów';
     } else {
       const h = getWheel(timerWheels[0]);
       const m = getWheel(timerWheels[1]);
@@ -2223,14 +2248,17 @@ function initClock() {
       timerRunning = true;
       timerEnd = Date.now() + ms;
       timerRemain = 0;
-      $z('timer-start-btn').textContent = 'Wstrzymaj';
+      const btn = $z('timer-start-btn');
+      if(btn) btn.textContent = 'Wstrzymaj';
+      
       timerInt = setInterval(() => {
         updateTimerUi();
         if (Date.now() >= timerEnd) {
           clearInterval(timerInt);
           timerRunning = false;
           timerRemain = 0;
-          $z('timer-start-btn').textContent = 'Start';
+          const b = $z('timer-start-btn');
+          if(b) b.textContent = 'Start';
           zeniToast('Minutnik zakończony');
         }
       }, 200);
@@ -2238,12 +2266,13 @@ function initClock() {
     updateTimerUi();
   };
   
-  $z('timer-start-btn').addEventListener('click', startTimer);
-  $z('timer-cancel-btn').addEventListener('click', () => {
+  $z('timer-start-btn')?.addEventListener('click', startTimer);
+  $z('timer-cancel-btn')?.addEventListener('click', () => {
     clearInterval(timerInt);
     timerRunning = false;
     timerRemain = 0;
-    $z('timer-start-btn').textContent = 'Start';
+    const btn = $z('timer-start-btn');
+    if(btn) btn.textContent = 'Start';
     updateTimerUi();
   });
 
@@ -2280,7 +2309,7 @@ function initControlCenter() {
     if (startY !== null && e.clientY - startY > 30 && e.clientX > window.innerWidth - 60) {
       ccOpen = true;
       cc.classList.add('open');
-      $z('cc-scrim').classList.add('open');
+      $z('cc-scrim')?.classList.add('open');
     }
     startY = null;
   });
@@ -2288,12 +2317,13 @@ function initControlCenter() {
   $z('cc-scrim')?.addEventListener('click', () => {
     ccOpen = false;
     cc.classList.remove('open');
-    $z('cc-scrim').classList.remove('open');
+    $z('cc-scrim')?.classList.remove('open');
   });
 
   $z('cc-slider')?.addEventListener('input', (e) => {
     sysVolume = e.target.value / 100;
-    $z('cc-vol-fill').style.width = e.target.value + '%';
+    const fill = $z('cc-vol-fill');
+    if(fill) fill.style.width = e.target.value + '%';
   });
   
   $z('cc-theme')?.addEventListener('click', () => {
