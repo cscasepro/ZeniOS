@@ -1,437 +1,249 @@
-/* =====================================================================
-   ZeniOS — Aparat (window.ZeniCamera)
-   ---------------------------------------------------------------------
-   • pełnoekranowy podgląd z kamery (getUserMedia), działa też z ekranu
-     blokady — bez odblokowywania telefonu
-   • tryby: Zdjęcie / Portret / Panorama
-   • obróbka zdjęcia: łagodna redukcja szumów (dwustopniowe przeskalowanie),
-     cieplejsza kolorystyka w stylu iPhone'a, delikatna winieta,
-     rozmyte tło w trybie Portret
-   • zoom 1×/2×, siatka, lampa błyskowa, przełączenie kamery
-   • zdjęcia zapisywane lokalnie (localStorage), podgląd w „Ostatnie”
-   Ładować PO loading.js (nie zależy od niego).
-   ===================================================================== */
-(function () {
+/* zeni-camera.js – aplikacja Aparat w stylu iPhone'a dla ZeniOS
+ * Wymaga: zeni-photo-engine.js (captureProPhoto) załadowanego wcześniej.
+ * Użycie:  const cam = ZeniCamera.open(containerElement);  ...  cam.close();
+ * Galeria: ZeniGallery.all() zwraca [{id, type, blob, date}], zdarzenie 'zeni:gallery-changed'.
+ */
+(function (global) {
   'use strict';
 
-  const STORE_KEY = 'zenios.camera.photos.v1';
-  const MAX_PHOTOS = 10;
-
-  const $ = (id) => document.getElementById(id);
-
-  const state = {
-    open: false,
-    ready: false,
-    facing: 'environment',
-    mode: 'photo',
-    flash: 'auto',
-    zoom: 1,
-    grid: false,
-    stream: null,
-    photos: []
-  };
-  const els = {};
-
-  /* --------------------------------- dane --------------------------------- */
-  function readPhotos() {
-    try {
-      const raw = localStorage.getItem(STORE_KEY);
-      const list = raw ? JSON.parse(raw) : [];
-      return Array.isArray(list) ? list.filter((x) => typeof x === 'string') : [];
-    } catch (e) { return []; }
-  }
-
-  function writePhotos() {
-    const put = (list) => {
-      try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); return true; }
-      catch (e) { return false; }
-    };
-    if (put(state.photos)) return;
-    state.photos = state.photos.slice(0, 4);   // brak miejsca — zostaw najnowsze
-    put(state.photos);
-  }
-
-  /* ------------------------------- podgląd -------------------------------- */
-  function stopStream() {
-    if (state.stream) {
-      state.stream.getTracks().forEach((t) => t.stop());
-      state.stream = null;
-    }
-    state.ready = false;
-    if (els.video) {
-      els.video.srcObject = null;
-      els.video.classList.remove('ready');
-    }
-  }
-
-  function setStatus(text) {
-    if (!els.status) return;
-    els.status.textContent = text || '';
-    els.status.classList.toggle('visible', Boolean(text));
-  }
-
-  async function startStream() {
-    stopStream();
-    setStatus('');
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      useFallback('Podgląd demo — przeglądarka nie udostępnia kamery');
-      return;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: state.facing,
-          width: { ideal: 1920 },
-          height: { ideal: 1440 }
-        }
+  /* ---------- Galeria (IndexedDB, wspólna dla Aparatu i aplikacji Zdjęcia) ---------- */
+  const ZeniGallery = {
+    _open() {
+      return new Promise((res, rej) => {
+        const rq = indexedDB.open('ZeniGallery', 1);
+        rq.onupgradeneeded = () => rq.result.createObjectStore('items', { keyPath: 'id', autoIncrement: true });
+        rq.onsuccess = () => res(rq.result);
+        rq.onerror = () => rej(rq.error);
       });
-      state.stream = stream;
-      state.ready = true;
-      els.video.srcObject = stream;
-      els.scene.classList.add('hidden');
-      els.video.classList.toggle('mirror', state.facing === 'user');
-      await els.video.play().catch(() => {});
-      els.video.classList.add('ready');
-      applyTorch();
-    } catch (err) {
-      useFallback('Podgląd demo — brak dostępu do kamery');
+    },
+    async _tx(mode, fn) {
+      const db = await this._open();
+      return new Promise((res, rej) => {
+        const tx = db.transaction('items', mode);
+        const rq = fn(tx.objectStore('items'));
+        tx.oncomplete = () => res(rq && rq.result);
+        tx.onerror = () => rej(tx.error);
+      });
+    },
+    async add(blob, type = 'photo') {
+      const id = await this._tx('readwrite', s => s.add({ type, blob, date: Date.now() }));
+      window.dispatchEvent(new CustomEvent('zeni:gallery-changed', { detail: { id, type } }));
+      return id;
+    },
+    all() { return this._tx('readonly', s => s.getAll()); },
+    remove(id) {
+      return this._tx('readwrite', s => s.delete(id)).then(() =>
+        window.dispatchEvent(new CustomEvent('zeni:gallery-changed', { detail: { id } })));
     }
-  }
+  };
 
-  function useFallback(message) {
-    stopStream();
-    if (els.scene) els.scene.classList.remove('hidden');
-    setStatus(message);
-  }
+  /* ---------- Style ---------- */
+  const CSS = `
+  .zc{position:relative;width:100%;height:100%;background:#000;color:#fff;font-family:-apple-system,"SF Pro Text",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden;user-select:none}
+  .zc button{background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:0}
+  .zc-top{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;flex:none}
+  .zc-ic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center}
+  .zc-ic.on{background:#ffd60a;color:#000}
+  .zc-chev{width:38px;height:30px;border-radius:15px;background:rgba(120,120,128,.36);display:grid;place-items:center}
+  .zc-view{position:relative;flex:1;min-height:0;overflow:hidden;background:#111}
+  .zc-view video{width:100%;height:100%;object-fit:cover;display:block}
+  .zc-view video.mirror{transform:scaleX(-1)}
+  .zc-grid{position:absolute;inset:0;pointer-events:none;display:none;
+    background:linear-gradient(#fff6,#fff6) 33.3% 0/1px 100% no-repeat,linear-gradient(#fff6,#fff6) 66.6% 0/1px 100% no-repeat,
+    linear-gradient(#fff6,#fff6) 0 33.3%/100% 1px no-repeat,linear-gradient(#fff6,#fff6) 0 66.6%/100% 1px no-repeat}
+  .zc-grid.on{display:block}
+  .zc-lock{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:#ffd60a;color:#000;font-size:13px;font-weight:600;padding:3px 10px;border-radius:4px;display:none}
+  .zc-focus{position:absolute;width:76px;height:76px;border:1.5px solid #ffd60a;display:none;transform:translate(-50%,-50%);pointer-events:none}
+  .zc-focus::after{content:"☀";position:absolute;right:-22px;top:50%;transform:translateY(-50%);color:#ffd60a;font-size:15px}
+  .zc-zoom{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;background:rgba(0,0,0,.35);padding:4px;border-radius:24px}
+  .zc-zoom button{min-width:30px;height:30px;border-radius:15px;font-size:12px;font-weight:600}
+  .zc-zoom button.on{background:rgba(0,0,0,.6);color:#ffd60a;min-width:38px}
+  .zc-modes{height:44px;display:flex;justify-content:center;gap:26px;align-items:center;flex:none;font-size:13px;font-weight:600;letter-spacing:.4px}
+  .zc-modes button{color:#fff;opacity:.9}.zc-modes button.on{color:#ffd60a}
+  .zc-bar{height:104px;display:flex;align-items:center;justify-content:space-around;flex:none}
+  .zc-thumb{width:50px;height:50px;border-radius:8px;background:#222 center/cover;border:1px solid #444}
+  .zc-shutter{width:76px;height:76px;border-radius:50%;border:4px solid #fff;display:grid;place-items:center;position:relative}
+  .zc-shutter i{width:62px;height:62px;border-radius:50%;background:#fff;transition:transform .08s,background .2s,border-radius .2s}
+  .zc-shutter:active i{transform:scale(.9)}
+  .zc-shutter.rec i{background:#ff3b30;width:32px;height:32px;border-radius:7px}
+  .zc-shutter.busy i{background:#bbb;animation:zcp 1s infinite}
+  @keyframes zcp{50%{opacity:.45}}
+  .zc-flip{width:50px;height:50px;border-radius:50%;background:rgba(120,120,128,.36);display:grid;place-items:center}
+  .zc-flash{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
+  .zc-flash.go{animation:zcf .22s}
+  @keyframes zcf{0%{opacity:.9}100%{opacity:0}}
+  .zc-count{position:absolute;inset:0;display:none;place-items:center;font-size:96px;font-weight:200;text-shadow:0 2px 12px #000a;pointer-events:none}
+  .zc-prog{position:absolute;left:0;bottom:0;height:3px;width:0;background:#ffd60a}
+  .zc-menu{position:absolute;left:12px;right:12px;top:60px;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);border-radius:16px;padding:6px 0;display:none;z-index:5}
+  .zc-menu.open{display:block}
+  .zc-row{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;font-size:15px;border-bottom:1px solid #fff1}
+  .zc-row:last-child{border:0}.zc-row small{opacity:.6;display:block;font-size:12px}
+  .zc-sw{width:46px;height:28px;border-radius:14px;background:#555;position:relative;transition:.2s}
+  .zc-sw::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s}
+  .zc-sw.on{background:#30d158}.zc-sw.on::after{left:20px}
+  .zc-seg button{padding:4px 10px;border-radius:12px;font-size:13px}.zc-seg button.on{background:#ffd60a;color:#000}
+  .zc-err{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:30px;font-size:15px;background:#000}
+  `;
 
-  function applyTorch() {
-    if (!state.stream) return;
-    const track = state.stream.getVideoTracks()[0];
-    if (!track || !track.applyConstraints) return;
-    const on = state.flash === 'on';
-    track.applyConstraints({ advanced: [{ torch: on }] }).catch(() => {});
-  }
+  const ICON = {
+    bolt: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>',
+    chev: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>',
+    live: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7" stroke-dasharray="2 2.5"/><path d="M4 4l16 16"/></svg>',
+    flip: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14-4L4 9"/><path d="M4 4v5h5"/><path d="M4 13a8 8 0 0 0 14 4l2-2"/><path d="M20 20v-5h-5"/></svg>'
+  };
 
-  /* ------------------------------ obróbka zdjęcia ------------------------------ */
-  function captureStill() {
-    const video = els.video;
-    const live = state.ready && video.videoWidth > 0;
-    const vw = live ? video.videoWidth : 1080;
-    const vh = live ? video.videoHeight : 1920;
+  function open(container) {
+    if (!document.getElementById('zc-style')) {
+      const st = document.createElement('style'); st.id = 'zc-style'; st.textContent = CSS; document.head.appendChild(st);
+    }
+    const root = document.createElement('div');
+    root.className = 'zc';
+    root.innerHTML = `
+      <div class="zc-top">
+        <button class="zc-ic" data-a="torch">${ICON.bolt}</button>
+        <button class="zc-chev" data-a="menu">${ICON.chev}</button>
+        <button class="zc-ic" disabled style="opacity:.6">${ICON.live}</button>
+      </div>
+      <div class="zc-menu">
+        <div class="zc-row" data-a="pro"><div>Tryb Pro<small>Smart HDR + Deep Fusion (10 klatek)</small></div><div class="zc-sw on"></div></div>
+        <div class="zc-row" data-a="grid"><div>Siatka</div><div class="zc-sw"></div></div>
+        <div class="zc-row"><div>Samowyzwalacz</div><div class="zc-seg"><button data-t="0" class="on">Wył.</button><button data-t="3">3 s</button><button data-t="10">10 s</button></div></div>
+      </div>
+      <div class="zc-view">
+        <video playsinline muted autoplay></video>
+        <div class="zc-grid"></div><div class="zc-lock">BLOKADA AE/AF</div><div class="zc-focus"></div>
+        <div class="zc-count"></div><div class="zc-flash"></div><div class="zc-prog"></div>
+        <div class="zc-zoom"><button data-z="0.5" style="display:none">0,5</button><button data-z="1" class="on">1×</button></div>
+        <div class="zc-err"></div>
+      </div>
+      <div class="zc-modes"><button data-m="video">WIDEO</button><button data-m="photo" class="on">ZDJĘCIE</button></div>
+      <div class="zc-bar">
+        <button class="zc-thumb" data-a="gallery"></button>
+        <button class="zc-shutter" data-a="shutter"><i></i></button>
+        <button class="zc-flip" data-a="flip">${ICON.flip}</button>
+      </div>`;
+    container.appendChild(root);
 
-    /* kadr zgodny z podglądem (object-fit: cover) + zoom */
-    const boxW = els.layer.clientWidth || 390;
-    const boxH = els.layer.clientHeight || 844;
-    const boxRatio = boxW / boxH;
-    const videoRatio = vw / vh;
-    let cw = vw, ch = vh;
-    if (videoRatio > boxRatio) cw = vh * boxRatio;
-    else ch = vw / boxRatio;
-    cw /= state.zoom;
-    ch /= state.zoom;
-    const cx = (vw - cw) / 2;
-    const cy = (vh - ch) / 2;
+    const $ = s => root.querySelector(s);
+    const video = $('video'), view = $('.zc-view'), shutter = $('.zc-shutter');
+    const state = { facing: 'environment', mode: 'photo', pro: true, timer: 0, torch: false, busy: false, stream: null, rec: null };
 
-    const pano = state.mode === 'pano';
-    const outW = pano ? 2400 : 1170;
-    const outH = pano ? 800 : Math.round(outW * (ch / cw));
-
-    /* 1. redukcja szumów: render w połowie rozdzielczości (wygładzanie)
-          i ponowne powiększenie z wysoką jakością interpolacji */
-    const soft = document.createElement('canvas');
-    soft.width = Math.max(2, Math.round(outW / 2));
-    soft.height = Math.max(2, Math.round(outH / 2));
-    const sctx = soft.getContext('2d');
-    sctx.imageSmoothingEnabled = true;
-    sctx.imageSmoothingQuality = 'high';
-
-    if (live) {
-      if (pano) {
-        const bandH = ch * 0.34;
-        sctx.drawImage(video, cx, cy + (ch - bandH) / 2, cw, bandH, 0, 0, soft.width, soft.height);
-      } else {
-        sctx.drawImage(video, cx, cy, cw, ch, 0, 0, soft.width, soft.height);
+    /* --- strumień kamery --- */
+    async function start() {
+      stop();
+      try {
+        state.stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: state.facing, width: { ideal: 3840 }, height: { ideal: 2160 } }, audio: false });
+        video.srcObject = state.stream;
+        video.classList.toggle('mirror', state.facing === 'user');
+        await video.play();
+        const t = state.stream.getVideoTracks()[0], caps = t.getCapabilities ? t.getCapabilities() : {};
+        $('[data-z="0.5"]').style.display = caps.zoom && caps.zoom.min <= 0.5 ? '' : 'none';
+        $('[data-a="torch"]').style.visibility = caps.torch ? 'visible' : 'hidden';
+        $('.zc-err').style.display = 'none';
+      } catch (e) {
+        const er = $('.zc-err'); er.style.display = 'grid';
+        er.textContent = 'Brak dostępu do kamery. Zezwól na aparat w przeglądarce (wymagane HTTPS lub localhost).';
       }
-    } else {
-      paintDemoScene(sctx, soft.width, soft.height);
+    }
+    function stop() { if (state.stream) state.stream.getTracks().forEach(t => t.stop()); state.stream = null; }
+
+    /* --- miniatura = ostatnie zdjęcie z galerii --- */
+    let thumbURL;
+    async function refreshThumb() {
+      try {
+        const items = await ZeniGallery.all(); const last = items[items.length - 1];
+        if (thumbURL) URL.revokeObjectURL(thumbURL);
+        if (last && last.type === 'photo') { thumbURL = URL.createObjectURL(last.blob); $('.zc-thumb').style.backgroundImage = `url(${thumbURL})`; }
+      } catch (_) {}
     }
 
-    /* 2. wyostrzenie po wygładzeniu + kolorystyka */
-    const out = document.createElement('canvas');
-    out.width = outW;
-    out.height = outH;
-    const ctx = out.getContext('2d');
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.filter = 'contrast(1.07) saturate(1.15) brightness(1.02)';
-    ctx.drawImage(soft, 0, 0, outW, outH);
-    ctx.filter = 'none';
-
-    /* ciepły akcent i lekkie podbicie świateł */
-    ctx.globalCompositeOperation = 'soft-light';
-    ctx.fillStyle = 'rgba(255, 178, 112, 0.10)';
-    ctx.fillRect(0, 0, outW, outH);
-    ctx.globalCompositeOperation = 'source-over';
-
-    /* winieta */
-    const vg = ctx.createRadialGradient(
-      outW / 2, outH / 2, Math.min(outW, outH) * 0.28,
-      outW / 2, outH / 2, Math.max(outW, outH) * 0.72
-    );
-    vg.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    vg.addColorStop(1, 'rgba(0, 0, 0, 0.26)');
-    ctx.fillStyle = vg;
-    ctx.fillRect(0, 0, outW, outH);
-
-    /* Portret: miękkie, rozmyte tło poza owalem twarzy */
-    if (state.mode === 'portrait') {
-      const blur = document.createElement('canvas');
-      blur.width = outW;
-      blur.height = outH;
-      const bctx = blur.getContext('2d');
-      bctx.filter = 'blur(24px) brightness(0.97) saturate(1.05)';
-      bctx.drawImage(soft, -60, -60, outW + 120, outH + 120);
-      bctx.filter = 'none';
-      bctx.globalCompositeOperation = 'destination-in';
-      const mask = bctx.createRadialGradient(
-        outW / 2, outH * 0.5, Math.min(outW, outH) * 0.3,
-        outW / 2, outH * 0.5, Math.min(outW, outH) * 0.68
-      );
-      mask.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      mask.addColorStop(0.6, 'rgba(0, 0, 0, 0.5)');
-      mask.addColorStop(1, '#000');
-      bctx.fillStyle = mask;
-      bctx.fillRect(0, 0, outW, outH);
-      ctx.drawImage(blur, 0, 0);
+    /* --- robienie zdjęcia --- */
+    async function takePhoto() {
+      if (state.busy || !video.videoWidth) return;
+      state.busy = true; shutter.classList.add('busy');
+      try {
+        if (state.timer) await countdown(state.timer);
+        $('.zc-flash').classList.remove('go'); void $('.zc-flash').offsetWidth; $('.zc-flash').classList.add('go');
+        let blob;
+        if (state.pro && typeof global.captureProPhoto === 'function') {
+          blob = await global.captureProPhoto(video, { frames: 10, quality: 0.95,
+            onProgress: p => { $('.zc-prog').style.width = (p * 100) + '%'; } });
+        } else {
+          const c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight;
+          c.getContext('2d').drawImage(video, 0, 0);
+          blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.95));
+        }
+        await ZeniGallery.add(blob, 'photo');   // <- zapis do galerii
+        await refreshThumb();
+      } catch (e) { console.error('Błąd zdjęcia:', e); }
+      $('.zc-prog').style.width = '0'; shutter.classList.remove('busy'); state.busy = false;
+    }
+    async function countdown(n) {
+      const c = $('.zc-count'); c.style.display = 'grid';
+      for (let i = n; i > 0; i--) { c.textContent = i; await new Promise(r => setTimeout(r, 1000)); }
+      c.style.display = 'none';
     }
 
-    return out.toDataURL('image/jpeg', 0.9);
-  }
-
-  function paintDemoScene(ctx, w, h) {
-    const sky = ctx.createLinearGradient(0, 0, 0, h);
-    sky.addColorStop(0, '#16213f');
-    sky.addColorStop(0.36, '#38558c');
-    sky.addColorStop(0.56, '#d98a5c');
-    sky.addColorStop(0.57, '#2a1a24');
-    sky.addColorStop(1, '#0d0a10');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, w, h);
-
-    const sun = ctx.createRadialGradient(w * 0.62, h * 0.5, 0, w * 0.62, h * 0.5, h * 0.34);
-    sun.addColorStop(0, 'rgba(255, 226, 178, 0.85)');
-    sun.addColorStop(1, 'rgba(255, 190, 130, 0)');
-    ctx.fillStyle = sun;
-    ctx.fillRect(0, 0, w, h);
-
-    ctx.fillStyle = '#141019';
-    ctx.beginPath();
-    ctx.moveTo(0, h * 0.72);
-    ctx.bezierCurveTo(w * 0.25, h * 0.62, w * 0.5, h * 0.78, w, h * 0.66);
-    ctx.lineTo(w, h);
-    ctx.lineTo(0, h);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  /* -------------------------------- galeria -------------------------------- */
-  function renderThumb() {
-    if (!els.thumb) return;
-    const last = state.photos[0];
-    els.thumb.style.backgroundImage = last ? `url("${last}")` : '';
-    els.thumb.classList.toggle('empty', !last);
-  }
-
-  function renderRoll() {
-    if (!els.rollGrid) return;
-    els.rollGrid.textContent = '';
-    if (!state.photos.length) {
-      const empty = document.createElement('p');
-      empty.className = 'camera-roll-empty';
-      empty.textContent = 'Brak zdjęć — zrób pierwsze.';
-      els.rollGrid.appendChild(empty);
-      return;
+    /* --- wideo --- */
+    function toggleRecord() {
+      if (state.rec) { state.rec.stop(); return; }
+      const chunks = [];
+      const mr = new MediaRecorder(state.stream);
+      mr.ondataavailable = e => e.data.size && chunks.push(e.data);
+      mr.onstop = async () => {
+        shutter.classList.remove('rec'); state.rec = null;
+        await ZeniGallery.add(new Blob(chunks, { type: mr.mimeType || 'video/webm' }), 'video');
+      };
+      mr.start(); state.rec = mr; shutter.classList.add('rec');
     }
-    state.photos.forEach((src, index) => {
-      const shot = document.createElement('button');
-      shot.type = 'button';
-      shot.className = 'camera-roll-item';
-      shot.style.backgroundImage = `url("${src}")`;
-      shot.setAttribute('aria-label', `Zdjęcie ${index + 1}`);
-      shot.addEventListener('click', () => {
-        const link = document.createElement('a');
-        link.href = src;
-        link.download = `zenios-${Date.now()}.jpg`;
-        link.click();
-      });
-      els.rollGrid.appendChild(shot);
-    });
-  }
 
-  function toggleRoll(force) {
-    if (!els.roll) return;
-    const open = typeof force === 'boolean' ? force : !els.roll.classList.contains('open');
-    els.roll.classList.toggle('open', open);
-    els.roll.setAttribute('aria-hidden', open ? 'false' : 'true');
-    if (open) renderRoll();
-  }
-
-  /* ------------------------------- interfejs ------------------------------- */
-  function setMode(mode) {
-    state.mode = mode;
-    els.layer.dataset.mode = mode;
-    els.modes.querySelectorAll('.cam-mode').forEach((b) => {
-      b.classList.toggle('active', b.dataset.mode === mode);
-    });
-    els.zoomRow?.classList.toggle('hidden', mode === 'pano');
-    setStatus(mode === 'portrait'
-      ? 'Portret — rozmyte tło, miękkie światło'
-      : mode === 'pano' ? 'Panorama — przesuń telefon powoli' : '');
-  }
-
-  function setZoom(zoom) {
-    state.zoom = zoom;
-    els.layer.style.setProperty('--cam-zoom', String(zoom));
-    els.zoomRow.querySelectorAll('[data-zoom]').forEach((b) => {
-      b.classList.toggle('active', Number(b.dataset.zoom) === zoom);
-    });
-  }
-
-  function cycleFlash() {
-    state.flash = state.flash === 'auto' ? 'on' : state.flash === 'on' ? 'off' : 'auto';
-    const label = state.flash === 'auto' ? 'Auto' : state.flash === 'on' ? 'Wł.' : 'Wył.';
-    els.flashBtn.dataset.state = state.flash;
-    els.flashBtn.querySelector('span').textContent = label;
-    applyTorch();
-  }
-
-  function shoot() {
-    if (els.shutter.classList.contains('shooting')) return;
-    els.shutter.classList.add('shooting');
-    els.flash.classList.remove('fire');
-    void els.flash.offsetWidth;
-    els.flash.classList.add('fire');
-    if (navigator.vibrate) navigator.vibrate(8);
-
-    const src = captureStill();
-    state.photos.unshift(src);
-    state.photos = state.photos.slice(0, MAX_PHOTOS);
-    writePhotos();
-    renderThumb();
-
-    setTimeout(() => els.shutter.classList.remove('shooting'), 160);
-    setTimeout(() => els.flash.classList.remove('fire'), 320);
-  }
-
-  async function flipCamera() {
-    state.facing = state.facing === 'environment' ? 'user' : 'environment';
-    await startStream();
-  }
-
-  function open() {
-    if (!els.layer) return;
-    closeRollAndLoad();
-    state.open = true;
-    els.layer.classList.add('open');
-    els.layer.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('camera-open');
-    setMode(state.mode);
-    setZoom(1);
-    startStream();
-  }
-
-  function close() {
-    if (!els.layer || !state.open) return;
-    state.open = false;
-    els.layer.classList.remove('open');
-    els.layer.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('camera-open');
-    toggleRoll(false);
-    stopStream();
-  }
-
-  function closeRollAndLoad() {
-    toggleRoll(false);
-    state.photos = readPhotos();
-    renderThumb();
-  }
-
-  function bind() {
-    els.layer = $('camera-layer');
-    if (!els.layer) return;
-    els.video = $('camera-video');
-    els.scene = $('camera-scene');
-    els.grid = $('camera-grid');
-    els.flash = $('camera-flash');
-    els.status = $('camera-status');
-    els.modes = $('camera-modes');
-    els.zoomRow = $('camera-zoom');
-    els.shutter = $('camera-shutter');
-    els.thumb = $('camera-thumb');
-    els.roll = $('camera-roll');
-    els.rollGrid = $('camera-roll-grid');
-    els.flashBtn = $('camera-flash-btn');
-
-    state.photos = readPhotos();
-    renderThumb();
-
-    $('camera-close')?.addEventListener('click', close);
-    $('camera-shutter')?.addEventListener('click', shoot);
-    $('camera-switch')?.addEventListener('click', flipCamera);
-    els.flashBtn?.addEventListener('click', cycleFlash);
-    $('camera-grid-btn')?.addEventListener('click', (e) => {
-      state.grid = !state.grid;
-      els.grid.classList.toggle('visible', state.grid);
-      e.currentTarget.classList.toggle('active', state.grid);
-    });
-    $('camera-live')?.addEventListener('click', () => toggleRoll(true));
-    els.thumb?.addEventListener('click', () => toggleRoll(true));
-    $('camera-roll-close')?.addEventListener('click', () => toggleRoll(false));
-
-    els.modes.querySelectorAll('.cam-mode').forEach((b) => {
-      b.addEventListener('click', () => setMode(b.dataset.mode));
-    });
-    els.zoomRow.querySelectorAll('[data-zoom]').forEach((b) => {
-      b.addEventListener('click', () => setZoom(Number(b.dataset.zoom)));
+    /* --- zdarzenia --- */
+    root.addEventListener('click', async e => {
+      const el = e.target.closest('[data-a],[data-m],[data-z],[data-t]'); if (!el) return;
+      const a = el.dataset.a;
+      if (a === 'shutter') return state.mode === 'photo' ? takePhoto() : toggleRecord();
+      if (a === 'flip') { state.facing = state.facing === 'user' ? 'environment' : 'user'; return start(); }
+      if (a === 'menu') return $('.zc-menu').classList.toggle('open');
+      if (a === 'pro') { state.pro = !state.pro; return el.querySelector('.zc-sw').classList.toggle('on', state.pro); }
+      if (a === 'grid') { const on = el.querySelector('.zc-sw').classList.toggle('on'); return $('.zc-grid').classList.toggle('on', on); }
+      if (a === 'torch') {
+        state.torch = !state.torch; el.classList.toggle('on', state.torch);
+        try { await state.stream.getVideoTracks()[0].applyConstraints({ advanced: [{ torch: state.torch }] }); } catch (_) {}
+        return;
+      }
+      if (a === 'gallery') return root.dispatchEvent(new CustomEvent('zeni:open-gallery', { bubbles: true }));
+      if (el.dataset.t !== undefined) {
+        state.timer = +el.dataset.t; el.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); return;
+      }
+      if (el.dataset.m) {
+        state.mode = el.dataset.m; root.querySelectorAll('[data-m]').forEach(b => b.classList.toggle('on', b === el)); return;
+      }
+      if (el.dataset.z) {
+        const z = +el.dataset.z;
+        try { await state.stream.getVideoTracks()[0].applyConstraints({ advanced: [{ zoom: z }] }); } catch (_) {}
+        root.querySelectorAll('[data-z]').forEach(b => b.classList.toggle('on', b === el)); return;
+      }
     });
 
-    /* przesunięcie w dół zamyka aparat (jak w iPhonie) */
-    let dragStart = null;
-    els.layer.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('button')) return;
-      dragStart = e.clientY;
+    // dotknięcie = ostrość, przytrzymanie = BLOKADA AE/AF
+    let hold;
+    view.addEventListener('pointerdown', e => {
+      if (e.target.closest('.zc-zoom')) return;
+      const r = view.getBoundingClientRect(), f = $('.zc-focus');
+      f.style.left = (e.clientX - r.left) + 'px'; f.style.top = (e.clientY - r.top) + 'px'; f.style.display = 'block';
+      clearTimeout(hold); hold = setTimeout(() => { $('.zc-lock').style.display = 'block'; }, 600);
     });
-    els.layer.addEventListener('pointerup', (e) => {
-      if (dragStart === null) return;
-      const delta = e.clientY - dragStart;
-      dragStart = null;
-      if (delta > 90) close();
+    view.addEventListener('pointerup', () => {
+      clearTimeout(hold);
+      setTimeout(() => { if ($('.zc-lock').style.display === 'none') $('.zc-focus').style.display = 'none'; }, 1200);
     });
+    $('.zc-lock').addEventListener('click', e => { e.stopPropagation(); e.target.style.display = 'none'; $('.zc-focus').style.display = 'none'; });
 
-    /* wyjście gestem/paskiem nawigacji nie zostawia włączonej kamery */
-    ['gesture-home-btn', 'sys-btn-home', 'sys-btn-back'].forEach((id) => {
-      $(id)?.addEventListener('click', () => { if (state.open) close(); }, true);
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && state.open) close();
-    });
-
-    document.addEventListener('visibilitychange', () => {
-      if (!state.open) return;
-      if (document.hidden) stopStream();
-      else if (state.open) startStream();
-    });
+    start(); refreshThumb();
+    return { close() { stop(); root.remove(); if (thumbURL) URL.revokeObjectURL(thumbURL); }, state };
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind, { once: true });
-  else bind();
-
-  window.ZeniCamera = {
-    open,
-    close,
-    shoot,
-    get state() { return { open: state.open, mode: state.mode, facing: state.facing, zoom: state.zoom, ready: state.ready }; }
-  };
-})();
+  global.ZeniGallery = ZeniGallery;
+  global.ZeniCamera = { open };
+})(window);
