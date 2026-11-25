@@ -1,152 +1,237 @@
-/* zeni-photo-engine.js
- * Silnik "fotografii obliczeniowej" w czystym JS (Canvas + ImageData).
- * Użycie: const blob = await captureProPhoto(videoEl);
- *         const url  = await captureProPhoto(videoEl, { output: 'dataurl' });
+/**
+ * Silnik fotografii obliczeniowej (Smart HDR + Deep Fusion style)
+ * Wykorzystuje niewidoczny <canvas> oraz operacje na ImageData / Float32Array.
+ *
+ * @param {HTMLVideoElement} videoElement - Aktywny element <video> ze strumieniem kamery
+ * @param {Object} [options] - Opcjonalne parametry przetwarzania
+ * @returns {Promise<Blob|string>} Gotowe zdjęcie JPEG (domyślnie Blob, lub DataURL)
  */
-(function (global) {
-  'use strict';
+async function captureProPhoto(videoElement, options = {}) {
+  if (!videoElement || !videoElement.videoWidth || !videoElement.videoHeight) {
+    throw new Error('Element <video> nie ma jeszcze aktywnego strumienia ani wymiarów.');
+  }
 
-  const smooth = (e0, e1, x) => {
-    const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
+  const {
+    framesCount = 10,
+    quality = 0.95,
+    output = 'blob', // 'blob' | 'dataurl'
+    sharpenThreshold = 8,
+    sharpenAmount = 1.15,
+    contrastAmount = 0.22,
+    vibranceAmount = 0.35,
+    warmthAmount = 0.04,
+    onProgress = null
+  } = options;
+
+  const width = videoElement.videoWidth;
+  const height = videoElement.videoHeight;
+  const pixelCount = width * height;
+
+  // Niewidoczny <canvas> poza drzewem DOM
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+  const clampByte = (v) => (v < 0 ? 0 : v > 255 ? 255 : v);
+  const smoothstep = (edge0, edge1, x) => {
+    const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
     return t * t * (3 - 2 * t);
   };
-  const clamp255 = v => (v < 0 ? 0 : v > 255 ? 255 : v);
-  const tick = () => new Promise(r => setTimeout(r, 0)); // oddaje wątek UI
+  const yieldToUI = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-  // Czeka na NOWĄ klatkę wideo (rVFC), a gdy brak – na requestAnimationFrame
-  function nextFrame(video) {
-    return new Promise(res => {
-      if ('requestVideoFrameCallback' in video) video.requestVideoFrameCallback(() => res());
-      else requestAnimationFrame(() => res());
+  // Czeka na kolejną klatkę wideo w pętli requestAnimationFrame
+  const waitNextFrame = () =>
+    new Promise((resolve) => {
+      requestAnimationFrame(() => resolve());
     });
-  }
 
-  /* 1. Multi-Frame Noise Reduction – akumulacja w Float32 (bez trzymania 10 klatek w RAM) */
-  async function averageFrames(video, ctx, W, H, frames, onProgress) {
-    const acc = new Float32Array(W * H * 3);
-    for (let f = 0; f < frames; f++) {
-      await nextFrame(video);
-      ctx.drawImage(video, 0, 0, W, H);
-      const d = ctx.getImageData(0, 0, W, H).data;
-      for (let p = 0, j = 0; p < d.length; p += 4, j += 3) {
-        acc[j] += d[p]; acc[j + 1] += d[p + 1]; acc[j + 2] += d[p + 2];
-      }
-      onProgress && onProgress((f + 1) / frames * 0.6);
+  // ---------------------------------------------------------------------------
+  // 1. MULTI-FRAME NOISE REDUCTION (Uśrednianie 10 klatek w pętli rAF)
+  // ---------------------------------------------------------------------------
+  // Akumulator RGB w Float32Array (3 wartości na piksel: R, G, B)
+  const rgbBuffer = new Float32Array(pixelCount * 3);
+
+  for (let f = 0; f < framesCount; f++) {
+    await waitNextFrame();
+    ctx.drawImage(videoElement, 0, 0, width, height);
+    const frameData = ctx.getImageData(0, 0, width, height).data;
+
+    for (let p = 0, c = 0; p < frameData.length; p += 4, c += 3) {
+      rgbBuffer[c] += frameData[p];
+      rgbBuffer[c + 1] += frameData[p + 1];
+      rgbBuffer[c + 2] += frameData[p + 2];
     }
-    const inv = 1 / frames;
-    for (let i = 0; i < acc.length; i++) acc[i] *= inv;
-    return acc;
+
+    if (typeof onProgress === 'function') {
+      onProgress(((f + 1) / framesCount) * 0.55);
+    }
   }
 
-  /* 2. Smart HDR / Tone mapping: mocno rozjaśnia cienie (L<80), środek bez zmian, światła (L>200) kompresuje */
-  function buildToneGainLUT() {
-    const y = L => {
-      const t = L / 255;
-      const lifted = Math.pow(t, 0.55);
-      const w = 1 - smooth(40, 110, L);          // wpływ tylko w cieniach, wygasa do ~110
-      return t + (lifted - t) * w;
+  const invFrames = 1 / framesCount;
+  for (let i = 0; i < rgbBuffer.length; i++) {
+    rgbBuffer[i] *= invFrames;
+  }
+
+  await yieldToUI();
+
+  // ---------------------------------------------------------------------------
+  // 2. SMART HDR / TONE MAPPING (Rozpiętość tonalna wg luminancji L)
+  // L = 0.299R + 0.587G + 0.114B
+  // Mocne rozjaśnienie cieni (L < 80), środek neutralny, kompresja świateł (L > 200)
+  // ---------------------------------------------------------------------------
+  const toneGainLUT = new Float32Array(256);
+
+  const shadowLiftCurve = (L) => {
+    const norm = L / 255;
+    // Podniesienie cieni (gamma < 1) z płynnym zanikiem powyżej L ~ 80-115
+    const lifted = Math.pow(norm, 0.52);
+    const shadowWeight = 1 - smoothstep(45, 115, L);
+    return norm + (lifted - norm) * shadowWeight;
+  };
+
+  const baseAt200 = shadowLiftCurve(200);
+
+  for (let l = 0; l < 256; l++) {
+    let mappedNorm = shadowLiftCurve(l);
+
+    // Delikatna kompresja świateł powyżej L = 200, aby uniknąć przepaleń
+    if (l > 200) {
+      const highlightExcess = mappedNorm - baseAt200;
+      mappedNorm = baseAt200 + highlightExcess * 0.55;
+    }
+
+    const targetL = mappedNorm * 255;
+    // Ograniczamy maksymalne wzmocnienie (gain), aby nie wyciągać szumu z głębokiej czerni
+    const gain = l < 2 ? 1.0 : Math.min(3.4, targetL / l);
+    toneGainLUT[l] = gain;
+  }
+
+  for (let c = 0; c < rgbBuffer.length; c += 3) {
+    const r = rgbBuffer[c];
+    const g = rgbBuffer[c + 1];
+    const b = rgbBuffer[c + 2];
+
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    const lumIdx = lum < 0 ? 0 : lum > 255 ? 255 : lum | 0;
+    const gain = toneGainLUT[lumIdx];
+
+    rgbBuffer[c] = clampByte(r * gain);
+    rgbBuffer[c + 1] = clampByte(g * gain);
+    rgbBuffer[c + 2] = clampByte(b * gain);
+  }
+
+  if (typeof onProgress === 'function') onProgress(0.72);
+  await yieldToUI();
+
+  // ---------------------------------------------------------------------------
+  // 3. INTELLIGENT SHARPENING (Unsharp Mask na luminancji z progiem)
+  // Wyostrza tylko krawędzie przekraczające próg, chroniąc gładkie powierzchnie
+  // ---------------------------------------------------------------------------
+  const lumPlane = new Float32Array(pixelCount);
+  for (let p = 0, c = 0; p < pixelCount; p++, c += 3) {
+    lumPlane[p] = 0.299 * rgbBuffer[c] + 0.587 * rgbBuffer[c + 1] + 0.114 * rgbBuffer[c + 2];
+  }
+
+  // Separowalne rozmycie Gaussa 3x3 ([1, 2, 1] / 4 w poziomie i pionie)
+  const horizBlur = new Float32Array(pixelCount);
+  for (let y = 0; y < height; y++) {
+    const rowOffset = y * width;
+    for (let x = 0; x < width; x++) {
+      const xLeft = x > 0 ? x - 1 : 0;
+      const xRight = x < width - 1 ? x + 1 : width - 1;
+      horizBlur[rowOffset + x] =
+        (lumPlane[rowOffset + xLeft] + 2 * lumPlane[rowOffset + x] + lumPlane[rowOffset + xRight]) * 0.25;
+    }
+  }
+
+  const blurredLum = new Float32Array(pixelCount);
+  for (let y = 0; y < height; y++) {
+    const yUp = (y > 0 ? y - 1 : 0) * width;
+    const yMid = y * width;
+    const yDown = (y < height - 1 ? y + 1 : height - 1) * width;
+    for (let x = 0; x < width; x++) {
+      blurredLum[yMid + x] =
+        (horizBlur[yUp + x] + 2 * horizBlur[yMid + x] + horizBlur[yDown + x]) * 0.25;
+    }
+  }
+
+  const maxEdgeDelta = 26; // zabezpieczenie przed jasnymi/ciemnymi obwódkami (halo)
+  for (let p = 0, c = 0; p < pixelCount; p++, c += 3) {
+    const detail = lumPlane[p] - blurredLum[p];
+    const absDetail = Math.abs(detail);
+
+    if (absDetail <= sharpenThreshold) {
+      continue; // brak wyostrzania na gładkich powierzchniach i szumie
+    }
+
+    const maskWeight = smoothstep(sharpenThreshold, sharpenThreshold * 2.5, absDetail);
+    let delta = detail * sharpenAmount * maskWeight;
+    if (delta > maxEdgeDelta) delta = maxEdgeDelta;
+    else if (delta < -maxEdgeDelta) delta = -maxEdgeDelta;
+
+    rgbBuffer[c] = clampByte(rgbBuffer[c] + delta);
+    rgbBuffer[c + 1] = clampByte(rgbBuffer[c + 1] + delta);
+    rgbBuffer[c + 2] = clampByte(rgbBuffer[c + 2] + delta);
+  }
+
+  if (typeof onProgress === 'function') onProgress(0.86);
+  await yieldToUI();
+
+  // ---------------------------------------------------------------------------
+  // 4. APPLE COLOR SCIENCE (Krzywa S kontrastu + Vibrance + ocieplenie WB)
+  // ---------------------------------------------------------------------------
+  for (let c = 0; c < rgbBuffer.length; c += 3) {
+    // Subtelne ocieplenie balansu bieli (lekko więcej czerwieni, mniej niebieskiego)
+    let r = clampByte(rgbBuffer[c] * (1 + warmthAmount));
+    let g = clampByte(rgbBuffer[c + 1] * (1 + warmthAmount * 0.25));
+    let b = clampByte(rgbBuffer[c + 2] * (1 - warmthAmount));
+
+    // Delikatna krzywa S dla kontrastu i mikrokontrastu
+    const applySCurve = (val) => {
+      const x = val / 255;
+      const sCurve = x * x * (3 - 2 * x);
+      return 255 * (x + (sCurve - x) * contrastAmount);
     };
-    const y200 = y(200);
-    const lut = new Float32Array(256);
-    for (let L = 0; L < 256; L++) {
-      let v = y(L);
-      if (L > 200) v = y200 + (v - y200) * 0.6;  // miękkie ramię świateł
-      lut[L] = L < 1 ? 1 : Math.min(3.5, (v * 255) / L); // limit zysku, by nie wzmacniać szumu
-    }
-    return lut;
+
+    r = applySCurve(r);
+    g = applySCurve(g);
+    b = applySCurve(b);
+
+    // Vibrance: mocniej podbija kolory mało nasycone, łagodniej już nasycone
+    const maxCh = Math.max(r, g, b);
+    const minCh = Math.min(r, g, b);
+    const saturation = maxCh > 0 ? (maxCh - minCh) / maxCh : 0;
+    const vibranceBoost = 1 + vibranceAmount * (1 - saturation);
+    const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+
+    rgbBuffer[c] = clampByte(luma + (r - luma) * vibranceBoost);
+    rgbBuffer[c + 1] = clampByte(luma + (g - luma) * vibranceBoost);
+    rgbBuffer[c + 2] = clampByte(luma + (b - luma) * vibranceBoost);
   }
 
-  function toneMap(px) {
-    const lut = buildToneGainLUT();
-    for (let i = 0; i < px.length; i += 3) {
-      const L = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
-      const g = lut[Math.min(255, L | 0)];
-      px[i] = clamp255(px[i] * g);
-      px[i + 1] = clamp255(px[i + 1] * g);
-      px[i + 2] = clamp255(px[i + 2] * g);
-    }
+  if (typeof onProgress === 'function') onProgress(0.95);
+
+  // ---------------------------------------------------------------------------
+  // 5. ZAPIS DO ImageData I EKSPORT DO JPEG (0.95)
+  // ---------------------------------------------------------------------------
+  const outputImageData = ctx.createImageData(width, height);
+  const outData = outputImageData.data;
+
+  for (let p = 0, c = 0; p < outData.length; p += 4, c += 3) {
+    outData[p] = rgbBuffer[c];
+    outData[p + 1] = rgbBuffer[c + 1];
+    outData[p + 2] = rgbBuffer[c + 2];
+    outData[p + 3] = 255;
   }
 
-  /* 3. Inteligentne wyostrzanie: unsharp mask na luminancji z progiem */
-  function sharpen(px, W, H, { threshold = 6, amount = 1.2, maxBoost = 28 } = {}) {
-    const n = W * H;
-    const Y = new Float32Array(n);
-    for (let p = 0, i = 0; p < n; p++, i += 3) Y[p] = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+  ctx.putImageData(outputImageData, 0, 0);
 
-    // rozmycie [1 2 1] separowalne
-    const tmp = new Float32Array(n), B = new Float32Array(n);
-    for (let y = 0; y < H; y++) {
-      const r = y * W;
-      for (let x = 0; x < W; x++) {
-        const a = Y[r + Math.max(0, x - 1)], b = Y[r + x], c = Y[r + Math.min(W - 1, x + 1)];
-        tmp[r + x] = (a + 2 * b + c) * 0.25;
-      }
-    }
-    for (let y = 0; y < H; y++) {
-      const y0 = Math.max(0, y - 1) * W, y1 = y * W, y2 = Math.min(H - 1, y + 1) * W;
-      for (let x = 0; x < W; x++) B[y1 + x] = (tmp[y0 + x] + 2 * tmp[y1 + x] + tmp[y2 + x]) * 0.25;
-    }
-    for (let p = 0, i = 0; p < n; p++, i += 3) {
-      const d = Y[p] - B[p];
-      const a = Math.abs(d);
-      if (a <= threshold) continue;                       // gładkie powierzchnie: bez zmian
-      let boost = d * amount * smooth(threshold, threshold * 2.5, a);
-      boost = Math.max(-maxBoost, Math.min(maxBoost, boost)); // ogranicza halo
-      px[i] = clamp255(px[i] + boost);
-      px[i + 1] = clamp255(px[i + 1] + boost);
-      px[i + 2] = clamp255(px[i + 2] + boost);
-    }
-  }
-
-  /* 4. Apple Color Science: krzywa S + vibrance + lekkie ocieplenie */
-  function colorScience(px, { contrast = 0.22, vibrance = 0.38, warmth = 0.03 } = {}) {
-    for (let i = 0; i < px.length; i += 3) {
-      let r = px[i] * (1 + warmth), g = px[i + 1], b = px[i + 2] * (1 - warmth);
-      r = clamp255(r); b = clamp255(b);
-
-      // krzywa S (mieszanie z smoothstep)
-      const s = c => { const x = c / 255; return 255 * (x + (x * x * (3 - 2 * x) - x) * contrast); };
-      r = s(r); g = s(g); b = s(b);
-
-      // vibrance: mocniej dla mało nasyconych
-      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
-      const sat = mx > 0 ? (mx - mn) / mx : 0;
-      const k = 1 + vibrance * (1 - sat);
-      const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-      px[i] = clamp255(gray + (r - gray) * k);
-      px[i + 1] = clamp255(gray + (g - gray) * k);
-      px[i + 2] = clamp255(gray + (b - gray) * k);
-    }
-  }
-
-  /* 5. Integracja */
-  async function captureProPhoto(videoElement, opts = {}) {
-    const { frames = 10, quality = 0.95, output = 'blob', onProgress } = opts;
-    const W = videoElement.videoWidth, H = videoElement.videoHeight;
-    if (!W || !H) throw new Error('Wideo nie jest gotowe (brak wymiarów).');
-
-    const canvas = document.createElement('canvas'); // niewidoczny, nie dodajemy do DOM
-    canvas.width = W; canvas.height = H;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-    const px = await averageFrames(videoElement, ctx, W, H, frames, onProgress);
-    await tick(); toneMap(px);                onProgress && onProgress(0.72);
-    await tick(); sharpen(px, W, H, opts.sharpen); onProgress && onProgress(0.86);
-    await tick(); colorScience(px, opts.color);    onProgress && onProgress(0.95);
-
-    const img = ctx.createImageData(W, H);
-    const out = img.data;
-    for (let p = 0, j = 0; p < out.length; p += 4, j += 3) {
-      out[p] = px[j]; out[p + 1] = px[j + 1]; out[p + 2] = px[j + 2]; out[p + 3] = 255;
-    }
-    ctx.putImageData(img, 0, 0);
-
-    const result = output === 'dataurl'
+  const result =
+    output === 'dataurl'
       ? canvas.toDataURL('image/jpeg', quality)
-      : await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
-    onProgress && onProgress(1);
-    return result;
-  }
+      : await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
 
-  global.captureProPhoto = captureProPhoto;
-})(typeof window !== 'undefined' ? window : globalThis);
+  if (typeof onProgress === 'function') onProgress(1);
+  return result;
+}
