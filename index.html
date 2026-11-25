@@ -9,7 +9,7 @@
 </head>
 <body>
   <div class="phone-screen">
-    <!-- Górny pasek statusu -->
+    <!-- Pasek statusu -->
     <div class="status-bar-overlay" id="status-bar-overlay" aria-hidden="true">
       <span class="status-clock" id="status-clock">16:26</span>
       <span class="status-right">
@@ -257,10 +257,9 @@
           <span class="link-accent">Pokaż wszystko ›</span>
         </div>
 
-        <!-- Tutaj skrypt będzie wstawiał zdjęcia -->
-        <div id="gallery-grid" class="gallery-grid"></div>
+        <!-- Miejsce na zdjęcia -->
+        <div id="gallery-grid" class="gallery-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 0 10px 100px 10px;"></div>
 
-        <!-- Ten div będzie ukrywany, gdy pojawią się zdjęcia -->
         <div class="empty-state" id="gallery-empty-state">
           <div class="empty-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -273,6 +272,7 @@
         </div>
       </div>
 
+      <!-- Oś czasu -->
       <div class="app-scroll gal-pane" id="gal-pane-timeline">
         <div class="timeline-group">
           <div class="timeline-head">
@@ -512,10 +512,12 @@
     </div>
   </div>
 
-  <script src="loading.js"></script>
+  <!-- Skrypty systemowe -->
+  <script src="zeni-photo-engine.js"></script>
+  <script src="zeni-camera.js"></script>
+  <script src="loading (5).js"></script>
   <script src="zeni-system.js"></script>
   <script src="zeni-lockscreen.js"></script>
-  <script src="zeni-camera.js"></script>
   <script src="zeni-network.js"></script>
 </body>
 </html>
