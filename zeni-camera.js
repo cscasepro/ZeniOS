@@ -1,7 +1,8 @@
-/* zeni-camera.js – obsługa aparatu ZeniOS (integracja z HTML) */
+/* zeni-camera.js – obsługa gotowego aparatu z HTML + ZeniGallery */
 (function (global) {
   'use strict';
 
+  // Baza danych dla zdjęć
   const ZeniGallery = {
     _open() {
       return new Promise((res, rej) => {
@@ -32,22 +33,15 @@
     }
   };
 
-  let currentInstance = null;
-
+  // Główna funkcja otwierająca aparat
   function open(container) {
-    // Jeśli już jest otwarty, zamknij
-    if (currentInstance) {
-      currentInstance.close();
-    }
-
-    // Znajdź warstwę aparatu w HTML
     const camLayer = document.getElementById('camera-layer');
     if (!camLayer) {
       console.error('Brak #camera-layer w HTML');
       return;
     }
 
-    // Odsłoń aparat
+    // Pokaż aparat
     camLayer.classList.add('active');
     camLayer.setAttribute('aria-hidden', 'false');
 
@@ -65,15 +59,17 @@
 
     let stream = null;
     let facing = 'environment';
-    let flashMode = 'auto'; // auto, on, off
+    let flashMode = 'auto';
     let isGridOn = false;
     let isBusy = false;
 
+    // Uruchom kamerę
     async function start() {
       stop();
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: facing, width: { ideal: 3840 }, height: { ideal: 2160 } }, audio: false
+          video: { facingMode: facing, width: { ideal: 3840 }, height: { ideal: 2160 } },
+          audio: false
         });
         video.srcObject = stream;
         await video.play();
@@ -89,7 +85,7 @@
       }
     }
 
-    // Miniatura ostatniego zdjęcia
+    // Miniatura
     async function refreshThumb() {
       try {
         const items = await ZeniGallery.all();
@@ -118,7 +114,7 @@
         await ZeniGallery.add(blob, 'photo');
         await refreshThumb();
 
-        // Efekt błysku
+        // Błysk
         const flash = document.getElementById('camera-flash');
         if (flash) {
           flash.style.opacity = '1';
@@ -132,7 +128,7 @@
       isBusy = false;
     }
 
-    // Podgląd rolki
+    // Rolka zdjęć
     async function openRoll() {
       rollGrid.innerHTML = '';
       const items = await ZeniGallery.all();
@@ -148,12 +144,12 @@
           }
         });
       }
-      roll.style.transform = 'translateY(0)';
+      roll.classList.add('open');
       roll.setAttribute('aria-hidden', 'false');
     }
 
     function closeRoll() {
-      roll.style.transform = 'translateY(100%)';
+      roll.classList.remove('open');
       roll.setAttribute('aria-hidden', 'true');
     }
 
@@ -165,7 +161,7 @@
       if (currentInstance === api) currentInstance = null;
     }
 
-    // Zdarzenia
+    // Podpięcie zdarzeń
     closeBtn.onclick = close;
     shutter.onclick = takePhoto;
     switchBtn.onclick = () => {
@@ -193,6 +189,8 @@
     currentInstance = api;
     return api;
   }
+
+  let currentInstance = null;
 
   global.ZeniGallery = ZeniGallery;
   global.ZeniCamera = {
