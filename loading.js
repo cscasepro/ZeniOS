@@ -53,7 +53,6 @@ const AVAILABLE_WIDGETS = [
   }
 ];
 
-/* Wspólny stan muzyki (widżet + Centrum sterowania) */
 const zenMusic = { playing: false, title: 'Chromatica', artist: 'Lady Gaga' };
 let zenTodayEvents = () => [];
 
@@ -98,7 +97,6 @@ let activeWidgets = [
   { id: 'calendar', wide: false }
 ];
 
-/* Stan kalkulatora */
 let calcExpression = '0';
 let calcResetNext = false;
 
@@ -127,7 +125,6 @@ function updateClock() {
   if (domRefs.calendarAppDate) domRefs.calendarAppDate.textContent = dateText;
 }
 
-/* Wskaźnik baterii w stylu iOS. */
 function setBatteryLevel(percent, opts) {
   const clamped = Math.max(0, Math.min(100, Math.round(Number(percent)) || 0));
   currentBatteryLevel = clamped;
@@ -2291,6 +2288,73 @@ function initZeniApps() {
   initControlCenter();
   initNotifications();
   bindLockscreenExtras();
+  initGallery(); // <- DODANO GALERIĘ
+}
+
+/* ---------------- GALERIA ---------------- */
+function initGallery() {
+  const galleryApp = document.getElementById('app-gallery');
+  if (!galleryApp) return;
+
+  let grid = galleryApp.querySelector('.gallery-grid');
+  if (!grid) {
+    grid = document.createElement('div');
+    grid.className = 'gallery-grid';
+    grid.style.cssText = 'display:grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 10px; padding-bottom: 80px; overflow-y: auto; height: 100%;';
+    galleryApp.appendChild(grid);
+  }
+
+  window.addEventListener('zeni:gallery-changed', () => {
+    renderGallery();
+  });
+
+  async function renderGallery() {
+    if (!window.ZeniGallery) return;
+    try {
+      const items = await window.ZeniGallery.all();
+      grid.innerHTML = '';
+      
+      if (items.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #888; margin-top: 50px;">Brak zdjęć. Zrób coś aparatem!</div>';
+        return;
+      }
+
+      items.reverse().forEach(item => {
+        if (item.type === 'photo') {
+          const imgWrap = document.createElement('div');
+          imgWrap.style.cssText = 'aspect-ratio: 1; overflow: hidden; border-radius: 4px; background: #222;';
+          
+          const img = document.createElement('img');
+          img.src = URL.createObjectURL(item.blob);
+          img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+          
+          imgWrap.onclick = () => {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; justify-content: center; align-items: center; flex-direction: column;';
+            const bigImg = document.createElement('img');
+            bigImg.src = img.src;
+            bigImg.style.cssText = 'max-width: 95%; max-height: 80%; object-fit: contain;';
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = 'Zamknij';
+            closeBtn.style.cssText = 'margin-top: 20px; padding: 10px 20px; background: #333; color: white; border: none; border-radius: 20px; font-size: 16px; cursor: pointer;';
+            closeBtn.onclick = () => overlay.remove();
+
+            overlay.appendChild(bigImg);
+            overlay.appendChild(closeBtn);
+            document.body.appendChild(overlay);
+          };
+
+          imgWrap.appendChild(img);
+          grid.appendChild(imgWrap);
+        }
+      });
+    } catch (e) {
+      console.error("Błąd podczas ładowania galerii:", e);
+    }
+  }
+
+  renderGallery();
 }
 
 /* ---------------- CENTRUM STEROWANIA ---------------- */
