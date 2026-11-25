@@ -24,33 +24,9 @@ const INSTALLED_APPS = [
 ];
 
 const AVAILABLE_WIDGETS = [
-  {
-    id: 'music',
-    name: 'Muzyka',
-    subtitle: '',
-    caption: 'Music',
-    theme: 'music-widget',
-    artText: '♪',
-    badge: '♫'
-  },
-  {
-    id: 'calendar',
-    name: 'Kalendarz',
-    subtitle: '',
-    caption: 'Calendar',
-    theme: 'calendar-widget',
-    artText: '22',
-    badge: 'KAL'
-  },
-  {
-    id: 'weather',
-    name: 'Pogoda',
-    subtitle: '14°C • Bezchmurnie',
-    caption: 'Weather',
-    theme: 'weather-widget',
-    artText: '14°',
-    badge: '☀'
-  }
+  { id: 'music', name: 'Muzyka', subtitle: '', caption: 'Music', theme: 'music-widget', artText: '♪', badge: '♫' },
+  { id: 'calendar', name: 'Kalendarz', subtitle: '', caption: 'Calendar', theme: 'calendar-widget', artText: '22', badge: 'KAL' },
+  { id: 'weather', name: 'Pogoda', subtitle: '14°C • Bezchmurnie', caption: 'Weather', theme: 'weather-widget', artText: '14°', badge: '☀' }
 ];
 
 const zenMusic = { playing: false, title: 'Chromatica', artist: 'Lady Gaga' };
@@ -59,12 +35,7 @@ let zenTodayEvents = () => [];
 const DEFAULT_WALLPAPER_INDEX = 6;
 const BATTERY_PRESETS = [94, 65, 20, 100];
 
-const LOCK_LABELS = {
-  swipe: 'Przeciągnięcie',
-  pin: 'PIN',
-  password: 'Hasło',
-  pattern: 'Wzór'
-};
+const LOCK_LABELS = { swipe: 'Przeciągnięcie', pin: 'PIN', password: 'Hasło', pattern: 'Wzór' };
 
 let loadTimer = null;
 let clockTimer = null;
@@ -149,9 +120,7 @@ function setBatteryLevel(percent, opts) {
   if (ccFill) ccFill.setAttribute('width', String(Math.max(1, 13 * clamped / 100)));
 }
 
-function applyBatteryLevel(level, opts) {
-  setBatteryLevel(level, opts);
-}
+function applyBatteryLevel(level, opts) { setBatteryLevel(level, opts); }
 
 function initRealBatteryIfAvailable() {
   setBatteryLevel(currentBatteryLevel, { charging: false });
@@ -188,12 +157,10 @@ function loadImageWithFallback(imgEl, basePath) {
   if (!imgEl || !basePath) return;
   const candidates = resolveWallpaperCandidates(basePath);
   let attempt = 0;
-
   function tryNext() {
     if (attempt >= candidates.length) return;
     imgEl.src = candidates[attempt++];
   }
-
   imgEl.onerror = tryNext;
   tryNext();
 }
@@ -216,7 +183,6 @@ function setWallpaper(index) {
   currentWallpaperIndex = index;
   const wpName = `default_wallpaper_${index + 1}`;
   const basePath = ZENIOS_WALLPAPERS[index];
-
   if (domRefs.systemWallpaper) loadImageWithFallback(domRefs.systemWallpaper, basePath);
   if (window.ZeniLock) window.ZeniLock.syncSystemWallpaper(basePath);
   else if (domRefs.lockWallpaper) loadImageWithFallback(domRefs.lockWallpaper, basePath);
@@ -229,23 +195,16 @@ function setWallpaper(index) {
 function renderWallpaperPicker() {
   const { wpGrid } = domRefs;
   if (!wpGrid) return;
-
   wpGrid.innerHTML = '';
   ZENIOS_WALLPAPERS.forEach((basePath, idx) => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = `wp-choice${idx === currentWallpaperIndex ? ' active' : ''}`;
     btn.title = `default_wallpaper_${idx + 1}`;
-
     const thumb = document.createElement('img');
     thumb.alt = `Tapeta ${idx + 1}`;
     loadImageWithFallback(thumb, basePath);
-
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      setWallpaper(idx);
-    });
-
+    btn.addEventListener('click', (e) => { e.stopPropagation(); setWallpaper(idx); });
     btn.appendChild(thumb);
     wpGrid.appendChild(btn);
   });
@@ -294,28 +253,22 @@ function renderWidgets() {
   const grid = domRefs.widgetsGrid;
   if (!grid) return;
   grid.innerHTML = '';
-
   activeWidgets.forEach((entry, index) => {
     const meta = AVAILABLE_WIDGETS.find((w) => w.id === entry.id);
     if (!meta) return;
-
     const wrap = document.createElement('div');
     wrap.className = `zen-widget ${meta.theme}${entry.wide ? ' wide' : ''}`;
-
     const topRow = document.createElement('div');
     topRow.className = 'widget-top-row';
-
     const infoCol = document.createElement('div');
     infoCol.className = 'widget-info';
     const titleEl = document.createElement('div');
     titleEl.className = 'widget-title';
     const subEl = document.createElement('div');
     subEl.className = 'widget-sub';
-
     const now = new Date();
     const DAYS_UP = ['NIEDZIELA', 'PONIEDZIAŁEK', 'WTOREK', 'ŚRODA', 'CZWARTEK', 'PIĄTEK', 'SOBOTA'];
     const MONTHS_GEN = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
-
     if (meta.id === 'music') {
       wrap.classList.toggle('idle', !zenMusic.playing);
       const art = document.createElement('div');
@@ -349,53 +302,32 @@ function renderWidgets() {
       titleEl.textContent = meta.name;
       subEl.textContent = meta.subtitle;
     }
-
     infoCol.appendChild(titleEl);
     infoCol.appendChild(subEl);
-
     const editBar = document.createElement('div');
     editBar.className = 'widget-edit-bar';
-
     const sizeBtn = document.createElement('button');
     sizeBtn.type = 'button';
     sizeBtn.className = 'widget-mini-btn';
     sizeBtn.textContent = entry.wide ? 'Mały' : 'Szeroki';
-    sizeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      activeWidgets[index].wide = !activeWidgets[index].wide;
-      renderWidgets();
-    });
-
+    sizeBtn.addEventListener('click', (e) => { e.stopPropagation(); activeWidgets[index].wide = !activeWidgets[index].wide; renderWidgets(); });
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'widget-mini-btn';
     delBtn.textContent = 'Usuń';
-    delBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      activeWidgets.splice(index, 1);
-      renderWidgets();
-    });
-
+    delBtn.addEventListener('click', (e) => { e.stopPropagation(); activeWidgets.splice(index, 1); renderWidgets(); });
     editBar.appendChild(sizeBtn);
     editBar.appendChild(delBtn);
-
     const caption = document.createElement('div');
     caption.className = 'widget-caption';
     caption.textContent = meta.caption;
-
     wrap.appendChild(topRow);
     wrap.appendChild(infoCol);
     wrap.appendChild(editBar);
     wrap.appendChild(caption);
-
-    wrap.addEventListener('click', () => {
-      if (longPressTriggered || isHomeEditMode) return;
-      if (meta.id === 'calendar') openApp('app-calendar');
-    });
-
+    wrap.addEventListener('click', () => { if (longPressTriggered || isHomeEditMode) return; if (meta.id === 'calendar') openApp('app-calendar'); });
     grid.appendChild(wrap);
   });
-
   renderWidgetPicker();
 }
 
@@ -403,30 +335,23 @@ function renderWidgetPicker() {
   const list = domRefs.widgetPickerList;
   if (!list) return;
   list.innerHTML = '';
-
   AVAILABLE_WIDGETS.forEach((w) => {
     const exists = activeWidgets.some((item) => item.id === w.id);
     const row = document.createElement('div');
     row.className = 'widget-picker-item';
-
     const col = document.createElement('div');
     col.className = 'option-text-col';
     col.innerHTML = `<span class="row-title">${w.name}</span><span class="option-sub">${w.subtitle}</span>`;
-
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = `glass-action-btn ${exists ? '' : 'primary'}`;
     btn.textContent = exists ? 'Usuń' : 'Dodaj';
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (exists) {
-        activeWidgets = activeWidgets.filter((item) => item.id !== w.id);
-      } else {
-        activeWidgets.push({ id: w.id, wide: false });
-      }
+      if (exists) { activeWidgets = activeWidgets.filter((item) => item.id !== w.id); }
+      else { activeWidgets.push({ id: w.id, wide: false }); }
       renderWidgets();
     });
-
     row.appendChild(col);
     row.appendChild(btn);
     list.appendChild(row);
@@ -437,37 +362,29 @@ function renderHomeApps() {
   const grid = domRefs.homeAppsGrid;
   if (!grid) return;
   grid.innerHTML = '';
-
   homeAppOrder.forEach((appId) => {
     const app = INSTALLED_APPS.find((item) => item.id === appId);
     if (!app) return;
-
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = `home-app-tile${selectedSwapAppId === app.id ? ' swap-selected' : ''}`;
     btn.setAttribute('data-app-id', app.id);
-
     const iconBox = document.createElement('div');
     iconBox.className = 'home-app-icon-box';
-
     const img = document.createElement('img');
     img.src = app.icon;
     img.alt = app.title;
     attachAppIconFallback(img, app.badge);
     normalizeIcon(img);
-
     const label = document.createElement('span');
     label.className = 'home-app-label';
     label.textContent = app.title;
-
     iconBox.appendChild(img);
     btn.appendChild(iconBox);
     btn.appendChild(label);
-
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (longPressTriggered) return;
-
       if (isHomeEditMode) {
         if (!selectedSwapAppId) {
           selectedSwapAppId = app.id;
@@ -480,19 +397,15 @@ function renderHomeApps() {
         } else {
           const i1 = homeAppOrder.indexOf(selectedSwapAppId);
           const i2 = homeAppOrder.indexOf(app.id);
-          if (i1 !== -1 && i2 !== -1) {
-            [homeAppOrder[i1], homeAppOrder[i2]] = [homeAppOrder[i2], homeAppOrder[i1]];
-          }
+          if (i1 !== -1 && i2 !== -1) { [homeAppOrder[i1], homeAppOrder[i2]] = [homeAppOrder[i2], homeAppOrder[i1]]; }
           selectedSwapAppId = null;
           if (domRefs.homeEditStatus) domRefs.homeEditStatus.textContent = 'Zamieniono miejscami';
           renderHomeApps();
         }
         return;
       }
-
       openApp(app.id);
     });
-
     grid.appendChild(btn);
   });
 }
@@ -501,11 +414,8 @@ function setHomeEditMode(enabled) {
   isHomeEditMode = Boolean(enabled);
   selectedSwapAppId = null;
   domRefs.wallpaperLayer?.classList.toggle('editing', isHomeEditMode);
-  if (!isHomeEditMode) {
-    domRefs.widgetPickerSheet?.classList.remove('open');
-  } else if (domRefs.homeEditStatus) {
-    domRefs.homeEditStatus.textContent = 'Widżety i zamiana pozycji ikon';
-  }
+  if (!isHomeEditMode) { domRefs.widgetPickerSheet?.classList.remove('open'); }
+  else if (domRefs.homeEditStatus) { domRefs.homeEditStatus.textContent = 'Widżety i zamiana pozycji ikon'; }
   renderWidgets();
   renderHomeApps();
 }
@@ -515,18 +425,15 @@ function renderInstalledAppsSearch(query = '') {
   if (!list) return;
   const q = query.trim().toLowerCase();
   list.innerHTML = '';
-
   const filtered = INSTALLED_APPS.filter((app) => !q || app.title.toLowerCase().includes(q));
   if (filtered.length === 0) {
     list.innerHTML = '<div class="empty-label" style="text-align:center;padding:18px;">Brak zainstalowanej aplikacji</div>';
     return;
   }
-
   filtered.forEach((app) => {
     const item = document.createElement('button');
     item.type = 'button';
     item.className = 'installed-app-item';
-
     const thumb = document.createElement('div');
     thumb.className = 'installed-app-thumb';
     const img = document.createElement('img');
@@ -534,24 +441,16 @@ function renderInstalledAppsSearch(query = '') {
     img.alt = app.title;
     attachAppIconFallback(img, app.badge);
     thumb.appendChild(img);
-
     const name = document.createElement('span');
     name.className = 'row-title';
     name.textContent = app.title;
-
     const tag = document.createElement('span');
     tag.className = 'row-value';
     tag.textContent = 'Zainstalowana';
-
     item.appendChild(thumb);
     item.appendChild(name);
     item.appendChild(tag);
-
-    item.addEventListener('click', () => {
-      closeSearchDrawer();
-      openApp(app.id);
-    });
-
+    item.addEventListener('click', () => { closeSearchDrawer(); openApp(app.id); });
     list.appendChild(item);
   });
 }
@@ -563,85 +462,41 @@ function openSearchDrawer() {
   setTimeout(() => domRefs.installedAppsSearch?.focus(), 60);
 }
 
-function closeSearchDrawer() {
-  domRefs.appSearchDrawer?.classList.remove('open');
-}
+function closeSearchDrawer() { domRefs.appSearchDrawer?.classList.remove('open'); }
 
 function bindHomeGesturesAndLongPress() {
   const home = domRefs.wallpaperLayer;
   if (!home) return;
-
   home.addEventListener('pointerdown', (e) => {
     if (isLocked || isAnyAppOpen()) return;
-    if (e.target.closest('.widget-picker-sheet') || e.target.closest('.app-search-drawer') || e.target.closest('.liquid-dock')) {
-      return;
-    }
-
+    if (e.target.closest('.widget-picker-sheet') || e.target.closest('.app-search-drawer') || e.target.closest('.liquid-dock')) return;
     homeSwipeStartX = e.clientX;
     homeSwipeStartY = e.clientY;
     longPressTriggered = false;
-
     clearTimeout(longPressTimer);
-    longPressTimer = setTimeout(() => {
-      longPressTriggered = true;
-      setHomeEditMode(true);
-    }, LONG_PRESS_MS);
+    longPressTimer = setTimeout(() => { longPressTriggered = true; setHomeEditMode(true); }, LONG_PRESS_MS);
   });
-
   home.addEventListener('pointermove', (e) => {
     if (homeSwipeStartX === null || homeSwipeStartY === null) return;
-    if (Math.hypot(e.clientX - homeSwipeStartX, e.clientY - homeSwipeStartY) > 10) {
-      clearTimeout(longPressTimer);
-    }
+    if (Math.hypot(e.clientX - homeSwipeStartX, e.clientY - homeSwipeStartY) > 10) { clearTimeout(longPressTimer); }
   });
-
   home.addEventListener('pointerup', (e) => {
     clearTimeout(longPressTimer);
     if (homeSwipeStartX === null || homeSwipeStartY === null) return;
-
     const dx = e.clientX - homeSwipeStartX;
     const dy = e.clientY - homeSwipeStartY;
     homeSwipeStartX = null;
     homeSwipeStartY = null;
-
     if (longPressTriggered || isHomeEditMode) return;
-
-    if (dx <= -45 && Math.abs(dx) > Math.abs(dy)) {
-      openSearchDrawer();
-    } else if (dx >= 45 && Math.abs(dx) > Math.abs(dy) && domRefs.appSearchDrawer?.classList.contains('open')) {
-      closeSearchDrawer();
-    }
+    if (dx <= -45 && Math.abs(dx) > Math.abs(dy)) { openSearchDrawer(); }
+    else if (dx >= 45 && Math.abs(dx) > Math.abs(dy) && domRefs.appSearchDrawer?.classList.contains('open')) { closeSearchDrawer(); }
   });
-
-  home.addEventListener('pointercancel', () => {
-    clearTimeout(longPressTimer);
-    homeSwipeStartX = null;
-    homeSwipeStartY = null;
-  });
-
-  domRefs.openWidgetDrawerBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    domRefs.widgetPickerSheet?.classList.toggle('open');
-  });
-
-  domRefs.closeWidgetDrawerBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    domRefs.widgetPickerSheet?.classList.remove('open');
-  });
-
-  domRefs.doneEditModeBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    setHomeEditMode(false);
-  });
-
-  domRefs.closeSearchDrawerBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    closeSearchDrawer();
-  });
-
-  domRefs.installedAppsSearch?.addEventListener('input', () => {
-    renderInstalledAppsSearch(domRefs.installedAppsSearch.value);
-  });
+  home.addEventListener('pointercancel', () => { clearTimeout(longPressTimer); homeSwipeStartX = null; homeSwipeStartY = null; });
+  domRefs.openWidgetDrawerBtn?.addEventListener('click', (e) => { e.stopPropagation(); domRefs.widgetPickerSheet?.classList.toggle('open'); });
+  domRefs.closeWidgetDrawerBtn?.addEventListener('click', (e) => { e.stopPropagation(); domRefs.widgetPickerSheet?.classList.remove('open'); });
+  domRefs.doneEditModeBtn?.addEventListener('click', (e) => { e.stopPropagation(); setHomeEditMode(false); });
+  domRefs.closeSearchDrawerBtn?.addEventListener('click', (e) => { e.stopPropagation(); closeSearchDrawer(); });
+  domRefs.installedAppsSearch?.addEventListener('input', () => { renderInstalledAppsSearch(domRefs.installedAppsSearch.value); });
 }
 
 function bindCalculator() {
@@ -649,53 +504,31 @@ function bindCalculator() {
     const btn = e.target.closest('[data-calc]');
     if (!btn || !domRefs.calcDisplay) return;
     const token = btn.getAttribute('data-calc');
-
-    if (token === 'C') {
-      calcExpression = '0';
-      calcResetNext = false;
-    } else if (token === '±') {
-      calcExpression = calcExpression.startsWith('-') ? calcExpression.slice(1) : `-${calcExpression}`;
-    } else if (token === '%') {
-      const num = parseFloat(calcExpression);
-      calcExpression = Number.isNaN(num) ? '0' : String(num / 100);
-    } else if (token === '=') {
+    if (token === 'C') { calcExpression = '0'; calcResetNext = false; }
+    else if (token === '±') { calcExpression = calcExpression.startsWith('-') ? calcExpression.slice(1) : `-${calcExpression}`; }
+    else if (token === '%') { const num = parseFloat(calcExpression); calcExpression = Number.isNaN(num) ? '0' : String(num / 100); }
+    else if (token === '=') {
       try {
         const safeExpr = calcExpression.replace(/[^0-9+\-*/.]/g, '');
         const res = Function(`"use strict"; return (${safeExpr || 0});`)();
         calcExpression = String(res);
         calcResetNext = true;
-      } catch {
-        calcExpression = 'Błąd';
-        calcResetNext = true;
-      }
+      } catch { calcExpression = 'Błąd'; calcResetNext = true; }
     } else {
-      if (calcResetNext && /[0-9.]/.test(token)) {
-        calcExpression = token;
-        calcResetNext = false;
-      } else if (calcExpression === '0' && /[0-9]/.test(token)) {
-        calcExpression = token;
-        calcResetNext = false;
-      } else {
-        calcExpression += token;
-        calcResetNext = false;
-      }
+      if (calcResetNext && /[0-9.]/.test(token)) { calcExpression = token; calcResetNext = false; }
+      else if (calcExpression === '0' && /[0-9]/.test(token)) { calcExpression = token; calcResetNext = false; }
+      else { calcExpression += token; calcResetNext = false; }
     }
     domRefs.calcDisplay.textContent = calcExpression;
   });
 }
 
-function isAnyAppOpen() {
-  return Array.from(domRefs.appViews || []).some((view) => view.classList.contains('open'));
-}
-
-function isHomeScreenVisible() {
-  return !isLocked && !isAnyAppOpen() && Boolean(domRefs.wallpaperLayer?.classList.contains('active'));
-}
+function isAnyAppOpen() { return Array.from(domRefs.appViews || []).some((view) => view.classList.contains('open')); }
+function isHomeScreenVisible() { return !isLocked && !isAnyAppOpen() && Boolean(domRefs.wallpaperLayer?.classList.contains('active')); }
 
 function syncStatusBarDisplay() {
   const bar = domRefs.statusBarOverlay;
   if (!bar) return;
-
   const stillActive = Boolean(domRefs.stillLayer?.classList.contains('active'));
   bar.classList.toggle('visible', !stillActive);
   if (typeof updateStatusBarTone === 'function') updateStatusBarTone();
@@ -704,40 +537,24 @@ function syncStatusBarDisplay() {
 function syncNavBarDisplay() {
   const overlay = domRefs.systemNavOverlay;
   if (!overlay) return;
-
   const appOpen = isAnyAppOpen();
   const homeVisible = isHomeScreenVisible();
   const shouldShowNav = !isLocked && (appOpen || homeVisible);
   const isButtons = currentNavMode === 'buttons';
-
   document.body.classList.toggle('zenios-in-app', appOpen && !isLocked);
   overlay.classList.toggle('in-app', shouldShowNav);
   overlay.classList.toggle('mode-gestures', !isButtons);
   overlay.classList.toggle('mode-buttons', isButtons);
-
-  if (!shouldShowNav) {
-    overlay.style.opacity = '0';
-    overlay.style.visibility = 'hidden';
-    overlay.style.pointerEvents = 'none';
-    return;
-  }
-
+  if (!shouldShowNav) { overlay.style.opacity = '0'; overlay.style.visibility = 'hidden'; overlay.style.pointerEvents = 'none'; return; }
   overlay.style.opacity = '1';
   overlay.style.visibility = 'visible';
   overlay.style.pointerEvents = 'auto';
-
-  if (domRefs.gestureHandle) {
-    domRefs.gestureHandle.style.display = isButtons ? 'none' : 'inline-flex';
-  }
-  if (domRefs.sysButtonsRow) {
-    domRefs.sysButtonsRow.style.display = isButtons ? 'flex' : 'none';
-  }
+  if (domRefs.gestureHandle) { domRefs.gestureHandle.style.display = isButtons ? 'none' : 'inline-flex'; }
+  if (domRefs.sysButtonsRow) { domRefs.sysButtonsRow.style.display = isButtons ? 'flex' : 'none'; }
 }
 
 function hideAllUnlockPanels() {
-  [domRefs.unlockPinPanel, domRefs.unlockPasswordPanel, domRefs.unlockPatternPanel].forEach((panel) => {
-    if (panel) panel.classList.remove('active');
-  });
+  [domRefs.unlockPinPanel, domRefs.unlockPasswordPanel, domRefs.unlockPatternPanel].forEach((panel) => { if (panel) panel.classList.remove('active'); });
   if (domRefs.pinError) domRefs.pinError.textContent = '';
   if (domRefs.passwordError) domRefs.passwordError.textContent = '';
   if (domRefs.patternError) domRefs.patternError.textContent = '';
@@ -753,9 +570,7 @@ function resetUnlockInputs() {
 }
 
 function lockScreen() {
-  if (window.ZeniCamera && typeof window.ZeniCamera.close === 'function') {
-    window.ZeniCamera.close();
-  }
+  if (window.ZeniCamera && typeof window.ZeniCamera.close === 'function') { window.ZeniCamera.close(); }
   isLocked = true;
   setHomeEditMode(false);
   closeSearchDrawer();
@@ -764,9 +579,7 @@ function lockScreen() {
   resetUnlockInputs();
   updateLockHint();
   showLayer(domRefs.lockscreenLayer);
-  if (domRefs.liquidDock) {
-    domRefs.liquidDock.classList.remove('visible');
-  }
+  if (domRefs.liquidDock) { domRefs.liquidDock.classList.remove('visible'); }
 }
 
 function unlockScreenNow() {
@@ -775,52 +588,31 @@ function unlockScreenNow() {
   hideAllUnlockPanels();
   resetUnlockInputs();
   showLayer(domRefs.wallpaperLayer);
-  if (domRefs.liquidDock) {
-    domRefs.liquidDock.classList.add('visible');
-  }
+  if (domRefs.liquidDock) { domRefs.liquidDock.classList.add('visible'); }
 }
 
 function updateLockHint() {
   if (!domRefs.lockHintText) return;
-  if (currentLockMethod === 'swipe') {
-    domRefs.lockHintText.textContent = 'Przeciągnij w górę, aby odblokować';
-  } else if (currentLockMethod === 'pin') {
-    domRefs.lockHintText.textContent = 'Przeciągnij w górę — wpisz PIN';
-  } else if (currentLockMethod === 'password') {
-    domRefs.lockHintText.textContent = 'Przeciągnij w górę — wpisz hasło';
-  } else if (currentLockMethod === 'pattern') {
-    domRefs.lockHintText.textContent = 'Przeciągnij w górę — narysuj wzór';
-  }
+  if (currentLockMethod === 'swipe') { domRefs.lockHintText.textContent = 'Przeciągnij w górę, aby odblokować'; }
+  else if (currentLockMethod === 'pin') { domRefs.lockHintText.textContent = 'Przeciągnij w górę — wpisz PIN'; }
+  else if (currentLockMethod === 'password') { domRefs.lockHintText.textContent = 'Przeciągnij w górę — wpisz hasło'; }
+  else if (currentLockMethod === 'pattern') { domRefs.lockHintText.textContent = 'Przeciągnij w górę — narysuj wzór'; }
 }
 
 function requestUnlockChallenge(targetAppId = null) {
   pendingAppAfterUnlock = targetAppId;
-
-  if (currentLockMethod === 'swipe') {
-    unlockScreenNow();
-    if (targetAppId) openApp(targetAppId);
-    return;
-  }
-
+  if (currentLockMethod === 'swipe') { unlockScreenNow(); if (targetAppId) openApp(targetAppId); return; }
   hideAllUnlockPanels();
   resetUnlockInputs();
   if (domRefs.lockBottomArea) domRefs.lockBottomArea.classList.add('dimmed');
-
-  if (currentLockMethod === 'pin' && domRefs.unlockPinPanel) {
-    domRefs.unlockPinPanel.classList.add('active');
-  } else if (currentLockMethod === 'password' && domRefs.unlockPasswordPanel) {
-    domRefs.unlockPasswordPanel.classList.add('active');
-    setTimeout(() => domRefs.lockPasswordInput?.focus(), 50);
-  } else if (currentLockMethod === 'pattern' && domRefs.unlockPatternPanel) {
-    domRefs.unlockPatternPanel.classList.add('active');
-  }
+  if (currentLockMethod === 'pin' && domRefs.unlockPinPanel) { domRefs.unlockPinPanel.classList.add('active'); }
+  else if (currentLockMethod === 'password' && domRefs.unlockPasswordPanel) { domRefs.unlockPasswordPanel.classList.add('active'); setTimeout(() => domRefs.lockPasswordInput?.focus(), 50); }
+  else if (currentLockMethod === 'pattern' && domRefs.unlockPatternPanel) { domRefs.unlockPatternPanel.classList.add('active'); }
 }
 
 function updatePinDots() {
   const dots = domRefs.pinDots?.querySelectorAll('span') || [];
-  dots.forEach((dot, i) => {
-    dot.classList.toggle('filled', i < enteredPin.length);
-  });
+  dots.forEach((dot, i) => { dot.classList.toggle('filled', i < enteredPin.length); });
 }
 
 function handlePinDigit(digit) {
@@ -828,7 +620,6 @@ function handlePinDigit(digit) {
   enteredPin += digit;
   updatePinDots();
   if (domRefs.pinError) domRefs.pinError.textContent = '';
-
   if (enteredPin.length === 4) {
     if (enteredPin === pinCode) {
       const nextApp = pendingAppAfterUnlock;
@@ -836,10 +627,7 @@ function handlePinDigit(digit) {
       if (nextApp) openApp(nextApp);
     } else {
       if (domRefs.pinError) domRefs.pinError.textContent = 'Nieprawidłowy PIN';
-      setTimeout(() => {
-        enteredPin = '';
-        updatePinDots();
-      }, 280);
+      setTimeout(() => { enteredPin = ''; updatePinDots(); }, 280);
     }
   }
 }
@@ -850,9 +638,7 @@ function submitPasswordUnlock() {
     const nextApp = pendingAppAfterUnlock;
     unlockScreenNow();
     if (nextApp) openApp(nextApp);
-  } else if (domRefs.passwordError) {
-    domRefs.passwordError.textContent = 'Nieprawidłowe hasło';
-  }
+  } else if (domRefs.passwordError) { domRefs.passwordError.textContent = 'Nieprawidłowe hasło'; }
 }
 
 function clearPatternNodes() {
@@ -863,11 +649,9 @@ function clearPatternNodes() {
 function handlePatternNode(nodeEl) {
   const id = nodeEl.getAttribute('data-node');
   if (!id || enteredPattern.includes(id)) return;
-
   enteredPattern.push(id);
   nodeEl.classList.add('selected');
   if (domRefs.patternError) domRefs.patternError.textContent = '';
-
   const seq = enteredPattern.join('-');
   if (seq === patternCode) {
     const nextApp = pendingAppAfterUnlock;
@@ -881,33 +665,17 @@ function handlePatternNode(nodeEl) {
 
 function syncSecretEditorUi() {
   if (!domRefs.secretEditInput || !domRefs.secretEditorLabel) return;
-  if (currentLockMethod === 'pin') {
-    domRefs.secretEditorLabel.textContent = 'Kod PIN (4 cyfry)';
-    domRefs.secretEditInput.value = pinCode;
-  } else if (currentLockMethod === 'password') {
-    domRefs.secretEditorLabel.textContent = 'Hasło odblokowania';
-    domRefs.secretEditInput.value = passwordCode;
-  } else if (currentLockMethod === 'pattern') {
-    domRefs.secretEditorLabel.textContent = 'Wzór (punkty 1–9 oddzielone myślnikiem)';
-    domRefs.secretEditInput.value = patternCode;
-  } else {
-    domRefs.secretEditorLabel.textContent = 'Zapisany kod / wzór (do użycia po zmianie metody)';
-    domRefs.secretEditInput.value = pinCode;
-  }
+  if (currentLockMethod === 'pin') { domRefs.secretEditorLabel.textContent = 'Kod PIN (4 cyfry)'; domRefs.secretEditInput.value = pinCode; }
+  else if (currentLockMethod === 'password') { domRefs.secretEditorLabel.textContent = 'Hasło odblokowania'; domRefs.secretEditInput.value = passwordCode; }
+  else if (currentLockMethod === 'pattern') { domRefs.secretEditorLabel.textContent = 'Wzór (punkty 1–9 oddzielone myślnikiem)'; domRefs.secretEditInput.value = patternCode; }
+  else { domRefs.secretEditorLabel.textContent = 'Zapisany kod / wzór (do użycia po zmianie metody)'; domRefs.secretEditInput.value = pinCode; }
 }
 
 function setLockMethod(method) {
   const valid = ['swipe', 'pin', 'password', 'pattern'].includes(method) ? method : 'swipe';
   currentLockMethod = valid;
-
-  if (domRefs.currentLockLabel) {
-    domRefs.currentLockLabel.textContent = LOCK_LABELS[valid];
-  }
-
-  domRefs.lockMethodOptions?.forEach((row) => {
-    row.classList.toggle('active', row.getAttribute('data-lock-method') === valid);
-  });
-
+  if (domRefs.currentLockLabel) { domRefs.currentLockLabel.textContent = LOCK_LABELS[valid]; }
+  domRefs.lockMethodOptions?.forEach((row) => { row.classList.toggle('active', row.getAttribute('data-lock-method') === valid); });
   updateLockHint();
   syncSecretEditorUi();
 }
@@ -915,20 +683,10 @@ function setLockMethod(method) {
 function saveSecretFromEditor() {
   const raw = (domRefs.secretEditInput?.value || '').trim();
   if (!raw) return;
-
-  if (currentLockMethod === 'pin') {
-    pinCode = raw;
-    if (domRefs.secretStatusHint) domRefs.secretStatusHint.textContent = `Zapisano PIN: ${pinCode}`;
-  } else if (currentLockMethod === 'password') {
-    passwordCode = raw;
-    if (domRefs.secretStatusHint) domRefs.secretStatusHint.textContent = `Zapisano hasło: ${passwordCode}`;
-  } else if (currentLockMethod === 'pattern') {
-    patternCode = raw;
-    if (domRefs.secretStatusHint) domRefs.secretStatusHint.textContent = `Zapisano wzór: ${patternCode}`;
-  } else {
-    pinCode = raw;
-    if (domRefs.secretStatusHint) domRefs.secretStatusHint.textContent = `Zapisano kod PIN: ${pinCode}`;
-  }
+  if (currentLockMethod === 'pin') { pinCode = raw; if (domRefs.secretStatusHint) domRefs.secretStatusHint.textContent = `Zapisano PIN: ${pinCode}`; }
+  else if (currentLockMethod === 'password') { passwordCode = raw; if (domRefs.secretStatusHint) domRefs.secretStatusHint.textContent = `Zapisano hasło: ${passwordCode}`; }
+  else if (currentLockMethod === 'pattern') { patternCode = raw; if (domRefs.secretStatusHint) domRefs.secretStatusHint.textContent = `Zapisano wzór: ${patternCode}`; }
+  else { pinCode = raw; if (domRefs.secretStatusHint) domRefs.secretStatusHint.textContent = `Zapisano kod PIN: ${pinCode}`; }
 }
 
 function bindLockscreenFeatures() {
@@ -938,160 +696,64 @@ function bindLockscreenFeatures() {
       if (e.target.closest('.unlock-panel') || e.target.closest('.lock-circle-btn')) return;
       lockSwipeStartY = e.clientY;
     });
-
     layer.addEventListener('pointerup', (e) => {
       if (e.target.closest('.unlock-panel') || e.target.closest('.lock-circle-btn')) return;
       if (lockSwipeStartY === null) return;
       const deltaY = lockSwipeStartY - e.clientY;
       lockSwipeStartY = null;
-      if (deltaY >= 14) {
-        requestUnlockChallenge(null);
-      }
+      if (deltaY >= 14) { requestUnlockChallenge(null); }
     });
   }
-
-  domRefs.lockSwipeBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    requestUnlockChallenge(null);
-  });
-
-  domRefs.lockTorchBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    domRefs.lockTorchBtn.classList.toggle('torch-on');
-  });
-
+  domRefs.lockSwipeBtn?.addEventListener('click', (e) => { e.stopPropagation(); requestUnlockChallenge(null); });
+  domRefs.lockTorchBtn?.addEventListener('click', (e) => { e.stopPropagation(); domRefs.lockTorchBtn.classList.toggle('torch-on'); });
   domRefs.lockCameraBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     if (window.ZeniCamera) {
-      const container = domRefs.lockscreenLayer || document.body;
-      window.ZeniCamera.open(container);
+      // Otwiera gotowy aparat z HTML
+      window.ZeniCamera.open();
     }
   });
-
-  domRefs.pinKeys?.forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const digit = btn.getAttribute('data-pin');
-      if (digit) handlePinDigit(digit);
-    });
-  });
-
-  domRefs.pinClearBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    enteredPin = '';
-    updatePinDots();
-    if (domRefs.pinError) domRefs.pinError.textContent = '';
-  });
-
-  domRefs.pinCancelBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    hideAllUnlockPanels();
-    resetUnlockInputs();
-  });
-
-  domRefs.passwordSubmitBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    submitPasswordUnlock();
-  });
-
-  domRefs.lockPasswordInput?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      submitPasswordUnlock();
-    }
-  });
-
-  domRefs.passwordCancelBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    hideAllUnlockPanels();
-    resetUnlockInputs();
-  });
-
-  domRefs.patternNodes?.forEach((node) => {
-    node.addEventListener('click', (e) => {
-      e.stopPropagation();
-      handlePatternNode(node);
-    });
-  });
-
-  domRefs.patternResetBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    clearPatternNodes();
-  });
-
-  domRefs.patternCancelBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    hideAllUnlockPanels();
-    resetUnlockInputs();
-  });
+  domRefs.pinKeys?.forEach((btn) => { btn.addEventListener('click', (e) => { e.stopPropagation(); const digit = btn.getAttribute('data-pin'); if (digit) handlePinDigit(digit); }); });
+  domRefs.pinClearBtn?.addEventListener('click', (e) => { e.stopPropagation(); enteredPin = ''; updatePinDots(); if (domRefs.pinError) domRefs.pinError.textContent = ''; });
+  domRefs.pinCancelBtn?.addEventListener('click', (e) => { e.stopPropagation(); hideAllUnlockPanels(); resetUnlockInputs(); });
+  domRefs.passwordSubmitBtn?.addEventListener('click', (e) => { e.stopPropagation(); submitPasswordUnlock(); });
+  domRefs.lockPasswordInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submitPasswordUnlock(); } });
+  domRefs.passwordCancelBtn?.addEventListener('click', (e) => { e.stopPropagation(); hideAllUnlockPanels(); resetUnlockInputs(); });
+  domRefs.patternNodes?.forEach((node) => { node.addEventListener('click', (e) => { e.stopPropagation(); handlePatternNode(node); }); });
+  domRefs.patternResetBtn?.addEventListener('click', (e) => { e.stopPropagation(); clearPatternNodes(); });
+  domRefs.patternCancelBtn?.addEventListener('click', (e) => { e.stopPropagation(); hideAllUnlockPanels(); resetUnlockInputs(); });
 }
 
 function openSettingsSubscreen(screenId) {
-  [
-    domRefs.settingsMain,
-    domRefs.settingsWallpaper,
-    domRefs.settingsSystemNav,
-    domRefs.settingsPasscode,
-    document.getElementById('settings-lockscreen'),
-    document.getElementById('settings-wifi'),
-    document.getElementById('settings-bluetooth')
-  ].forEach((el) => {
-    if (!el) return;
-    el.classList.toggle('active', el.id === screenId);
-  });
+  [domRefs.settingsMain, domRefs.settingsWallpaper, domRefs.settingsSystemNav, domRefs.settingsPasscode, document.getElementById('settings-lockscreen'), document.getElementById('settings-wifi'), document.getElementById('settings-bluetooth')].forEach((el) => { if (!el) return; el.classList.toggle('active', el.id === screenId); });
 }
 
 function setSystemNavMode(mode) {
   currentNavMode = mode === 'buttons' ? 'buttons' : 'gestures';
-
-  if (domRefs.currentNavLabel) {
-    domRefs.currentNavLabel.textContent = currentNavMode === 'buttons' ? 'Przyciski' : 'Gesty';
-  }
-
-  domRefs.navModeOptions.forEach((row) => {
-    row.classList.toggle('active', row.getAttribute('data-nav-mode') === currentNavMode);
-  });
-
+  if (domRefs.currentNavLabel) { domRefs.currentNavLabel.textContent = currentNavMode === 'buttons' ? 'Przyciski' : 'Gesty'; }
+  domRefs.navModeOptions.forEach((row) => { row.classList.toggle('active', row.getAttribute('data-nav-mode') === currentNavMode); });
   syncNavBarDisplay();
 }
 
 function handleBackAction() {
   const settingsOpen = domRefs.settingsView?.classList.contains('open');
-  const subscreenActive =
-    domRefs.settingsWallpaper?.classList.contains('active') ||
-    domRefs.settingsSystemNav?.classList.contains('active') ||
-    domRefs.settingsPasscode?.classList.contains('active') ||
-    document.getElementById('settings-lockscreen')?.classList.contains('active');
-
-  if (settingsOpen && subscreenActive) {
-    openSettingsSubscreen('settings-main');
-  } else {
-    closeAllApps();
-  }
+  const subscreenActive = domRefs.settingsWallpaper?.classList.contains('active') || domRefs.settingsSystemNav?.classList.contains('active') || domRefs.settingsPasscode?.classList.contains('active') || document.getElementById('settings-lockscreen')?.classList.contains('active');
+  if (settingsOpen && subscreenActive) { openSettingsSubscreen('settings-main'); } else { closeAllApps(); }
 }
 
 function openApp(appId) {
   if (!appId) return;
-  if (isLocked) {
-    requestUnlockChallenge(appId);
-    return;
-  }
+  if (isLocked) { requestUnlockChallenge(appId); return; }
   closeSearchDrawer();
   setHomeEditMode(false);
-  if (appId === 'app-settings') {
-    openSettingsSubscreen('settings-main');
-  }
-  domRefs.appViews.forEach((view) => {
-    view.classList.toggle('open', view.id === appId);
-  });
+  if (appId === 'app-settings') { openSettingsSubscreen('settings-main'); }
+  domRefs.appViews.forEach((view) => { view.classList.toggle('open', view.id === appId); });
   syncNavBarDisplay();
   syncStatusBarDisplay();
 }
 
 function closeAllApps() {
-  domRefs.appViews.forEach((view) => {
-    view.classList.remove('open');
-  });
+  domRefs.appViews.forEach((view) => { view.classList.remove('open'); });
   openSettingsSubscreen('settings-main');
   syncNavBarDisplay();
   syncStatusBarDisplay();
@@ -1101,163 +763,66 @@ function bindAppNavigation() {
   domRefs.openAppTriggers.forEach((el) => {
     const targetId = el.getAttribute('data-open-app');
     if (!targetId) return;
-
-    el.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      openApp(targetId);
-    });
+    el.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openApp(targetId); });
   });
-
   if (domRefs.gestureHandle) {
-    domRefs.gestureHandle.addEventListener('pointerdown', (e) => {
-      e.stopPropagation();
-      gestureStartY = e.clientY;
-    });
-
+    domRefs.gestureHandle.addEventListener('pointerdown', (e) => { e.stopPropagation(); gestureStartY = e.clientY; });
     domRefs.gestureHandle.addEventListener('pointerup', (e) => {
       e.stopPropagation();
-      if (gestureStartY === null) {
-        if (isAnyAppOpen()) closeAllApps();
-        return;
-      }
+      if (gestureStartY === null) { if (isAnyAppOpen()) closeAllApps(); return; }
       const deltaY = gestureStartY - e.clientY;
       gestureStartY = null;
-      if ((deltaY >= 8 || Math.abs(deltaY) < 10) && isAnyAppOpen()) {
-        closeAllApps();
-      }
+      if ((deltaY >= 8 || Math.abs(deltaY) < 10) && isAnyAppOpen()) { closeAllApps(); }
     });
-
-    domRefs.gestureHandle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (isAnyAppOpen()) {
-        closeAllApps();
-      }
-    });
+    domRefs.gestureHandle.addEventListener('click', (e) => { e.stopPropagation(); if (isAnyAppOpen()) { closeAllApps(); } });
   }
-
-  domRefs.sysBtnHome?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    closeSearchDrawer();
-    closeAllApps();
-  });
-
-  domRefs.sysBtnRecents?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    closeAllApps();
-  });
-
+  domRefs.sysBtnHome?.addEventListener('click', (e) => { e.stopPropagation(); closeSearchDrawer(); closeAllApps(); });
+  domRefs.sysBtnRecents?.addEventListener('click', (e) => { e.stopPropagation(); closeAllApps(); });
   domRefs.sysBtnBack?.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (domRefs.appSearchDrawer?.classList.contains('open') && !isAnyAppOpen()) {
-      closeSearchDrawer();
-      return;
-    }
+    if (domRefs.appSearchDrawer?.classList.contains('open') && !isAnyAppOpen()) { closeSearchDrawer(); return; }
     handleBackAction();
   });
 }
 
 function setGalleryView(viewMode) {
   const isTimeline = viewMode === 'timeline';
-
-  if (domRefs.galPaneCollections) {
-    domRefs.galPaneCollections.classList.toggle('active', !isTimeline);
-  }
-  if (domRefs.galPaneTimeline) {
-    domRefs.galPaneTimeline.classList.toggle('active', isTimeline);
-  }
-
-  domRefs.galSegButtons.forEach((btn) => {
-    btn.classList.toggle('active', btn.getAttribute('data-gal-view') === viewMode);
-  });
-
-  const messages = {
-    collections: 'Brak pozycji',
-    photos: 'Brak obrazów',
-    albums: 'Brak kolekcji',
-    search: 'Brak wyników'
-  };
-
-  if (domRefs.galleryEmptyText && messages[viewMode]) {
-    domRefs.galleryEmptyText.textContent = messages[viewMode];
-  }
-  if (domRefs.galleryRecentCount) {
-    domRefs.galleryRecentCount.textContent = '0 obrazów, 0 klipów';
-  }
+  if (domRefs.galPaneCollections) { domRefs.galPaneCollections.classList.toggle('active', !isTimeline); }
+  if (domRefs.galPaneTimeline) { domRefs.galPaneTimeline.classList.toggle('active', isTimeline); }
+  domRefs.galSegButtons.forEach((btn) => { btn.classList.toggle('active', btn.getAttribute('data-gal-view') === viewMode); });
+  const messages = { collections: 'Brak pozycji', photos: 'Brak obrazów', albums: 'Brak kolekcji', search: 'Brak wyników' };
+  if (domRefs.galleryEmptyText && messages[viewMode]) { domRefs.galleryEmptyText.textContent = messages[viewMode]; }
+  if (domRefs.galleryRecentCount) { domRefs.galleryRecentCount.textContent = '0 obrazów, 0 klipów'; }
 }
 
 function bindGalleryFeatures() {
-  domRefs.galSegButtons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const mode = btn.getAttribute('data-gal-view');
-      if (mode) setGalleryView(mode);
-    });
-  });
-
+  domRefs.galSegButtons.forEach((btn) => { btn.addEventListener('click', () => { const mode = btn.getAttribute('data-gal-view'); if (mode) setGalleryView(mode); }); });
   domRefs.galNavButtons.forEach((btn, index) => {
     btn.addEventListener('click', () => {
       const nav = btn.getAttribute('data-gal-nav');
       domRefs.galNavButtons.forEach((b, i) => b.classList.toggle('active', i === index));
-
-      if (nav === 'timeline') {
-        setGalleryView('timeline');
-      } else if (nav === 'search') {
-        setGalleryView('collections');
-        domRefs.gallerySearchWrap?.classList.add('open');
-        domRefs.gallerySearchInput?.focus();
-      } else {
-        setGalleryView(nav || 'collections');
-      }
+      if (nav === 'timeline') { setGalleryView('timeline'); }
+      else if (nav === 'search') { setGalleryView('collections'); domRefs.gallerySearchWrap?.classList.add('open'); domRefs.gallerySearchInput?.focus(); }
+      else { setGalleryView(nav || 'collections'); }
     });
   });
-
   if (domRefs.gallerySearchToggle && domRefs.gallerySearchWrap) {
-    domRefs.gallerySearchToggle.addEventListener('click', () => {
-      const opened = domRefs.gallerySearchWrap.classList.toggle('open');
-      if (opened) domRefs.gallerySearchInput?.focus();
-    });
+    domRefs.gallerySearchToggle.addEventListener('click', () => { const opened = domRefs.gallerySearchWrap.classList.toggle('open'); if (opened) domRefs.gallerySearchInput?.focus(); });
   }
-
   if (domRefs.gallerySearchInput && domRefs.galleryEmptyText) {
-    domRefs.gallerySearchInput.addEventListener('input', () => {
-      const q = domRefs.gallerySearchInput.value.trim();
-      domRefs.galleryEmptyText.textContent = q
-        ? `Brak wyników dla „${q}”`
-        : 'Brak pozycji';
-    });
+    domRefs.gallerySearchInput.addEventListener('input', () => { const q = domRefs.gallerySearchInput.value.trim(); domRefs.galleryEmptyText.textContent = q ? `Brak wyników dla „${q}”` : 'Brak pozycji'; });
   }
-
-  domRefs.zoomPills.forEach((pill) => {
-    pill.addEventListener('click', () => {
-      domRefs.zoomPills.forEach((p) => p.classList.toggle('active', p === pill));
-    });
-  });
+  domRefs.zoomPills.forEach((pill) => { pill.addEventListener('click', () => { domRefs.zoomPills.forEach((p) => p.classList.toggle('active', p === pill)); }); });
 }
 
 function bindSettingsFeatures() {
-  const {
-    settingsSearch,
-    openWallpaperPicker,
-    openSystemNavPicker,
-    openPasscodePicker,
-    settingsBackButtons,
-    airplaneToggle,
-    wifiStatusValue,
-    btStatusValue,
-    navModeOptions,
-    lockMethodOptions,
-    saveSecretBtn,
-    testLockNowBtn,
-    batteryCycleRow
-  } = domRefs;
-
+  const { settingsSearch, openWallpaperPicker, openSystemNavPicker, openPasscodePicker, settingsBackButtons, airplaneToggle, wifiStatusValue, btStatusValue, navModeOptions, lockMethodOptions, saveSecretBtn, testLockNowBtn, batteryCycleRow } = domRefs;
   if (settingsSearch) {
     settingsSearch.addEventListener('input', () => {
       const q = settingsSearch.value.trim().toLowerCase();
       document.querySelectorAll('#settings-main .settings-group[data-group]').forEach((group) => {
         const rows = group.querySelectorAll('.settings-row');
         let visibleCount = 0;
-
         rows.forEach((row) => {
           const titleText = (row.querySelector('.row-title')?.textContent || '').toLowerCase();
           const extra = (row.getAttribute('data-search') || '').toLowerCase();
@@ -1265,85 +830,25 @@ function bindSettingsFeatures() {
           row.classList.toggle('hidden-by-search', !match);
           if (match) visibleCount++;
         });
-
         group.classList.toggle('all-hidden', visibleCount === 0);
       });
     });
   }
-
-  if (airplaneToggle) {
-    airplaneToggle.addEventListener('change', () => {
-      const on = airplaneToggle.checked;
-      if (wifiStatusValue) wifiStatusValue.textContent = on ? 'Wyłączone' : 'ZeniNet';
-      if (btStatusValue) btStatusValue.textContent = on ? 'Wyłączony' : 'Włączony';
-    });
-  }
-
-  if (batteryCycleRow) {
-    batteryCycleRow.addEventListener('click', () => {
-      batteryPresetIndex = (batteryPresetIndex + 1) % BATTERY_PRESETS.length;
-      applyBatteryLevel(BATTERY_PRESETS[batteryPresetIndex]);
-    });
-  }
-
-  if (openPasscodePicker) {
-    openPasscodePicker.addEventListener('click', () => {
-      syncSecretEditorUi();
-      openSettingsSubscreen('settings-passcode');
-    });
-  }
-
-  if (openWallpaperPicker) {
-    openWallpaperPicker.addEventListener('click', () => {
-      openSettingsSubscreen('settings-wallpaper');
-    });
-  }
-
-  if (openSystemNavPicker) {
-    openSystemNavPicker.addEventListener('click', () => {
-      openSettingsSubscreen('settings-system-nav');
-    });
-  }
-
-  settingsBackButtons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      openSettingsSubscreen('settings-main');
-    });
-  });
-
-  navModeOptions.forEach((row) => {
-    row.addEventListener('click', () => {
-      const mode = row.getAttribute('data-nav-mode');
-      if (mode) setSystemNavMode(mode);
-    });
-  });
-
-  lockMethodOptions?.forEach((row) => {
-    row.addEventListener('click', () => {
-      const method = row.getAttribute('data-lock-method');
-      if (method) setLockMethod(method);
-    });
-  });
-
-  saveSecretBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    saveSecretFromEditor();
-  });
-
-  testLockNowBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    lockScreen();
-  });
+  if (airplaneToggle) { airplaneToggle.addEventListener('change', () => { const on = airplaneToggle.checked; if (wifiStatusValue) wifiStatusValue.textContent = on ? 'Wyłączone' : 'ZeniNet'; if (btStatusValue) btStatusValue.textContent = on ? 'Wyłączony' : 'Włączony'; }); }
+  if (batteryCycleRow) { batteryCycleRow.addEventListener('click', () => { batteryPresetIndex = (batteryPresetIndex + 1) % BATTERY_PRESETS.length; applyBatteryLevel(BATTERY_PRESETS[batteryPresetIndex]); }); }
+  if (openPasscodePicker) { openPasscodePicker.addEventListener('click', () => { syncSecretEditorUi(); openSettingsSubscreen('settings-passcode'); }); }
+  if (openWallpaperPicker) { openWallpaperPicker.addEventListener('click', () => { openSettingsSubscreen('settings-wallpaper'); }); }
+  if (openSystemNavPicker) { openSystemNavPicker.addEventListener('click', () => { openSettingsSubscreen('settings-system-nav'); }); }
+  settingsBackButtons.forEach((btn) => { btn.addEventListener('click', () => { openSettingsSubscreen('settings-main'); }); });
+  navModeOptions.forEach((row) => { row.addEventListener('click', () => { const mode = row.getAttribute('data-nav-mode'); if (mode) setSystemNavMode(mode); }); });
+  lockMethodOptions?.forEach((row) => { row.addEventListener('click', () => { const method = row.getAttribute('data-lock-method'); if (method) setLockMethod(method); }); });
+  saveSecretBtn?.addEventListener('click', (e) => { e.stopPropagation(); saveSecretFromEditor(); });
+  testLockNowBtn?.addEventListener('click', (e) => { e.stopPropagation(); lockScreen(); });
 }
 
 function finishLoading() {
-  if (loadTimer) {
-    clearTimeout(loadTimer);
-    loadTimer = null;
-  }
-  if (domRefs.loadingStill) {
-    domRefs.loadingStill.style.animation = 'none';
-  }
+  if (loadTimer) { clearTimeout(loadTimer); loadTimer = null; }
+  if (domRefs.loadingStill) { domRefs.loadingStill.style.animation = 'none'; }
   lockScreen();
 }
 
@@ -1467,16 +972,12 @@ function initSystem() {
   setSystemNavMode(currentNavMode);
   setLockMethod(currentLockMethod);
   showLayer(domRefs.stillLayer);
-
-  if (domRefs.liquidDock) {
-    domRefs.liquidDock.classList.remove('visible');
-  }
-
+  if (domRefs.liquidDock) { domRefs.liquidDock.classList.remove('visible'); }
   loadTimer = setTimeout(finishLoading, LOAD_DURATION_MS);
 }
 
 /* =====================================================================
-   ZeniOS 2.0 — motyw, kalkulator, notatki, pliki, kalendarz, zegar, centrum sterowania
+   ZeniOS 2.0 — aplikacje
    ===================================================================== */
 
 const $z = (id) => document.getElementById(id);
@@ -1500,7 +1001,6 @@ function zeniToast(msg) {
   zeniToastTimer = setTimeout(() => t.classList.remove('show'), 1700);
 }
 
-/* ---------------- MOTYW ---------------- */
 function updateStatusBarTone() {
   const phone = document.querySelector('.phone-screen');
   if (!phone) return;
@@ -1514,43 +1014,24 @@ function setTheme(theme, animate = true) {
   const phone = document.querySelector('.phone-screen');
   if (!phone) return;
   currentTheme = theme === 'light' ? 'light' : 'dark';
-  if (animate) {
-    phone.classList.add('theme-anim');
-    setTimeout(() => phone.classList.remove('theme-anim'), 500);
-  }
+  if (animate) { phone.classList.add('theme-anim'); setTimeout(() => phone.classList.remove('theme-anim'), 500); }
   phone.setAttribute('data-theme', currentTheme);
-  document.querySelectorAll('[data-theme-set]').forEach((b) => {
-    b.classList.toggle('active', b.getAttribute('data-theme-set') === currentTheme);
-  });
+  document.querySelectorAll('[data-theme-set]').forEach((b) => { b.classList.toggle('active', b.getAttribute('data-theme-set') === currentTheme); });
   $z('cc-theme')?.classList.toggle('on-blue', currentTheme === 'dark');
   updateStatusBarTone();
 }
 
 function bindTheme() {
-  document.querySelectorAll('[data-theme-set]').forEach((b) => {
-    b.addEventListener('click', (e) => {
-      e.stopPropagation();
-      setTheme(b.getAttribute('data-theme-set'));
-    });
-  });
+  document.querySelectorAll('[data-theme-set]').forEach((b) => { b.addEventListener('click', (e) => { e.stopPropagation(); setTheme(b.getAttribute('data-theme-set')); }); });
   setTheme('dark', false);
 }
 
-/* ---------------- KALKULATOR ---------------- */
 function initCalculator() {
   const display = $z('calc-display');
   const pad = $z('calc-pad');
   const acBtn = $z('calc-ac');
   if (!display || !pad) return;
-
-  let cur = '0';
-  let acc = null;
-  let op = null;
-  let fresh = true;
-  let lastOp = null;
-  let lastVal = null;
-  let justEq = false;
-
+  let cur = '0', acc = null, op = null, fresh = true, lastOp = null, lastVal = null, justEq = false;
   const numStr = (n) => {
     if (!isFinite(n)) return 'Błąd';
     const s = String(parseFloat(n.toPrecision(12)));
@@ -1566,15 +1047,7 @@ function initCalculator() {
     const grouped = i.replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
     return (neg ? '-' : '') + grouped + (f !== undefined ? ',' + f : '');
   };
-  const apply = (a, b, o) => {
-    switch (o) {
-      case '+': return a + b;
-      case '-': return a - b;
-      case '*': return a * b;
-      case '/': return b === 0 ? NaN : a / b;
-      default: return b;
-    }
-  };
+  const apply = (a, b, o) => { switch (o) { case '+': return a + b; case '-': return a - b; case '*': return a * b; case '/': return b === 0 ? NaN : a / b; default: return b; } };
   const render = () => {
     const text = fmt(cur);
     display.textContent = text;
@@ -1582,10 +1055,7 @@ function initCalculator() {
     const scale = len <= 6 ? 0.2 : len <= 7 ? 0.175 : len <= 8 ? 0.155 : len <= 9 ? 0.138 : len <= 11 ? 0.118 : 0.1;
     display.style.fontSize = `calc(min(100vw, 50dvh) * ${scale})`;
     if (acBtn) acBtn.textContent = cur !== '0' || !fresh ? 'C' : 'AC';
-    pad.querySelectorAll('.op').forEach((b) => {
-      const t = b.getAttribute('data-calc');
-      b.classList.toggle('active', Boolean(op) && fresh && t === op);
-    });
+    pad.querySelectorAll('.op').forEach((b) => { const t = b.getAttribute('data-calc'); b.classList.toggle('active', Boolean(op) && fresh && t === op); });
   };
   const press = (t) => {
     if (cur === 'Błąd' && t !== 'C') { cur = '0'; acc = null; op = null; fresh = true; }
@@ -1613,21 +1083,15 @@ function initCalculator() {
         const res = apply(val, lastVal, lastOp);
         cur = numStr(res); acc = res; fresh = true; justEq = true;
       }
-    } else if (t === '%') {
-      cur = numStr(parseFloat(cur) / 100); fresh = false;
-    } else if (t === '±') {
-      if (cur !== '0') cur = cur.startsWith('-') ? cur.slice(1) : '-' + cur;
-    } else if (t === 'C') {
+    } else if (t === '%') { cur = numStr(parseFloat(cur) / 100); fresh = false; }
+    else if (t === '±') { if (cur !== '0') cur = cur.startsWith('-') ? cur.slice(1) : '-' + cur; }
+    else if (t === 'C') {
       if (acBtn && acBtn.textContent === 'C') { cur = '0'; fresh = true; }
       else { cur = '0'; acc = null; op = null; fresh = true; lastOp = null; justEq = false; }
     }
     render();
   };
-
-  pad.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-calc]');
-    if (btn) press(btn.getAttribute('data-calc'));
-  });
+  pad.addEventListener('click', (e) => { const btn = e.target.closest('[data-calc]'); if (btn) press(btn.getAttribute('data-calc')); });
   document.addEventListener('keydown', (e) => {
     if (!$z('app-calculator')?.classList.contains('open')) return;
     if (/^[0-9]$/.test(e.key)) press(e.key);
@@ -1640,7 +1104,6 @@ function initCalculator() {
   render();
 }
 
-/* ---------------- NOTATKI ---------------- */
 function initNotes() {
   const listScreen = $z('notes-list-screen');
   const editScreen = $z('notes-edit-screen');
@@ -1657,7 +1120,6 @@ function initNotes() {
   ];
   let nextId = 4;
   let currentId = null;
-
   const timeLabel = (ts) => {
     const d = new Date(ts);
     const t = new Date();
@@ -1669,15 +1131,11 @@ function initNotes() {
   };
   const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const previewOf = (n) => (n.body.split('\n').find((l) => l.trim()) || 'Brak dodatkowego tekstu');
-
   const renderList = () => {
     const q = ($z('notes-search')?.value || '').trim().toLowerCase();
     const sorted = notes.filter((n) => !q || (n.title + ' ' + n.body).toLowerCase().includes(q)).sort((a, b) => b.ts - a.ts);
     const groups = { 'Dzisiaj': [], 'Poprzednie 7 dni': [], 'Starsze': [] };
-    sorted.forEach((n) => {
-      const age = (Date.now() - n.ts) / 86400e3;
-      (age < 1 ? groups['Dzisiaj'] : age < 8 ? groups['Poprzednie 7 dni'] : groups['Starsze']).push(n);
-    });
+    sorted.forEach((n) => { const age = (Date.now() - n.ts) / 86400e3; (age < 1 ? groups['Dzisiaj'] : age < 8 ? groups['Poprzednie 7 dni'] : groups['Starsze']).push(n); });
     listEl.innerHTML = '';
     Object.entries(groups).forEach(([name, arr]) => {
       if (!arr.length) return;
@@ -1698,11 +1156,7 @@ function initNotes() {
     const c = notes.length;
     $z('notes-count').textContent = c === 1 ? '1 notatka' : c % 10 >= 2 && c % 10 <= 4 && (c % 100 < 10 || c % 100 >= 20) ? `${c} notatki` : `${c} notatek`;
   };
-  const showScreen = (which) => {
-    listScreen.classList.toggle('active', which === 'list');
-    editScreen.classList.toggle('active', which === 'edit');
-    menu.classList.remove('open');
-  };
+  const showScreen = (which) => { listScreen.classList.toggle('active', which === 'list'); editScreen.classList.toggle('active', which === 'edit'); menu.classList.remove('open'); };
   const openNote = (id) => {
     const n = notes.find((x) => x.id === id);
     if (!n) return;
@@ -1720,35 +1174,19 @@ function initNotes() {
     renderList();
     showScreen('list');
   };
-  const save = () => {
-    const n = notes.find((x) => x.id === currentId);
-    if (!n) return;
-    n.title = titleEl.value;
-    n.body = bodyEl.value;
-    n.ts = Date.now();
-  };
-
-  $z('note-new-btn').addEventListener('click', () => {
-    const n = { id: nextId++, title: '', body: '', ts: Date.now() };
-    notes.push(n);
-    openNote(n.id);
-    setTimeout(() => titleEl.focus(), 60);
-  });
+  const save = () => { const n = notes.find((x) => x.id === currentId); if (!n) return; n.title = titleEl.value; n.body = bodyEl.value; n.ts = Date.now(); };
+  $z('note-new-btn').addEventListener('click', () => { const n = { id: nextId++, title: '', body: '', ts: Date.now() }; notes.push(n); openNote(n.id); setTimeout(() => titleEl.focus(), 60); });
   titleEl.addEventListener('input', save);
   bodyEl.addEventListener('input', save);
   titleEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); bodyEl.focus(); } });
   $z('note-back').addEventListener('click', closeNote);
   $z('note-done').addEventListener('click', closeNote);
   $z('note-undo').addEventListener('click', () => { bodyEl.focus(); document.execCommand('undo'); save(); });
-  $z('note-share').addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(`${titleEl.value}\n\n${bodyEl.value}`); zeniToast('Skopiowano notatkę'); }
-    catch { zeniToast('Nie można skopiować'); }
-  });
+  $z('note-share').addEventListener('click', async () => { try { await navigator.clipboard.writeText(`${titleEl.value}\n\n${bodyEl.value}`); zeniToast('Skopiowano notatkę'); } catch { zeniToast('Nie można skopiować'); } });
   $z('note-more').addEventListener('click', (e) => { e.stopPropagation(); menu.classList.toggle('open'); });
   editScreen.addEventListener('click', (e) => { if (!e.target.closest('#note-menu') && !e.target.closest('#note-more')) menu.classList.remove('open'); });
   $z('note-delete').addEventListener('click', () => { notes = notes.filter((x) => x.id !== currentId); currentId = null; renderList(); showScreen('list'); });
   $z('notes-search').addEventListener('input', renderList);
-
   editScreen.querySelectorAll('[data-fmt]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const f = btn.getAttribute('data-fmt');
@@ -1769,13 +1207,11 @@ function initNotes() {
   window.__notesReset = () => { renderList(); showScreen('list'); };
 }
 
-/* ---------------- PLIKI ---------------- */
 function initFiles() {
   const browseBody = $z('files-browse-body');
   const listPane = $z('files-pane-list');
   const browsePane = $z('files-pane-browse');
   if (!browseBody || !listPane) return;
-
   const I = {
     cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5 4 4 0 0 1 17.5 18z"/></svg>',
     phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/><line x1="11" y1="18.5" x2="13" y2="18.5"/></svg>',
@@ -1802,17 +1238,13 @@ function initFiles() {
   ];
   const tags = [['Czerwony', '#ff453a'], ['Pomarańczowy', '#ff9f0a'], ['Żółty', '#ffd60a'], ['Zielony', '#30d158'], ['Niebieski', '#0a84ff'], ['Fioletowy', '#bf5af2'], ['Szary', '#8e8e93']];
   const recents = [f('Plan_ZeniOS.docx', 'doc', 'Dzisiaj'), f('default_wallpaper_7.jpg', 'img', 'Dzisiaj'), f('Instrukcja.pdf', 'doc', 'Wczoraj'), f('Zenios_loading.png', 'img', 'Wczoraj')];
-
   let tab = 'browse';
   let stack = [];
   let fwd = [];
   const collapsed = { loc: false, tags: false };
-
-  const rowHtml = (ico, name, meta, chev) =>
-    `<div class="f-ico">${ico}</div><div class="f-name">${name}${meta ? `<span class="f-meta">${meta}</span>` : ''}</div>${chev ? '<span class="f-chev">›</span>' : ''}`;
+  const rowHtml = (ico, name, meta, chev) => `<div class="f-ico">${ico}</div><div class="f-name">${name}${meta ? `<span class="f-meta">${meta}</span>` : ''}</div>${chev ? '<span class="f-chev">›</span>' : ''}`;
   const iconFor = (it) => (it.kind === 'folder' ? I.folder : it.kind === 'img' ? I.img : I.doc);
   const emptyHtml = (txt) => `<div class="files-empty">${I.box}<div>${txt}</div></div>`;
-
   const renderBrowse = () => {
     const q = ($z('files-search')?.value || '').trim().toLowerCase();
     browseBody.innerHTML = '';
@@ -1846,7 +1278,6 @@ function initFiles() {
     });
     if (!browseBody.children.length) browseBody.innerHTML = emptyHtml('Brak wyników');
   };
-
   const renderList = (title, items, searchable) => {
     listPane.innerHTML = `<h1 class="files-title">${title}</h1>` +
       (searchable ? `<div class="search-field files-search"><svg class="search-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="files-list-search" type="search" placeholder="Szukaj" autocomplete="off"/></div>` : '') +
@@ -1871,7 +1302,6 @@ function initFiles() {
     fill('');
     listPane.querySelector('#files-list-search')?.addEventListener('input', (e) => fill(e.target.value.trim().toLowerCase()));
   };
-
   const sync = () => {
     document.querySelectorAll('[data-files-tab]').forEach((b) => b.classList.toggle('active', b.getAttribute('data-files-tab') === tab));
     const showBrowse = tab === 'browse' && !stack.length;
@@ -1886,7 +1316,6 @@ function initFiles() {
     $z('files-scroll').scrollTop = 0;
   };
   const pushFolder = (entry) => { stack.push(entry); fwd = []; sync(); };
-
   $z('files-back').addEventListener('click', () => { if (stack.length) { fwd.push(stack.pop()); sync(); } });
   $z('files-fwd').addEventListener('click', () => { if (fwd.length) { stack.push(fwd.pop()); sync(); } });
   $z('files-more').addEventListener('click', () => zeniToast('Pliki ZeniOS 2.0'));
@@ -1895,7 +1324,6 @@ function initFiles() {
   sync();
 }
 
-/* ---------------- KALENDARZ ---------------- */
 function initCalendar() {
   const monthsEl = $z('cal-months');
   if (!monthsEl) return;
@@ -1905,7 +1333,6 @@ function initCalendar() {
   let selected = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const key = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
   const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
-
   const cals = [
     { id: 'work', name: 'Praca', color: '#af52de', on: true },
     { id: 'school', name: 'Szkoła', color: '#ff2d55', on: true },
@@ -1925,7 +1352,6 @@ function initCalendar() {
   const calOf = (id) => cals.find((c) => c.id === id);
   const eventsOn = (k) => events.filter((e) => e.date === k && calOf(e.cal)?.on).sort((a, b) => a.time.localeCompare(b.time));
   zenTodayEvents = () => eventsOn(key(today));
-
   const monthBlock = (y, m) => {
     const wrap = document.createElement('div');
     wrap.className = 'cal-month';
@@ -1957,9 +1383,7 @@ function initCalendar() {
     for (let m = 0; m < 12; m++) monthsEl.appendChild(monthBlock(viewYear, m));
     $z('cal-year-label').textContent = viewYear;
   };
-  const refreshSelection = () => {
-    monthsEl.querySelectorAll('.cal-cell[data-date]').forEach((c) => c.classList.toggle('selected', c.getAttribute('data-date') === key(selected)));
-  };
+  const refreshSelection = () => { monthsEl.querySelectorAll('.cal-cell[data-date]').forEach((c) => c.classList.toggle('selected', c.getAttribute('data-date') === key(selected))); };
   const renderDay = () => {
     const panel = $z('cal-day-panel');
     const list = eventsOn(key(selected));
@@ -1999,12 +1423,10 @@ function initCalendar() {
     $z('cal-next-year').addEventListener('click', (e) => { e.stopPropagation(); viewYear++; renderYear(); });
   };
   const setMode = (mode) => { app.classList.toggle('cal-mode-year', mode === 'year'); if (mode === 'year') renderYear(); };
-
   const openSheet = (id, scrimId = 'cal-scrim') => { $z(id).classList.add('open'); $z(scrimId).classList.add('open'); };
   const closeSheets = () => { app.querySelectorAll('.sheet').forEach((s) => s.classList.remove('open')); $z('cal-scrim').classList.remove('open'); };
   app.querySelectorAll('[data-close-sheet]').forEach((b) => b.addEventListener('click', closeSheets));
   $z('cal-scrim').addEventListener('click', closeSheets);
-
   const renderCals = () => {
     const el = $z('cal-cals-list');
     el.innerHTML = '<div class="sheet-sec">ZeniOS</div>';
@@ -2061,7 +1483,6 @@ function initCalendar() {
   window.__calOpen = () => { setMode('month'); closeSheets(); viewYear = today.getFullYear(); renderMonths(); renderDay(); scrollToMonth(today.getMonth()); };
 }
 
-/* ---------------- ZEGAR ---------------- */
 function initClock() {
   const app = $z('app-clock');
   if (!app) return;
@@ -2080,7 +1501,6 @@ function initClock() {
   let draft = null;
   let lastFiredKey = '';
   let activeTab = 'alarms';
-
   const buildWheel = (container, specs) => {
     if (!container) return [];
     container.innerHTML = '';
@@ -2098,11 +1518,9 @@ function initClock() {
   };
   const setWheel = (col, v) => { if(col) col.scrollTop = v * ROW; };
   const getWheel = (col) => col ? Math.max(0, Math.min(col.children.length - 1, Math.round(col.scrollTop / ROW))) : 0;
-
   const alarmWheels = buildWheel($z('alarm-wheels'), [[24], [60]]);
   const timerWheels = buildWheel($z('timer-wheels'), [[24, 'godz.'], [60, 'min'], [60, 's']]);
   setTimeout(() => { setWheel(timerWheels[1], 5); }, 0);
-
   const showTab = (tab) => {
     activeTab = tab;
     app.querySelectorAll('.clock-pane').forEach((p) => p.classList.toggle('active', p.id === `clock-pane-${tab}`));
@@ -2112,7 +1530,6 @@ function initClock() {
   };
   let timerSecsSet = false;
   app.querySelectorAll('[data-clock-tab]').forEach((b) => b.addEventListener('click', () => showTab(b.getAttribute('data-clock-tab'))));
-
   const zones = [['Warszawa', 'Europe/Warsaw'], ['Londyn', 'Europe/London'], ['Nowy Jork', 'America/New_York'], ['Los Angeles', 'America/Los_Angeles'], ['Tokio', 'Asia/Tokyo'], ['Sydney', 'Australia/Sydney']];
   const renderWorld = () => {
     const el = $z('world-list');
@@ -2127,7 +1544,6 @@ function initClock() {
       return `<div class="world-item"><div><div class="when">${when}</div><div class="city">${name}</div></div><div class="time">${pad2(zd.getHours())}:${pad2(zd.getMinutes())}</div></div>`;
     }).join('');
   };
-
   const repeatLabel = (a) => (a.repeat === 'Nigdy' ? '' : `, ${a.repeat}`);
   const renderAlarms = () => {
     const el = $z('alarm-list');
@@ -2145,7 +1561,6 @@ function initClock() {
       el.appendChild(row);
     });
   };
-  
   const sheet = $z('alarm-sheet');
   const scrim = $z('alarm-scrim');
   const closeAlarmSheet = () => { if(sheet) sheet.classList.remove('open'); if(scrim) scrim.classList.remove('open'); };
@@ -2156,27 +1571,22 @@ function initClock() {
     if(rEl) rEl.textContent = `${draft.repeat} ›`;
     if(sEl) sEl.textContent = `${draft.sound} ›`;
   };
-  
   const openAlarmSheet = (id) => {
     editId = id;
     const src = id ? alarms.find((a) => a.id === id) : null;
     const nowD = new Date();
     draft = src ? { ...src } : { h: nowD.getHours(), m: nowD.getMinutes(), label: 'Alarm', on: true, repeat: 'dni robocze', sound: 'Kręgi', snooze: true };
-    
     const titleEl = $z('alarm-sheet-title');
     if(titleEl) titleEl.textContent = id ? 'Edytuj alarm' : 'Dodaj alarm';
     const labelInput = $z('alarm-label-input');
     if(labelInput) labelInput.value = draft.label === 'Alarm' ? '' : draft.label;
     const snoozeInput = $z('alarm-snooze-input');
     if(snoozeInput) snoozeInput.checked = draft.snooze;
-    
     refreshDraftUi();
     if(sheet) sheet.classList.add('open');
     if(scrim) scrim.classList.add('open');
-    
     setTimeout(() => { setWheel(alarmWheels[0], draft.h); setWheel(alarmWheels[1], draft.m); }, 50);
   };
-  
   const saveAlarm = () => {
     if (!draft) return;
     draft.h = getWheel(alarmWheels[0]);
@@ -2185,7 +1595,6 @@ function initClock() {
     draft.label = labelInput ? (labelInput.value.trim() || 'Alarm') : 'Alarm';
     const snoozeInput = $z('alarm-snooze-input');
     draft.snooze = snoozeInput ? snoozeInput.checked : false;
-    
     if (editId) {
       const i = alarms.findIndex((a) => a.id === editId);
       if (i >= 0) alarms[i] = { ...draft, id: editId };
@@ -2195,11 +1604,9 @@ function initClock() {
     closeAlarmSheet();
     renderAlarms();
   };
-
   $z('alarm-save-btn')?.addEventListener('click', saveAlarm);
   $z('alarm-cancel-btn')?.addEventListener('click', closeAlarmSheet);
   scrim?.addEventListener('click', closeAlarmSheet);
-  
   $z('alarm-repeat-val')?.parentElement?.addEventListener('click', () => {
     if(!draft) return;
     const i = REPEATS.indexOf(draft.repeat);
@@ -2212,12 +1619,10 @@ function initClock() {
     draft.sound = SOUNDS[(i + 1) % SOUNDS.length];
     refreshDraftUi();
   });
-
   let timerRunning = false;
   let timerEnd = 0;
   let timerRemain = 0;
   let timerInt = null;
-  
   const updateTimerUi = () => {
     const ms = timerRunning ? Math.max(0, timerEnd - Date.now()) : timerRemain;
     const totalSec = Math.ceil(ms / 1000);
@@ -2227,7 +1632,6 @@ function initClock() {
     const el = $z('timer-display');
     if (el) el.textContent = `${h > 0 ? pad2(h) + ':' : ''}${pad2(m)}:${pad2(s)}`;
   };
-  
   const startTimer = () => {
     if (timerRunning) {
       timerRunning = false;
@@ -2247,7 +1651,6 @@ function initClock() {
       timerRemain = 0;
       const btn = $z('timer-start-btn');
       if(btn) btn.textContent = 'Wstrzymaj';
-      
       timerInt = setInterval(() => {
         updateTimerUi();
         if (Date.now() >= timerEnd) {
@@ -2262,7 +1665,6 @@ function initClock() {
     }
     updateTimerUi();
   };
-  
   $z('timer-start-btn')?.addEventListener('click', startTimer);
   $z('timer-cancel-btn')?.addEventListener('click', () => {
     clearInterval(timerInt);
@@ -2272,12 +1674,10 @@ function initClock() {
     if(btn) btn.textContent = 'Start';
     updateTimerUi();
   });
-
   renderAlarms();
   updateTimerUi();
 }
 
-/* ---------------- INICJALIZACJA ZENI APPS ---------------- */
 function initZeniApps() {
   bindTheme();
   initCalculator();
@@ -2291,16 +1691,16 @@ function initZeniApps() {
   initGallery(); // <- DODANO GALERIĘ
 }
 
-/* ---------------- GALERIA ---------------- */
 function initGallery() {
   const galleryApp = document.getElementById('app-gallery');
   if (!galleryApp) return;
 
-  let grid = galleryApp.querySelector('.gallery-grid');
+  let grid = document.getElementById('gallery-grid');
   if (!grid) {
     grid = document.createElement('div');
+    grid.id = 'gallery-grid';
     grid.className = 'gallery-grid';
-    grid.style.cssText = 'display:grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 10px; padding-bottom: 80px; overflow-y: auto; height: 100%;';
+    grid.style.cssText = 'display:grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 0 10px 100px 10px; overflow-y: auto; height: 100%; box-sizing: border-box;';
     galleryApp.appendChild(grid);
   }
 
@@ -2314,15 +1714,19 @@ function initGallery() {
       const items = await window.ZeniGallery.all();
       grid.innerHTML = '';
       
+      const emptyState = galleryApp.querySelector('.empty-state');
+      if (emptyState) {
+        emptyState.style.display = items.length === 0 ? 'flex' : 'none';
+      }
+
       if (items.length === 0) {
-        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #888; margin-top: 50px;">Brak zdjęć. Zrób coś aparatem!</div>';
         return;
       }
 
       items.reverse().forEach(item => {
         if (item.type === 'photo') {
           const imgWrap = document.createElement('div');
-          imgWrap.style.cssText = 'aspect-ratio: 1; overflow: hidden; border-radius: 4px; background: #222;';
+          imgWrap.style.cssText = 'aspect-ratio: 1; overflow: hidden; background: #222;';
           
           const img = document.createElement('img');
           img.src = URL.createObjectURL(item.blob);
@@ -2333,11 +1737,11 @@ function initGallery() {
             overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; justify-content: center; align-items: center; flex-direction: column;';
             const bigImg = document.createElement('img');
             bigImg.src = img.src;
-            bigImg.style.cssText = 'max-width: 95%; max-height: 80%; object-fit: contain;';
+            bigImg.style.cssText = 'max-width: 95%; max-height: 80%; object-fit: contain; border-radius: 8px;';
             
             const closeBtn = document.createElement('button');
             closeBtn.textContent = 'Zamknij';
-            closeBtn.style.cssText = 'margin-top: 20px; padding: 10px 20px; background: #333; color: white; border: none; border-radius: 20px; font-size: 16px; cursor: pointer;';
+            closeBtn.style.cssText = 'margin-top: 20px; padding: 10px 24px; background: #333; color: white; border: none; border-radius: 20px; font-size: 16px; cursor: pointer;';
             closeBtn.onclick = () => overlay.remove();
 
             overlay.appendChild(bigImg);
@@ -2357,18 +1761,13 @@ function initGallery() {
   renderGallery();
 }
 
-/* ---------------- CENTRUM STEROWANIA ---------------- */
 function initControlCenter() {
   const cc = $z('control-center');
   if (!cc) return;
   let startY = null;
-  
   document.getElementById('status-bar-overlay')?.addEventListener('pointerdown', (e) => {
-    if (e.clientX > window.innerWidth - 60) {
-      startY = e.clientY;
-    }
+    if (e.clientX > window.innerWidth - 60) { startY = e.clientY; }
   });
-  
   document.getElementById('status-bar-overlay')?.addEventListener('pointerup', (e) => {
     if (startY !== null && e.clientY - startY > 30 && e.clientX > window.innerWidth - 60) {
       ccOpen = true;
@@ -2377,43 +1776,24 @@ function initControlCenter() {
     }
     startY = null;
   });
-
   $z('cc-scrim')?.addEventListener('click', () => {
     ccOpen = false;
     cc.classList.remove('open');
     $z('cc-scrim')?.classList.remove('open');
   });
-
   $z('cc-slider')?.addEventListener('input', (e) => {
     sysVolume = e.target.value / 100;
     const fill = $z('cc-vol-fill');
     if(fill) fill.style.width = e.target.value + '%';
   });
-  
-  $z('cc-theme')?.addEventListener('click', () => {
-    setTheme(currentTheme === 'dark' ? 'light' : 'dark');
-  });
-  
-  $z('cc-wifi')?.addEventListener('click', function() {
-    this.classList.toggle('on-blue');
-  });
-  $z('cc-bt')?.addEventListener('click', function() {
-    this.classList.toggle('on-blue');
-  });
-  $z('cc-airplane')?.addEventListener('click', function() {
-    this.classList.toggle('on-orange');
-  });
+  $z('cc-theme')?.addEventListener('click', () => { setTheme(currentTheme === 'dark' ? 'light' : 'dark'); });
+  $z('cc-wifi')?.addEventListener('click', function() { this.classList.toggle('on-blue'); });
+  $z('cc-bt')?.addEventListener('click', function() { this.classList.toggle('on-blue'); });
+  $z('cc-airplane')?.addEventListener('click', function() { this.classList.toggle('on-orange'); });
 }
 
-/* ---------------- POWIADOMIENIA ---------------- */
-function initNotifications() {
-  // Prosta implementacja
-}
-
-/* ---------------- EKSTRY EKRANU BLOKADY ---------------- */
-function bindLockscreenExtras() {
-  // Obsługa dodatkowych elementów
-}
+function initNotifications() {}
+function bindLockscreenExtras() {}
 
 document.addEventListener('DOMContentLoaded', () => {
   initSystem();
