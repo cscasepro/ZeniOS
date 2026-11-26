@@ -2,300 +2,240 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ustawienia</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ustawienia — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
             min-height: 100vh;
-            background: #000000;
-            color: #ffffff;
+            background: #f2f2f7;
+            color: #111827;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-            padding: 14px 16px 32px;
+            padding: 48px 16px 84px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            overflow-y: auto;
+            gap: 14px;
         }
-        .nav-header {
+        .topbar {
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
         }
-        .back-circle {
-            width: 34px;
-            height: 34px;
+        .pill {
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            color: #111827;
+            padding: 7px 14px;
             border-radius: 999px;
-            background: #1c1c1e;
-            border: none;
-            color: #ffffff;
-            font-size: 16px;
+            font-size: 13px;
+            font-weight: 600;
             cursor: pointer;
         }
-        h1 { font-size: 17px; font-weight: 700; }
-        .sec-title {
-            font-size: 12px;
-            color: #98989f;
-            margin: 0 0 6px 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
+        h1 { font-size: 32px; font-weight: 800; }
+        .search-box {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: none;
+            background: #e5e5ea;
+            font-size: 15px;
+            outline: none;
+        }
+        .profile-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        }
+        .avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2563eb, #60a5fa);
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .group {
-            background: #1c1c1e;
-            border-radius: 14px;
+            background: #ffffff;
+            border-radius: 18px;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
         }
         .row {
-            padding: 12px 14px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            font-size: 14px;
+            padding: 13px 16px;
+            border-bottom: 1px solid #f2f2f7;
+            font-size: 15px;
+            cursor: pointer;
         }
         .row:last-child { border-bottom: none; }
-        .val-muted { color: #98989f; font-size: 13px; }
-        .style-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            padding: 12px;
-        }
-        .style-btn {
-            padding: 10px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: #2c2c2e;
+        .row-left { display: flex; align-items: center; gap: 12px; }
+        .badge-sq {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
             color: #ffffff;
-            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+        }
+        .style-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px 16px;
+        }
+        .st-btn {
+            padding: 7px 12px;
+            border-radius: 999px;
+            border: 1px solid #d1d5db;
+            background: #f9fafb;
+            color: #111827;
+            font-size: 12.5px;
             font-weight: 600;
             cursor: pointer;
-            text-align: left;
         }
-        .style-btn.active {
+        .st-btn.active {
+            background: #0a84ff;
             border-color: #0a84ff;
-            background: rgba(10, 132, 255, 0.25);
+            color: #ffffff;
         }
         .wp-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             gap: 8px;
-            overflow-x: auto;
-            padding: 12px;
+            padding: 12px 16px;
         }
-        .wp-chip {
-            flex-shrink: 0;
-            padding: 8px 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: #2c2c2e;
-            color: #ffffff;
-            font-size: 12px;
+        .wp-swatch {
+            height: 44px;
+            border-radius: 12px;
+            border: 2px solid transparent;
             cursor: pointer;
         }
-        .switch {
-            width: 44px;
-            height: 26px;
-            accent-color: #30d158;
-            cursor: pointer;
-        }
-        .btn-pill {
-            padding: 8px 12px;
-            border-radius: 10px;
-            border: none;
-            background: #2c2c2e;
-            color: #ffffff;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .btn-danger {
-            background: rgba(255, 69, 58, 0.22);
-            color: #ff6961;
-        }
-        .log-box {
-            background: #0c0c0e;
-            padding: 10px;
-            font-family: ui-monospace, monospace;
-            font-size: 10px;
-            color: #d1d1d6;
-            max-height: 110px;
-            overflow-y: auto;
-            white-space: pre-wrap;
+        .wp-swatch.active {
+            border-color: #0a84ff;
+            transform: scale(1.04);
         }
     </style>
 </head>
 <body>
-    <div class="nav-header">
-        <button class="back-circle" onclick="goHome()">‹</button>
-        <h1>Ustawienia</h1>
-        <span class="val-muted">v1.0.2</span>
+    <div class="topbar">
+        <button class="pill" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
+        <button class="pill" onclick="parent.Kernel?.openApp('aktualizacje')">Aktualizacje</button>
     </div>
 
-    <div>
-        <div class="sec-title">Wygląd i styl ikon</div>
-        <div class="group">
-            <div class="row">
-                <span>Tryb jasny paska / tekstu</span>
-                <input type="checkbox" class="switch" id="chk-light" onchange="toggleLight(this.checked)">
-            </div>
-            <div class="style-grid">
-                <button id="st-color" class="style-btn" onclick="setIconStyle('color')">🌈 Kolorowy</button>
-                <button id="st-dark" class="style-btn" onclick="setIconStyle('dark')">🌑 Ciemny</button>
-                <button id="st-bw" class="style-btn" onclick="setIconStyle('bw')">⚪ Szaro-biały</button>
-                <button id="st-pink-purple" class="style-btn" onclick="setIconStyle('pink-purple')">🦄 Różowo-fioletowy</button>
-            </div>
+    <h1>Ustawienia</h1>
+    <input id="q" class="search-box" type="text" placeholder="Szukaj" oninput="filterRows()">
+
+    <div class="profile-card">
+        <div class="avatar">Z</div>
+        <div>
+            <div style="font-size:17px;font-weight:700;">Użytkownik ZenOS</div>
+            <div style="font-size:12.5px;color:#6b7280;">ZenOS v1.0.2 • Liquid Glass</div>
         </div>
     </div>
 
-    <div>
-        <div class="sec-title">Tapeta (default_wallpapers)</div>
-        <div class="group">
-            <div class="wp-row" id="wp-list"></div>
-            <div class="row">
-                <span style="font-size:12px;color:#98989f;">Własna tapeta:</span>
-                <input type="file" accept="image/*" style="font-size:11px;color:#98989f;max-width:190px;" onchange="uploadWallpaper(this)">
-            </div>
+    <div class="group" id="group-main">
+        <div class="row" data-k="bateria oszczedzanie">
+            <div class="row-left"><div class="badge-sq" style="background:#30d158;">🔋</div><span>Ochrona baterii</span></div>
+            <button id="btn-saver" class="pill" onclick="toggleSaver()">OFF</button>
+        </div>
+        <div class="row" data-k="skupienie focus">
+            <div class="row-left"><div class="badge-sq" style="background:#5e5ce6;">🌙</div><span>Tryb skupienia</span></div>
+            <button id="btn-focus" class="pill" onclick="toggleFocus()">OFF</button>
+        </div>
+        <div class="row" data-k="pamiec storage" onclick="parent.Kernel?.openApp('pamiec')">
+            <div class="row-left"><div class="badge-sq" style="background:#6b7280;">💾</div><span>Pamięć ZenOS</span></div>
+            <span style="color:#6b7280;font-size:13px;">49.54 GB ›</span>
+        </div>
+        <div class="row" data-k="aktualizacje system" onclick="parent.Kernel?.openApp('aktualizacje')">
+            <div class="row-left"><div class="badge-sq" style="background:#0a84ff;">🔄</div><span>Uaktualnienia systemu</span></div>
+            <span style="color:#6b7280;font-size:13px;">v1.0.2 ›</span>
         </div>
     </div>
 
-    <div>
-        <div class="sec-title">Bateria, skupienie i widżety</div>
-        <div class="group">
-            <div class="row">
-                <span>Ochrona baterii (hamuje tło)</span>
-                <input type="checkbox" class="switch" id="chk-battery" onchange="toggleBattery(this.checked)">
-            </div>
-            <div class="row">
-                <span>Tryb skupienia</span>
-                <input type="checkbox" class="switch" id="chk-focus" onchange="toggleFocus(this.checked)">
-            </div>
-            <div class="row">
-                <span>Widżety na ekranie głównym</span>
-                <input type="checkbox" class="switch" id="chk-widgets" onchange="toggleWidgets(this.checked)">
-            </div>
+    <div class="group" id="group-style">
+        <div class="row" style="cursor:default;">
+            <div class="row-left"><div class="badge-sq" style="background:#ff9f0a;">✨</div><span>Styl ikon</span></div>
+            <span id="cur-style-lbl" style="font-size:13px;color:#6b7280;">liquid</span>
+        </div>
+        <div class="style-pills">
+            <button class="st-btn" data-st="liquid" onclick="setIconStyle('liquid')">Liquid Glass</button>
+            <button class="st-btn" data-st="color" onclick="setIconStyle('color')">Kolorowy</button>
+            <button class="st-btn" data-st="dark" onclick="setIconStyle('dark')">Ciemny</button>
+            <button class="st-btn" data-st="bw" onclick="setIconStyle('bw')">B&amp;W</button>
+            <button class="st-btn" data-st="pink-purple" onclick="setIconStyle('pink-purple')">Róż-Fiolet</button>
         </div>
     </div>
 
-    <div>
-        <div class="sec-title">To urządzenie</div>
-        <div class="group">
-            <div class="row"><span>Nazwa</span><span class="val-muted">ZeniPhone</span></div>
-            <div class="row"><span>Wersja systemu</span><span class="val-muted">ZeniOS 1.0.2</span></div>
-            <div class="row"><span>Priorytet</span><span class="val-muted">TOP-1 + Izolacja iFrame</span></div>
+    <div class="group" id="group-wp">
+        <div class="row" style="cursor:default;">
+            <div class="row-left"><div class="badge-sq" style="background:#ec4899;">🖼️</div><span>Tapeta ZenOS</span></div>
         </div>
-    </div>
-
-    <div>
-        <div class="sec-title">Nadzór i awarie (Supervisor)</div>
-        <div class="group">
-            <div class="row">
-                <button class="btn-pill" onclick="loadLogs()">Pobierz logi</button>
-                <button class="btn-pill btn-danger" onclick="forceErrorBoot()">Wywołaj Error Boot</button>
-            </div>
-            <div id="logs" class="log-box">Brak wczytanych logów. Kliknij „Pobierz logi”.</div>
-        </div>
+        <div id="wp-grid" class="wp-row"></div>
     </div>
 
     <script>
-        const p = window.parent;
+        function syncAll() {
+            const saver = Boolean(parent.BatterySaver?.isEnabled?.());
+            const focus = Boolean(parent.FocusMode?.isEnabled?.());
+            const st = parent.IconTheme?.getStyle?.() || 'liquid';
+            const wpId = parent.WallpaperManager?.currentId || 'wp-1';
 
-        function initSettings() {
-            const wpList = document.getElementById('wp-list');
-            wpList.innerHTML = '';
-            const presets = (p && p.Wallpapers && p.Wallpapers.presets) || [
-                { id: 'wp_1', name: 'Tapeta 1' }, { id: 'wp_2', name: 'Tapeta 2' },
-                { id: 'wp_3', name: 'Tapeta 3' }, { id: 'wp_4', name: 'Tapeta 4' },
-                { id: 'wp_5', name: 'Tapeta 5' }, { id: 'wp_6', name: 'Tapeta 6' },
-                { id: 'wp_7', name: 'Tapeta 7' }
-            ];
+            document.getElementById('btn-saver').textContent = saver ? 'ON' : 'OFF';
+            document.getElementById('btn-focus').textContent = focus ? 'ON' : 'OFF';
+            document.getElementById('cur-style-lbl').textContent = st;
 
-            presets.forEach(wp => {
-                const btn = document.createElement('button');
-                btn.className = 'wp-chip';
-                btn.textContent = wp.name;
-                btn.onclick = () => {
-                    p.postMessage({ type: 'SET_WALLPAPER', target: 'home', value: wp.id }, '*');
-                    p.postMessage({ type: 'SET_WALLPAPER', target: 'lock', value: wp.id }, '*');
-                };
-                wpList.appendChild(btn);
+            document.querySelectorAll('.st-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.st === st);
             });
 
-            const style = (p && p.IconTheme && p.IconTheme.getStyle()) || 'color';
-            ['color', 'dark', 'bw', 'pink-purple'].forEach(id => {
-                document.getElementById('st-' + id)?.classList.toggle('active', id === style);
+            const wps = (parent.ZenManifest && parent.ZenManifest.wallpapers) || [];
+            const wpGrid = document.getElementById('wp-grid');
+            wpGrid.innerHTML = wps.map(w => `
+                <div class="wp-swatch ${w.id === wpId ? 'active' : ''}" style="background:${w.css};" onclick="pickWp('${w.id}')" title="${w.name}"></div>
+            `).join('');
+        }
+
+        function toggleSaver() {
+            parent.BatterySaver?.toggle?.();
+            syncAll();
+        }
+
+        function toggleFocus() {
+            parent.FocusMode?.toggle?.();
+            syncAll();
+        }
+
+        function setIconStyle(styleName) {
+            parent.IconTheme?.setStyle?.(styleName, true);
+            syncAll();
+        }
+
+        function pickWp(id) {
+            parent.WallpaperManager?.applyWallpaper?.(id, true);
+            syncAll();
+        }
+
+        function filterRows() {
+            const q = document.getElementById('q').value.trim().toLowerCase();
+            document.querySelectorAll('#group-main .row').forEach(r => {
+                const k = (r.dataset.k || '') + ' ' + r.textContent.toLowerCase();
+                r.style.display = !q || k.includes(q) ? 'flex' : 'none';
             });
-
-            document.getElementById('chk-battery').checked = Boolean(p && p.BatterySaver && p.BatterySaver.enabled);
-            document.getElementById('chk-focus').checked = Boolean(p && p.FocusMode && p.FocusMode.enabled);
-            document.getElementById('chk-widgets').checked = Boolean(p && p.Widgets && p.Widgets.config && p.Widgets.config.enabled !== false);
-            document.getElementById('chk-light').checked = Boolean(p && p.document && p.document.body.classList.contains('light-ui'));
         }
 
-        function setIconStyle(style) {
-            ['color', 'dark', 'bw', 'pink-purple'].forEach(id => {
-                document.getElementById('st-' + id)?.classList.toggle('active', id === style);
-            });
-            p.postMessage({ type: 'SET_ICON_STYLE', style }, '*');
-        }
-
-        function toggleLight(state) {
-            if (p && p.document) {
-                p.document.body.classList.toggle('light-ui', Boolean(state));
-            }
-        }
-
-        function uploadWallpaper(input) {
-            const file = input.files && input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = () => {
-                p.postMessage({ type: 'SET_WALLPAPER', target: 'home', value: reader.result }, '*');
-                p.postMessage({ type: 'SET_WALLPAPER', target: 'lock', value: reader.result }, '*');
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function toggleBattery(state) {
-            p.postMessage({ type: 'TOGGLE_BATTERY_SAVER', state }, '*');
-        }
-
-        function toggleFocus(state) {
-            p.postMessage({ type: 'TOGGLE_FOCUS_MODE', state }, '*');
-        }
-
-        function toggleWidgets(enabled) {
-            p.postMessage({ type: 'UPDATE_WIDGETS_CONFIG', config: { enabled } }, '*');
-        }
-
-        function loadLogs() {
-            p.postMessage({ type: 'GET_SUPERVISOR_LOGS' }, '*');
-        }
-
-        function forceErrorBoot() {
-            p.postMessage({
-                type: 'FORCE_ERROR_BOOT',
-                code: 'ERR_MANUAL_RECOVERY_TEST',
-                details: 'Test z Ustawień ZeniOS v1.0.2'
-            }, '*');
-        }
-
-        function goHome() {
-            p.postMessage({ type: 'GO_HOME' }, '*');
-        }
-
-        window.addEventListener('message', (e) => {
-            if (e.data && e.data.type === 'SUPERVISOR_LOGS') {
-                const lines = (e.data.logs || []).map(l => `[${l.time}] ${l.level}: ${l.message}`);
-                document.getElementById('logs').textContent = lines.length ? lines.join('\n') : 'Brak logów.';
-            }
-            if (e.data && e.data.type === 'OS_PRIORITY' && e.data.level === 'TOP_1') {
-                initSettings();
-            }
-        });
-
-        initSettings();
+        syncAll();
     </script>
 </body>
 </html>
