@@ -17,7 +17,7 @@
     <div id="os-shell">
         <header id="status-bar" class="priority-top">
             <div class="status-left">
-                <span id="clock">15:19</span>
+                <span id="clock">15:58</span>
                 <span id="focus-badge" style="display:none;" title="Tryb skupienia">🌙</span>
                 <span id="battery-badge" style="display:none;" title="Ochrona baterii">🔋</span>
                 <span id="flashlight-indicator" style="display:none;" title="Latarka">🔦</span>
@@ -69,15 +69,7 @@
             <button class="btn-close-all" onclick="PerformanceManager.purgeBackground()">Wyczyść pamięć tła</button>
         </div>
 
-        <!-- Home Indicator na dole zamiast ciężkiego paska -->
         <div id="home-indicator-zone" class="priority-top">
-            <div class="quick-sys-pills">
-                <button onclick="Kernel.goHome()" title="Ekran główny">● Pulpit</button>
-                <button onclick="Kernel.showRecents()" title="Ostatnie">▢ Pamięć</button>
-                <button onclick="Kernel.toggleNotifications()" title="Powiadomienia">🔔</button>
-                <button onclick="Kernel.toggleControlCenter()" title="Centrum sterowania">☰</button>
-                <button onclick="Kernel.lockDevice()" title="Zablokuj">🔒</button>
-            </div>
             <button id="home-indicator" onclick="Kernel.goHome()" aria-label="Home Indicator"></button>
         </div>
     </div>
