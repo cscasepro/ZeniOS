@@ -1,60 +1,437 @@
 :root {
-    --zen-bg: #05070d;
-    --zen-surface: rgba(24, 26, 33, 0.84);
-    --zen-surface-2: rgba(40, 43, 54, 0.92);
-    --zen-glass: rgba(28, 31, 40, 0.72);
-    --zen-border: rgba(255, 255, 255, 0.14);
-    --zen-text: #ffffff;
-    --zen-muted: #8e8e93;
-    --zen-accent: #0a84ff;
-    --zen-accent-2: #5e5ce6;
-    --zen-blur: 18px;
-    --zen-dock-alpha: 0.34;
-    --zen-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
-    --zen-motion: 0.2s;
+    --bg-wallpaper: radial-gradient(circle at 70% 25%, #2563eb 0%, #1d4ed8 34%, #0f172a 75%, #060913 100%);
+    --wallpaper-image: none;
+    --text-primary: #ffffff;
+    --glass-border: rgba(255, 255, 255, 0.36);
+    --glass-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+    --blur-strength: 18px;
+    --app-icon-radius: 15px;
+    --ease-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
+    --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
 }
 
-body.theme-light {
-    --zen-bg: #f2f2f7;
-    --zen-surface: rgba(255, 255, 255, 0.88);
-    --zen-surface-2: rgba(229, 229, 234, 0.95);
-    --zen-glass: rgba(255, 255, 255, 0.78);
-    --zen-border: rgba(0, 0, 0, 0.11);
-    --zen-text: #000000;
-    --zen-muted: #6e6e73;
+body.battery-saver-mode {
+    --blur-strength: 4px;
 }
 
-body.reduced-motion,
-body.reduced-motion * {
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.zen-glass-surface {
-    background: var(--zen-glass);
-    backdrop-filter: blur(var(--zen-blur)) saturate(170%);
-    -webkit-backdrop-filter: blur(var(--zen-blur)) saturate(170%);
-    border: 1px solid var(--zen-border);
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font-main);
+    color: var(--text-primary);
+    background: #05070c;
 }
 
-.zen-wallpaper-scrim {
+#wallpaper-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-image: var(--wallpaper-image), var(--bg-wallpaper);
+    background-size: cover;
+    background-position: center;
+    transition: filter 0.25s var(--ease-smooth);
+}
+
+#wallpaper-layer.blurred {
+    filter: blur(12px) brightness(0.86);
+}
+
+#os-shell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    overflow: hidden;
+}
+
+body.viewport-360x720 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.viewport-360x720 #os-shell {
+    width: 360px;
+    height: 720px;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 34px;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+    background: rgba(9, 13, 22, 0.28);
+}
+
+.liquid-glass {
+    position: relative;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 55%, rgba(255, 255, 255, 0.14) 100%);
+    backdrop-filter: blur(var(--blur-strength)) saturate(170%);
+    -webkit-backdrop-filter: blur(var(--blur-strength)) saturate(170%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    overflow: hidden;
+}
+
+.priority-top {
+    transform: translateZ(0);
+}
+
+.boot-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    z-index: 900;
+}
+
+#status-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    padding: 0 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13.5px;
+    font-weight: 600;
+    z-index: 600;
+    pointer-events: none;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+}
+
+.status-left, .status-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#perf-badge, #battery-badge {
+    font-size: 11px;
+    background: rgba(0, 0, 0, 0.36);
+    color: #ffffff;
+    padding: 2px 7px;
+    border-radius: 999px;
+}
+
+#desktop {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.18);
+    padding: 46px 16px 34px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    z-index: 100;
+    transition: transform 0.25s var(--ease-smooth), opacity 0.22s var(--ease-smooth);
+}
+
+#desktop.scaled-back {
+    transform: scale(0.96);
+    opacity: 0.75;
+}
+
+.pages-viewport {
+    flex: 1;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.pages-track {
+    display: flex;
+    width: 200%;
+    height: 100%;
+    transition: transform 0.32s var(--ease-smooth);
+}
+
+.pages-track.page-2 {
+    transform: translateX(-50%);
+}
+
+.home-page {
+    width: 50%;
+    height: 100%;
+    overflow-y: auto;
+    scrollbar-width: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 2px;
+}
+
+.home-page::-webkit-scrollbar {
+    display: none;
+}
+
+.widgets-box {
+    width: 100%;
+    height: 104px;
+    border: none;
+    background: transparent;
+    flex-shrink: 0;
+}
+
+.app-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 72px);
+    justify-content: space-between;
+    gap: 14px 10px;
+}
+
+.app-icon {
+    width: 72px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+}
+
+.app-icon-box {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+    border-radius: var(--app-icon-radius);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 4px;
+    transition: transform 0.14s var(--ease-smooth);
+}
+
+.app-icon:active .app-icon-box {
+    transform: scale(0.9);
+}
+
+.app-icon-box img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    display: block;
+}
+
+.app-icon-fallback {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 25px;
+}
+
+.app-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+    color: var(--text-primary);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+    max-width: 72px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dock-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.page-dots {
+    display: flex;
+    gap: 7px;
+}
+
+.dot-btn {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.38);
+    cursor: pointer;
+}
+
+.dot-btn.active {
+    background: #ffffff;
+    transform: scale(1.2);
+}
+
+.search-capsule {
+    border: none;
+    color: #ffffff;
+    padding: 5px 13px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.dock-capsule {
+    width: 100%;
+    max-width: 360px;
+    border-radius: 30px;
+    padding: 9px 14px;
+    display: grid;
+    grid-template-columns: repeat(4, 60px);
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dock-capsule .app-icon {
+    width: 60px;
+}
+
+.dock-capsule .app-icon-box,
+.dock-capsule .app-icon-box img,
+.dock-capsule .app-icon-fallback {
+    width: 54px;
+    height: 54px;
+    margin-bottom: 0;
+}
+
+.dock-capsule .app-label {
+    display: none;
+}
+
+#app-container {
+    position: absolute;
+    inset: 0;
+    z-index: 300;
     pointer-events: none;
 }
 
-body.theme-light .zen-wallpaper-scrim {
-    background: rgba(255, 255, 255, 0.08);
+.app-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #090d16;
+    position: absolute;
+    inset: 0;
+    display: none;
+    pointer-events: auto;
+    opacity: 0;
+    transform: scale(0.96);
+    transition: transform 0.24s var(--ease-smooth), opacity 0.18s var(--ease-smooth);
 }
 
-body.viewport-360 .zen-shell {
-    width: 360px;
-    height: 720px;
-    max-width: 360px;
-    max-height: 720px;
-    margin: auto;
-    border-radius: 32px;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+.app-frame.active {
+    display: block;
+    opacity: 1;
+    transform: scale(1);
+}
+
+.system-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    z-index: 450;
+}
+
+#lockscreen-frame {
+    z-index: 750;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#home-indicator-zone {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 22px;
+    z-index: 820;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+#home-indicator {
+    pointer-events: auto;
+    width: 128px;
+    height: 5px;
+    border-radius: 999px;
+    border: none;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+    cursor: pointer;
+}
+
+#recents-view {
+    position: absolute;
+    top: 44px;
+    bottom: 30px;
+    left: 14px;
+    right: 14px;
+    border-radius: 26px;
+    z-index: 500;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+}
+
+.recent-item {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 12px 14px;
+    border-radius: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.btn-close-all {
+    margin-top: auto;
+    padding: 12px;
+    border-radius: 16px;
+    border: none;
+    background: #ff453a;
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#brightness-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 780;
+    background: #000000;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#torch-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 840;
+    background: #ffffff;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+}
+
+#torch-veil.active {
+    opacity: 0.92;
 }
