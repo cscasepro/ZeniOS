@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aktualizacje i moduły</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            background: #090d16;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        h1 { font-size: 20px; }
+        .ver-card {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            border-radius: 16px;
+            padding: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ver-title { font-size: 15px; font-weight: 700; }
+        .ver-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+        .btn-refresh {
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: none;
+            background: #38bdf8;
+            color: #090d16;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .app-row {
+            background: rgba(30, 41, 59, 0.82);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+        .meta { font-size: 11px; color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <h1>Aktualizacje i moduły</h1>
+
+    <div class="ver-card">
+        <div>
+            <div class="ver-title">ZeniOS v1.0.2</div>
+            <div class="ver-sub">Architektura modułowa • TOP 1 • Style ikon</div>
+        </div>
+        <button class="btn-refresh" onclick="refreshDesktop()">Odśwież pulpit</button>
+    </div>
+
+    <div id="list" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+    <script>
+        function render() {
+            const p = window.parent;
+            const apps = (p && p.Manifest && p.Manifest.getApps()) || [];
+            const box = document.getElementById('list');
+            box.innerHTML = '';
+
+            apps.forEach(app => {
+                const row = document.createElement('div');
+                row.className = 'app-row';
+
+                const left = document.createElement('div');
+                left.innerHTML = `<div><strong>${esc(app.fallback || '📱')} ${esc(app.name)}</strong></div><div class="meta">wersja ${esc(app.version || '1.0.2')} • ${esc(app.id)}</div>`;
+
+                const chk = document.createElement('input');
+                chk.type = 'checkbox';
+                chk.checked = Boolean(app.enabled);
+                chk.disabled = app.id === 'ustawienia' || app.id === 'aktualizacje';
+                chk.onchange = () => {
+                    if (p && p.Manifest) {
+                        p.Manifest.setAppEnabled(app.id, chk.checked);
+                    }
+                    refreshDesktop();
+                };
+
+                row.appendChild(left);
+                row.appendChild(chk);
+                box.appendChild(row);
+            });
+        }
+
+        function refreshDesktop() {
+            window.parent.postMessage({ type: 'REFRESH_DESKTOP' }, '*');
+        }
+
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+
+        render();
+    </script>
+</body>
+</html>
