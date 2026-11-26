@@ -1,4 +1,4 @@
-const WallpaperManager = (() => {
+window.WallpaperManager = window.WallpaperManager || (() => {
     const STORAGE_KEY = 'zenos_wallpaper_v1';
     const BASE_PATH = 'default_wallpapers/';
     const EXTENSIONS = ['', '.png', '.jpg', '.jpeg', '.webp'];
@@ -14,6 +14,7 @@ const WallpaperManager = (() => {
     ];
 
     let current = loadState();
+    let isBlurred = false;
 
     function loadState() {
         try {
@@ -54,6 +55,14 @@ const WallpaperManager = (() => {
         tryNext();
     }
 
+    function applyBlurToDom() {
+        const layer = document.querySelector('#wallpaper-layer, .wallpaper-layer, [data-wallpaper-layer]');
+        if (layer) {
+            layer.style.filter = isBlurred ? 'blur(14px) brightness(0.82)' : '';
+            layer.style.transform = isBlurred ? 'scale(1.04)' : '';
+        }
+    }
+
     function applyToDom(url) {
         const bgValue = `url("${url}") center / cover no-repeat fixed`;
         document.documentElement.style.setProperty('--zenos-wallpaper', `url("${url}")`);
@@ -63,6 +72,7 @@ const WallpaperManager = (() => {
         if (layer) {
             layer.style.background = `url("${url}") center / cover no-repeat`;
         }
+        applyBlurToDom();
     }
 
     function applyCurrent() {
@@ -108,8 +118,17 @@ const WallpaperManager = (() => {
         applyCurrent();
     }
 
+    function setBlur(enabled) {
+        isBlurred = Boolean(enabled);
+        applyBlurToDom();
+    }
+
     function getWallpapers() {
         return DEFAULT_WALLPAPERS.slice();
+    }
+
+    function getCurrent() {
+        return { ...current };
     }
 
     function openQuickPicker() {
@@ -199,7 +218,7 @@ const WallpaperManager = (() => {
         };
 
         target.addEventListener('pointerdown', (e) => {
-            if (e.target.closest('button, a, input, .app-icon, .widget, .dock, .modal, .sheet')) return;
+            if (e.target.closest('button, a, input, iframe, .app-icon, .widget, .dock-zone, .modal, .sheet')) return;
             startX = e.clientX;
             startY = e.clientY;
             clear();
@@ -226,8 +245,18 @@ const WallpaperManager = (() => {
 
     function init(options = {}) {
         applyCurrent();
-        bindLongPress(options.longPressTarget || document.body, options.longPressMs || 550);
+        bindLongPress(options.longPressTarget || document.getElementById('desktop') || document.body, options.longPressMs || 550);
     }
 
-    return { init, setWallpaper, setCustomWallpaper, getWallpapers, openQuickPicker, bindLongPress };
+    return {
+        init,
+        setWallpaper,
+        setCustomWallpaper,
+        setBlur,
+        getWallpapers,
+        getCurrent,
+        openQuickPicker,
+        bindLongPress,
+        resolveImageUrl
+    };
 })();
