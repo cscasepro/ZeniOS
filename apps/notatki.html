@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notatki</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            background: #090d16;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        h1 { font-size: 20px; }
+        input, textarea {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(15, 23, 42, 0.9);
+            color: #f8fafc;
+            padding: 10px 12px;
+            font-family: inherit;
+            font-size: 13px;
+        }
+        textarea { min-height: 76px; resize: vertical; }
+        button {
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: none;
+            background: #38bdf8;
+            color: #090d16;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .note {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 10px 12px;
+        }
+        .note-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+        .note-body { font-size: 12px; color: #cbd5e1; }
+    </style>
+</head>
+<body>
+    <h1>Notatki</h1>
+    <input id="title" type="text" placeholder="Tytuł notatki...">
+    <textarea id="body" placeholder="Treść notatki..."></textarea>
+    <button onclick="addNote()">Zapisz notatkę</button>
+    <div id="list" class="list"></div>
+
+    <script>
+        function getNotes() {
+            const p = window.parent;
+            return (p && p.StorageManager && p.StorageManager.get('notes', [])) || [];
+        }
+
+        function saveNotes(list) {
+            const p = window.parent;
+            if (p && p.StorageManager) {
+                p.StorageManager.set('notes', list);
+            }
+            if (p && p.Widgets) {
+                p.Widgets.syncData();
+            }
+        }
+
+        function addNote() {
+            const title = document.getElementById('title').value.trim();
+            const text = document.getElementById('body').value.trim();
+            if (!title && !text) return;
+
+            const notes = getNotes();
+            notes.unshift({ id: Date.now(), title: title || 'Bez tytułu', text });
+            saveNotes(notes.slice(0, 30));
+
+            document.getElementById('title').value = '';
+            document.getElementById('body').value = '';
+            render();
+        }
+
+        function render() {
+            const notes = getNotes();
+            const box = document.getElementById('list');
+            box.innerHTML = '';
+            notes.forEach(n => {
+                const el = document.createElement('div');
+                el.className = 'note';
+                el.innerHTML = `<div class="note-title">${esc(n.title)}</div><div class="note-body">${esc(n.text)}</div>`;
+                box.appendChild(el);
+            });
+        }
+
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+
+        render();
+    </script>
+</body>
+</html>
