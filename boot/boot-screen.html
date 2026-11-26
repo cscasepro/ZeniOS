@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZeniOS Boot</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            height: 100vh;
+            background: #030712;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            overflow: hidden;
+        }
+        .logo-wrap {
+            width: 112px;
+            height: 112px;
+            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(56, 189, 248, 0.25);
+        }
+        .logo-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .fallback-icon {
+            display: none;
+            font-size: 46px;
+            font-weight: 700;
+            color: #38bdf8;
+        }
+        .title {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .version {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: -14px;
+        }
+        .bar-track {
+            width: 190px;
+            height: 5px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            overflow: hidden;
+        }
+        .bar-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #38bdf8, #a855f7);
+            transition: width 0.25s ease;
+        }
+        .status-text {
+            font-size: 12px;
+            color: #cbd5e1;
+            min-height: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-wrap">
+        <img id="boot-logo" src="../Boot_Loading/Zenios_loading.png" alt="ZeniOS Loading">
+        <span id="boot-fallback" class="fallback-icon">Z</span>
+    </div>
+    <div class="title">ZeniOS</div>
+    <div class="version">v1.0.2</div>
+    <div class="bar-track">
+        <div id="boot-bar" class="bar-fill"></div>
+    </div>
+    <div id="boot-status" class="status-text">Inicjalizacja rozruchu...</div>
+
+    <script>
+        const img = document.getElementById('boot-logo');
+        const fallback = document.getElementById('boot-fallback');
+        img.onerror = () => {
+            img.style.display = 'none';
+            fallback.style.display = 'inline';
+        };
+
+        window.addEventListener('message', (e) => {
+            if (!e.data || e.data.type !== 'BOOT_PROGRESS') return;
+            if (typeof e.data.progress === 'number') {
+                document.getElementById('boot-bar').style.width = `${Math.min(100, Math.max(0, e.data.progress))}%`;
+            }
+            if (e.data.text) {
+                document.getElementById('boot-status').textContent = e.data.text;
+            }
+        });
+    </script>
+</body>
+</html>
