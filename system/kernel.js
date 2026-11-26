@@ -1,206 +1,193 @@
 const Kernel = {
-    booted: false,
+    locked: true,
+    torchActive: false,
 
-    async init() {
-        if (this.booted) return;
-        this.booted = true;
+    async boot() {
+        Supervisor.init();
+        StorageManager.get('init_check', true);
 
-        if (typeof Supervisor !== 'undefined') Supervisor.init();
-        if (typeof StorageManager !== 'undefined') StorageManager.init?.();
-        if (typeof BatterySaver !== 'undefined') BatterySaver.init();
-        if (typeof FocusMode !== 'undefined') FocusMode.init();
-        if (typeof IconTheme !== 'undefined') IconTheme.init();
-        if (typeof PerformanceManager !== 'undefined') PerformanceManager.init();
-        if (typeof Watchdog !== 'undefined') Watchdog.init();
+        const bootInfo = await Bootloader.start();
 
-        if (typeof Bootloader !== 'undefined') {
-            await Bootloader.start();
+        BatterySaver.init();
+        FocusMode.init();
+        IconTheme.init();
+        WallpaperManager.init();
+        Notifications.init();
+        PerformanceManager.init();
+        Display.init();
+        WidgetsBridge.init();
+
+        if (!bootInfo.safeMode) {
+            Watchdog.start();
         }
 
-        if (typeof Display !== 'undefined') Display.init();
-        if (typeof Wallpapers !== 'undefined') Wallpapers.init();
-        if (typeof Widgets !== 'undefined') Widgets.init();
-        if (typeof Notifications !== 'undefined') Notifications.init();
-
-        this.startClock();
-        this.bindMessages();
+        this.bindEvents();
+        this.showLockScreen(true);
     },
 
-    openApp(appId) {
-        const apps = typeof Manifest !== 'undefined' ? Manifest.getApps() : [];
-        const app = apps.find(a => a.id === appId && a.enabled);
-        if (!app) return;
+    bindEvents() {
+        window.addEventListener('message', (e) => {
+            const data = e.data;
+            if (!data || !data.type) return;
 
-        Display.hideOverlays(['recents-view', 'control-center-frame', 'notifications-frame', 'search-frame']);
-
-        const container = document.getElementById('app-container');
-        if (!container) return;
-
-        let frame = container.querySelector(`.app-frame[data-app-id="${app.id}"]`);
-        if (!frame) {
-            frame = document.createElement('iframe');
-            frame.className = 'app-frame';
-            frame.dataset.appId = app.id;
-            frame.src = app.file;
-            frame.onerror = () => {
-                if (typeof Supervisor !== 'undefined') {
-                    Supervisor.log('ERROR', `Nie udało się załadować aplikacji: ${app.file}`);
-                }
-            };
-            container.appendChild(frame);
-        }
-
-        if (typeof PerformanceManager !== 'undefined') {
-            PerformanceManager.promoteToTop1(app.id);
-        } else {
-            frame.classList.add('active');
-        }
-    },
-
-    killApp(appId, refreshRecents = false) {
-        const frame = document.querySelector(`.app-frame[data-app-id="${appId}"]`);
-        if (frame) {
-            frame.contentWindow?.postMessage({ type: 'OS_PRIORITY', level: 'BACKGROUND' }, '*');
-            frame.remove();
-        }
-        if (typeof PerformanceManager !== 'undefined') {
-            PerformanceManager.tabHistory = PerformanceManager.tabHistory.filter(id => id !== appId);
-            if (PerformanceManager.activeAppId === appId) {
-                PerformanceManager.activeAppId = null;
+            if (data.type === 'UNLOCK_DEVICE') {
+                this.unlockDevice();
+            } else if (data.type === 'OPEN_APP' && data.appId) {
+                this.unlockDevice();
+                setTimeout(() => this.openApp(data.appId), 140);
+            } else if (data.type === 'TORCH_STATE') {
+                this.setTorch(Boolean(data.active), data.intensity);
+            } else if (data.type === 'TOGGLE_BATTERY_SAVER') {
+                BatterySaver.toggle();
+            } else if (data.type === 'TOGGLE_FOCUS_MODE') {
+                FocusMode.toggle();
+            } else if (data.type === 'SET_BRIGHTNESS' && typeof data.value === 'number') {
+                Display.setBrightness(data.value);
+            } else if (data.type === 'CLOSE_CONTROL_CENTER') {
+                this.toggleControlCenter(false);
+            } else if (data.type === 'CLOSE_SEARCH') {
+                this.toggleSearch(false);
+            } else if (data.type === 'CLOSE_NOTIFICATIONS') {
+                this.toggleNotifications(false);
+            } else if (data.type === 'STORAGE_CLEANED') {
+                Notifications.push('Pamięć ZenOS', `Zwolniono ${data.freedMb || 145.2} MB pamięci tymczasowej.`);
             }
-        }
-        if (refreshRecents && typeof Display !== 'undefined') {
-            Display.renderRecents();
-        }
+        });
     },
 
-    goHome() {
-        if (typeof Display !== 'undefined') Display.showHome();
+    showLockScreen(show) {
+        this.locked = Boolean(show);
+        const ls = document.getElementById('lockscreen-frame');
+        if (ls) ls.classList.toggle('hidden', !this.locked);
+        WallpaperManager.setBlur(this.locked);
     },
 
-    showRecents() {
-        if (typeof Display !== 'undefined') Display.renderRecents();
-    },
-
-    toggleControlCenter() {
-        if (typeof Display !== 'undefined') Display.toggleOverlay('control-center-frame');
-    },
-
-    toggleNotifications() {
-        if (typeof Display !== 'undefined') Display.toggleOverlay('notifications-frame');
-    },
-
-    toggleSearch() {
-        if (typeof Display !== 'undefined') Display.toggleOverlay('search-frame');
+    unlockDevice() {
+        this.showLockScreen(false);
     },
 
     lockDevice() {
         this.goHome();
-        const lock = document.getElementById('lockscreen-frame');
-        if (lock) {
-            lock.classList.remove('hidden');
-            if (typeof Wallpapers !== 'undefined') {
-                const cur = Wallpapers.getCurrent();
-                Wallpapers.applyLockWallpaper(cur.lock, false);
-            }
-            if (typeof Notifications !== 'undefined') {
-                Notifications.broadcast();
-            }
+        this.toggleControlCenter(false);
+        this.toggleSearch(false);
+        this.toggleNotifications(false);
+        this.showLockScreen(true);
+    },
+
+    openApp(appId) {
+        const allApps = (typeof ZenManifest !== 'undefined' && ZenManifest.apps) || [];
+        const app = allApps.find(a => a.id === appId);
+        if (!app) return;
+
+        this.hideRecents();
+        document.getElementById('desktop')?.classList.add('scaled-back');
+
+        const container = document.getElementById('app-container');
+        if (!container) return;
+
+        let entry = PerformanceManager.runningApps.get(appId);
+        if (!entry) {
+            const iframe = document.createElement('iframe');
+            iframe.className = 'app-frame';
+            iframe.src = app.url;
+            iframe.dataset.appId = appId;
+            container.appendChild(iframe);
+            PerformanceManager.registerApp(appId, iframe, { name: app.name });
+        } else {
+            PerformanceManager.setForegroundApp(appId);
+        }
+
+        Watchdog.ping(appId);
+    },
+
+    goHome() {
+        this.hideRecents();
+        PerformanceManager.setForegroundApp(null);
+        document.querySelectorAll('.app-frame').forEach(f => {
+            f.classList.remove('active');
+            f.style.display = 'none';
+        });
+        document.getElementById('desktop')?.classList.remove('scaled-back');
+    },
+
+    toggleControlCenter(forceState) {
+        const frame = document.getElementById('control-center-frame');
+        if (!frame) return;
+        const nextOpen = typeof forceState === 'boolean' ? forceState : frame.classList.contains('hidden');
+        frame.classList.toggle('hidden', !nextOpen);
+        if (nextOpen) {
+            frame.contentWindow?.postMessage({
+                type: 'CC_SYNC',
+                batterySaver: BatterySaver.isEnabled(),
+                focusMode: FocusMode.isEnabled(),
+                brightness: Display.brightness,
+                torchActive: this.torchActive
+            }, '*');
         }
     },
 
-    unlockDevice() {
-        const lock = document.getElementById('lockscreen-frame');
-        if (lock) lock.classList.add('hidden');
-        if (typeof Widgets !== 'undefined') Widgets.syncData();
+    toggleSearch(forceState) {
+        const frame = document.getElementById('search-frame');
+        if (!frame) return;
+        const nextOpen = typeof forceState === 'boolean' ? forceState : frame.classList.contains('hidden');
+        frame.classList.toggle('hidden', !nextOpen);
+        if (nextOpen) {
+            frame.contentWindow?.postMessage({ type: 'SEARCH_FOCUS' }, '*');
+        }
     },
 
-    startClock() {
-        const update = () => {
-            const now = new Date();
-            const hhmm = now.toTimeString().slice(0, 5);
-            const clockEl = document.getElementById('clock');
-            if (clockEl) clockEl.textContent = hhmm;
-
-            const lockFrame = document.getElementById('lockscreen-frame');
-            lockFrame?.contentWindow?.postMessage({ type: 'OS_CLOCK', time: hhmm }, '*');
-        };
-        update();
-        setInterval(update, 1000);
+    toggleNotifications(forceState) {
+        const frame = document.getElementById('notifications-frame');
+        if (!frame) return;
+        const nextOpen = typeof forceState === 'boolean' ? forceState : frame.classList.contains('hidden');
+        frame.classList.toggle('hidden', !nextOpen);
+        if (nextOpen) {
+            frame.contentWindow?.postMessage({ type: 'NOTIFICATIONS_UPDATED', items: Notifications.getAll() }, '*');
+        }
     },
 
-    bindMessages() {
-        window.addEventListener('message', (e) => {
-            const data = e.data;
-            if (!data || typeof data !== 'object') return;
+    setTorch(active, intensity = 80) {
+        this.torchActive = Boolean(active);
+        const veil = document.getElementById('torch-veil');
+        const ind = document.getElementById('flashlight-indicator');
+        if (veil) {
+            veil.classList.toggle('active', this.torchActive);
+            veil.style.opacity = this.torchActive ? String(Math.max(0.15, (intensity / 100) * 0.94)) : '0';
+        }
+        if (ind) ind.style.display = this.torchActive ? 'inline-block' : 'none';
+    },
 
-            if (typeof Supervisor !== 'undefined' && Supervisor.handleMessage(data, e.source)) {
-                return;
-            }
+    showRecents() {
+        const view = document.getElementById('recents-view');
+        if (!view) return;
+        this.renderRecents();
+        view.classList.remove('hidden');
+    },
 
-            switch (data.type) {
-                case 'UNLOCK_SCREEN':
-                    this.unlockDevice();
-                    break;
-                case 'OPEN_APP':
-                    if (data.appId) this.openApp(data.appId);
-                    break;
-                case 'GO_HOME':
-                    this.goHome();
-                    break;
-                case 'TOGGLE_FLASHLIGHT': {
-                    const ind = document.getElementById('flashlight-indicator');
-                    if (ind) ind.style.display = data.state ? 'inline-block' : 'none';
-                    const dev = document.getElementById('device-frame');
-                    if (dev) {
-                        dev.style.boxShadow = data.state
-                            ? '0 0 55px 12px rgba(255, 255, 255, 0.55)'
-                            : '0 25px 60px rgba(0, 0, 0, 0.85)';
-                    }
-                    break;
-                }
-                case 'TOGGLE_BATTERY_SAVER':
-                    if (typeof BatterySaver !== 'undefined') {
-                        BatterySaver.setEnabled(Boolean(data.state), true);
-                    }
-                    break;
-                case 'TOGGLE_FOCUS_MODE':
-                    if (typeof FocusMode !== 'undefined') {
-                        FocusMode.setEnabled(Boolean(data.state), true);
-                    }
-                    break;
-                case 'SET_ICON_STYLE':
-                    if (typeof IconTheme !== 'undefined' && data.style) {
-                        IconTheme.setStyle(data.style, true);
-                    }
-                    break;
-                case 'SET_WALLPAPER':
-                    if (typeof Wallpapers !== 'undefined') {
-                        Wallpapers.setWallpaper(data.target || 'home', data.value, true);
-                    }
-                    break;
-                case 'UPDATE_WIDGETS_CONFIG':
-                    if (typeof Widgets !== 'undefined') {
-                        Widgets.applyConfig(data.config || {}, true);
-                    }
-                    break;
-                case 'PUSH_NOTIFICATION':
-                    if (typeof Notifications !== 'undefined') {
-                        Notifications.push(data.title, data.body, data.appId || 'app');
-                    }
-                    break;
-                case 'SEARCH_QUERY':
-                    if (typeof Search !== 'undefined' && e.source) {
-                        e.source.postMessage({ type: 'SEARCH_RESULTS', items: Search.query(data.query || '') }, '*');
-                    }
-                    break;
-                case 'REFRESH_DESKTOP':
-                    if (typeof Display !== 'undefined') Display.renderDesktop();
-                    if (typeof Widgets !== 'undefined') Widgets.syncData();
-                    break;
-            }
-        });
+    hideRecents() {
+        document.getElementById('recents-view')?.classList.add('hidden');
+    },
+
+    renderRecents() {
+        const list = document.getElementById('recents-list');
+        if (!list) return;
+        const items = PerformanceManager.getRunningList();
+        if (!items.length) {
+            list.innerHTML = '<div style="font-size:13px;opacity:0.75;">Brak otwartych aplikacji w pamięci.</div>';
+            return;
+        }
+        list.innerHTML = items.map(item => `
+            <div class="recent-item">
+                <div><strong>${item.name}</strong><div style="font-size:11px;opacity:0.7;">${item.state}</div></div>
+                <div style="display:flex;gap:6px;">
+                    <button class="glass-btn" onclick="Kernel.openApp('${item.id}')">Otwórz</button>
+                    <button class="glass-btn" onclick="PerformanceManager.closeApp('${item.id}'); Kernel.renderRecents();">Zamknij</button>
+                </div>
+            </div>
+        `).join('');
     }
 };
 
-window.addEventListener('DOMContentLoaded', () => Kernel.init());
+window.addEventListener('DOMContentLoaded', () => {
+    Kernel.boot();
+});
