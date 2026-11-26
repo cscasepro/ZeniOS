@@ -1,71 +1,41 @@
-const Wallpapers = {
-    HOME_KEY: 'zenios_wallpaper_home',
-    LOCK_KEY: 'zenios_wallpaper_lock',
-
-    // Dopasowane do Twojego folderu default_wallpapers/ z automatycznym doborem rozszerzenia
-    presets: [
-        { id: 'wp_1', name: 'Tapeta 1', basePath: 'default_wallpapers/default_wallpaper_1' },
-        { id: 'wp_2', name: 'Tapeta 2', basePath: 'default_wallpapers/default_wallpaper_2' },
-        { id: 'wp_3', name: 'Tapeta 3', basePath: 'default_wallpapers/default_wallpaper_3' },
-        { id: 'wp_4', name: 'Tapeta 4', basePath: 'default_wallpapers/default_wallpaper_4' },
-        { id: 'wp_5', name: 'Tapeta 5', basePath: 'default_wallpapers/default_wallpaper_5' },
-        { id: 'wp_6', name: 'Tapeta 6', basePath: 'default_wallpapers/default_wallpaper_6' },
-        { id: 'wp_7', name: 'Tapeta 7', basePath: 'default_wallpapers/default_wallpaper_7' }
-    ],
+const WallpaperManager = {
+    currentId: 'wp-1',
 
     init() {
-        const homeWp = (typeof StorageManager !== 'undefined' && StorageManager.get(this.HOME_KEY)) || 'wp_1';
-        const lockWp = (typeof StorageManager !== 'undefined' && StorageManager.get(this.LOCK_KEY)) || homeWp;
-        this.applyHomeWallpaper(homeWp, false);
-        this.applyLockWallpaper(lockWp, false);
+        const savedId = StorageManager.get('wallpaper_id', 'wp-1');
+        this.applyWallpaper(savedId, false);
     },
 
-    resolveWallpaperUrl(wpIdOrUrl) {
-        if (!wpIdOrUrl) return null;
-        if (String(wpIdOrUrl).startsWith('data:image') || String(wpIdOrUrl).startsWith('http') || String(wpIdOrUrl).includes('/')) {
-            return String(wpIdOrUrl);
+    applyWallpaper(id, persist = true) {
+        const list = (typeof ZenManifest !== 'undefined' && ZenManifest.wallpapers) || [];
+        const wp = list.find(w => w.id === id) || list[0];
+        if (!wp) return;
+
+        this.currentId = wp.id;
+        document.documentElement.style.setProperty('--bg-wallpaper', wp.css);
+
+        const layer = document.getElementById('wallpaper-layer');
+        if (wp.file) {
+            const probe = new Image();
+            probe.onload = () => {
+                document.documentElement.style.setProperty('--wallpaper-image', `url("${wp.file}")`);
+                if (layer) layer.style.backgroundImage = `url("${wp.file}"), ${wp.css}`;
+            };
+            probe.onerror = () => {
+                document.documentElement.style.setProperty('--wallpaper-image', 'none');
+                if (layer) layer.style.backgroundImage = wp.css;
+            };
+            probe.src = wp.file;
+        } else if (layer) {
+            layer.style.backgroundImage = wp.css;
         }
-        const preset = this.presets.find(p => p.id === wpIdOrUrl);
-        if (!preset) return null;
-        // Jeśli plik w repo nie ma rozszerzenia, przeglądarka i tak spróbuje go pobrać po dokładnej ścieżce
-        return preset.basePath;
+
+        if (persist) StorageManager.set('wallpaper_id', wp.id);
+        window.postMessage({ type: 'WALLPAPER_CHANGED', id: wp.id }, '*');
     },
 
-    setWallpaper(target, value, persist = true) {
-        if (target === 'lock') {
-            return this.applyLockWallpaper(value, persist);
-        }
-        return this.applyHomeWallpaper(value, persist);
-    },
-
-    applyHomeWallpaper(value, persist = true) {
-        const url = this.resolveWallpaperUrl(value);
-        const frame = document.getElementById('device-frame');
-        if (frame && url) {
-            frame.style.setProperty('--wallpaper-image', `url("${url}")`);
-        }
-        if (persist && typeof StorageManager !== 'undefined') {
-            StorageManager.set(this.HOME_KEY, value);
-        }
-        return value;
-    },
-
-    applyLockWallpaper(value, persist = true) {
-        const url = this.resolveWallpaperUrl(value);
-        if (persist && typeof StorageManager !== 'undefined') {
-            StorageManager.set(this.LOCK_KEY, value);
-        }
-        const lockFrame = document.getElementById('lockscreen-frame');
-        if (lockFrame && url) {
-            lockFrame.contentWindow?.postMessage({ type: 'SET_LOCK_WALLPAPER', url }, '*');
-        }
-        return value;
-    },
-
-    getCurrent() {
-        return {
-            home: (typeof StorageManager !== 'undefined' && StorageManager.get(this.HOME_KEY)) || 'wp_1',
-            lock: (typeof StorageManager !== 'undefined' && StorageManager.get(this.LOCK_KEY)) || 'wp_1'
-        };
+    setBlur(blurred) {
+        const layer = document.getElementById('wallpaper-layer');
+        if (layer) layer.classList.toggle('blurred', Boolean(blurred));
     }
 };
