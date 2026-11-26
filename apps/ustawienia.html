@@ -5,287 +5,842 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ustawienia — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body {
-            min-height: 100%;
-            background: #f2f2f7;
-            color: #111827;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-            padding: 46px 14px 68px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+        :root {
+            --bg: #000000;
+            --surface: rgba(28, 28, 30, 0.84);
+            --surface-2: rgba(44, 44, 46, 0.9);
+            --glass: rgba(28, 28, 30, 0.72);
+            --border: rgba(255, 255, 255, 0.14);
+            --text: #ffffff;
+            --muted: #8e8e93;
+            --sep: rgba(255, 255, 255, 0.12);
+            --accent: #0a84ff;
+            --green: #30d158;
+            --search-bg: rgba(118, 118, 128, 0.24);
         }
+
+        body.light {
+            --bg: #f2f2f7;
+            --surface: rgba(255, 255, 255, 0.88);
+            --surface-2: rgba(229, 229, 234, 0.95);
+            --glass: rgba(255, 255, 255, 0.78);
+            --border: rgba(0, 0, 0, 0.1);
+            --text: #000000;
+            --muted: #6e6e73;
+            --sep: rgba(0, 0, 0, 0.1);
+            --accent: #007aff;
+            --green: #34c759;
+            --search-bg: rgba(118, 118, 128, 0.14);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+            overflow-y: auto;
+            padding: 44px 16px 72px;
+            transition: background 0.22s ease, color 0.22s ease;
+        }
+
         .topbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            min-height: 36px;
+            margin-bottom: 6px;
         }
-        .pill {
-            background: #ffffff;
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            color: #111827;
-            padding: 6px 12px;
-            border-radius: 999px;
-            font-size: 12px;
+
+        .pill-btn {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--accent);
+            font-size: 14px;
             font-weight: 600;
+            padding: 6px 13px;
+            border-radius: 999px;
             cursor: pointer;
         }
-        .pill.on {
-            background: #0a84ff;
-            border-color: #0a84ff;
-            color: #ffffff;
+
+        h1.big-title {
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 10px;
         }
-        h1 { font-size: 28px; font-weight: 800; }
-        .search-box {
+
+        .search-wrap {
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+        .search-input {
             width: 100%;
-            padding: 9px 13px;
+            height: 38px;
             border-radius: 12px;
-            border: none;
-            background: #e5e5ea;
-            font-size: 14px;
+            border: 1px solid var(--border);
+            background: var(--search-bg);
+            color: var(--text);
+            font-size: 15px;
+            padding: 0 34px 0 34px;
             outline: none;
         }
+
+        .search-input::placeholder {
+            color: var(--muted);
+        }
+
+        .search-ico {
+            position: absolute;
+            left: 11px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            color: var(--muted);
+            pointer-events: none;
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--muted);
+            color: var(--bg);
+            border: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            display: none;
+        }
+
+        .search-clear.visible {
+            display: inline-block;
+        }
+
         .profile-card {
-            background: #ffffff;
-            border-radius: 18px;
-            padding: 12px 14px;
+            background: var(--glass);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 14px 16px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 12px;
+            margin-bottom: 14px;
             cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
         }
+
+        .profile-left {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+        }
+
         .avatar {
-            width: 46px;
-            height: 46px;
+            width: 54px;
+            height: 54px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #2563eb, #60a5fa);
+            background: linear-gradient(135deg, #0a84ff, #5e5ce6);
             color: #ffffff;
-            font-size: 20px;
-            font-weight: 800;
+            font-size: 22px;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
         }
-        .group {
-            background: #ffffff;
-            border-radius: 18px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+
+        .profile-name {
+            font-size: 18px;
+            font-weight: 600;
         }
-        .row {
+
+        .profile-sub {
+            font-size: 12.5px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .group-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .row-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 14px;
-            border-bottom: 1px solid #f2f2f7;
-            font-size: 14px;
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--sep);
             cursor: pointer;
+            min-height: 48px;
         }
-        .row:last-child { border-bottom: none; }
-        .row-left { display: flex; align-items: center; gap: 10px; }
-        .badge-sq {
-            width: 28px;
-            height: 28px;
+
+        .row-item:last-child {
+            border-bottom: none;
+        }
+
+        .row-item.static {
+            cursor: default;
+        }
+
+        .row-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .icon-sq {
+            width: 30px;
+            height: 30px;
             border-radius: 8px;
             color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 15px;
+            flex-shrink: 0;
         }
-        .style-pills {
+
+        .row-title {
+            font-size: 15.5px;
+            font-weight: 400;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .row-right {
             display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            padding: 10px 14px;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 14px;
+            flex-shrink: 0;
         }
-        .st-btn {
-            padding: 6px 11px;
+
+        .chev {
+            color: var(--muted);
+            font-size: 17px;
+            line-height: 1;
+        }
+
+        .ios-switch {
+            position: relative;
+            width: 50px;
+            height: 30px;
+            flex-shrink: 0;
+        }
+
+        .ios-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .ios-slider {
+            position: absolute;
+            inset: 0;
+            background: rgba(120, 120, 128, 0.36);
             border-radius: 999px;
-            border: 1px solid #d1d5db;
-            background: #f9fafb;
-            color: #111827;
-            font-size: 11.5px;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+
+        .ios-slider:before {
+            content: "";
+            position: absolute;
+            width: 26px;
+            height: 26px;
+            left: 2px;
+            top: 2px;
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+            transition: 0.2s;
+        }
+
+        .ios-switch input:checked + .ios-slider {
+            background: var(--green);
+        }
+
+        .ios-switch input:checked + .ios-slider:before {
+            transform: translateX(20px);
+        }
+
+        .subpage {
+            display: none;
+            animation: slideIn 0.18s ease;
+        }
+
+        .subpage.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(12px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .sub-title {
+            font-size: 26px;
+            font-weight: 700;
+            margin: 6px 0 14px;
+        }
+
+        .sec-head {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin: 14px 4px 7px;
+        }
+
+        .slider-box {
+            padding: 13px 16px;
+            border-bottom: 1px solid var(--sep);
+        }
+
+        .slider-box:last-child {
+            border-bottom: none;
+        }
+
+        .slider-top {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14.5px;
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .seg-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 10px 12px;
+        }
+
+        .seg-btn {
+            padding: 8px 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            color: var(--text);
+            font-size: 13.5px;
             font-weight: 600;
             cursor: pointer;
         }
-        .st-btn.active {
-            background: #0a84ff;
-            border-color: #0a84ff;
+
+        .seg-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
             color: #ffffff;
         }
-        .wp-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            padding: 10px 14px;
+
+        .meta-note {
+            font-size: 12.5px;
+            color: var(--muted);
+            padding: 0 4px 10px;
+            line-height: 1.45;
         }
-        .wp-swatch {
-            height: 38px;
-            border-radius: 10px;
-            border: 2px solid transparent;
-            cursor: pointer;
-        }
-        .wp-swatch.active {
-            border-color: #0a84ff;
-        }
-        #dev-group {
+
+        #dev-section {
             display: none;
         }
-        #dev-group.visible {
+
+        #dev-section.unlocked {
             display: block;
+        }
+
+        .empty-search {
+            text-align: center;
+            color: var(--muted);
+            padding: 24px 12px;
+            font-size: 14px;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="topbar">
-        <button class="pill" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
-        <button class="pill" onclick="parent.Kernel?.openApp('aktualizacje')">Aktualizacje</button>
-    </div>
+    <!-- WIDOK GŁÓWNY -->
+    <div id="main-view">
+        <div class="topbar">
+            <button class="pill-btn" onclick="goHome()">‹ Pulpit</button>
+            <button class="pill-btn" onclick="openSubpage('general')">v1.0.2</button>
+        </div>
 
-    <h1>Ustawienia</h1>
-    <input id="q" class="search-box" type="text" placeholder="Szukaj" oninput="filterRows()">
+        <h1 class="big-title">Ustawienia</h1>
 
-    <div class="profile-card" onclick="handleProfileTap()">
-        <div class="avatar">Z</div>
-        <div>
-            <div style="font-size:15.5px;font-weight:700;">Użytkownik ZenOS</div>
-            <div id="sys-sub" style="font-size:12px;color:#6b7280;">ZenOS v1.0.2 • Bateria 100%</div>
+        <div class="search-wrap">
+            <span class="search-ico">🔍</span>
+            <input id="search-input" class="search-input" type="text" placeholder="Szukaj" oninput="applySearch()">
+            <button id="search-clear" class="search-clear" onclick="clearSearch()" aria-label="Wyczyść">✕</button>
         </div>
-    </div>
 
-    <div class="group" id="group-main">
-        <div class="row" data-k="bateria oszczedzanie">
-            <div class="row-left"><div class="badge-sq" style="background:#30d158;">🔋</div><span>Ochrona baterii</span></div>
-            <button id="btn-saver" class="pill" onclick="toggleSaver()">OFF</button>
-        </div>
-        <div class="row" data-k="skupienie focus">
-            <div class="row-left"><div class="badge-sq" style="background:#5e5ce6;">🌙</div><span>Tryb skupienia</span></div>
-            <button id="btn-focus" class="pill" onclick="toggleFocus()">OFF</button>
-        </div>
-        <div class="row" data-k="pamiec storage" onclick="parent.Kernel?.openApp('pamiec')">
-            <div class="row-left"><div class="badge-sq" style="background:#6b7280;">💾</div><span>Pamięć ZenOS</span></div>
-            <span style="color:#6b7280;font-size:12.5px;">49.54 GB ›</span>
-        </div>
-        <div class="row" data-k="aktualizacje system" onclick="parent.Kernel?.openApp('aktualizacje')">
-            <div class="row-left"><div class="badge-sq" style="background:#0a84ff;">🔄</div><span>Uaktualnienia systemu</span></div>
-            <span style="color:#6b7280;font-size:12.5px;">v1.0.2 ›</span>
-        </div>
-    </div>
-
-    <div class="group" id="group-style">
-        <div class="row" style="cursor:default;">
-            <div class="row-left"><div class="badge-sq" style="background:#ff9f0a;">✨</div><span>Styl ikon</span></div>
-            <span id="cur-style-lbl" style="font-size:12.5px;color:#6b7280;">liquid</span>
-        </div>
-        <div class="style-pills">
-            <button class="st-btn" data-st="liquid" onclick="setIconStyle('liquid')">Liquid Glass</button>
-            <button class="st-btn" data-st="color" onclick="setIconStyle('color')">Kolorowy</button>
-            <button class="st-btn" data-st="dark" onclick="setIconStyle('dark')">Ciemny</button>
-            <button class="st-btn" data-st="bw" onclick="setIconStyle('bw')">B&amp;W</button>
-            <button class="st-btn" data-st="pink-purple" onclick="setIconStyle('pink-purple')">Róż-Fiolet</button>
-        </div>
-    </div>
-
-    <div class="group" id="group-wp">
-        <div class="row" style="cursor:default;">
-            <div class="row-left"><div class="badge-sq" style="background:#ec4899;">🖼️</div><span>Tapeta ZenOS</span></div>
-        </div>
-        <div id="wp-grid" class="wp-row"></div>
-    </div>
-
-    <!-- Ukryta sekcja po 5 kliknięciach w "Użytkownik ZenOS" -->
-    <div class="group" id="dev-group">
-        <div class="row" style="cursor:default;">
-            <div class="row-left"><div class="badge-sq" style="background:#111827;">🛠️</div><span>Opcje programisty</span></div>
-        </div>
-        <div class="row" onclick="toggleRes360()">
-            <div>
-                <div style="font-size:14px;font-weight:600;">Rozdzielczość 360 × 720 px</div>
-                <div id="res-status" style="font-size:11.5px;color:#6b7280;">Pełny ekran</div>
+        <div class="profile-card" onclick="handleProfileClick()">
+            <div class="profile-left">
+                <div class="avatar">Z</div>
+                <div>
+                    <div id="prof-name" class="profile-name">Użytkownik ZenOS</div>
+                    <div id="prof-sub" class="profile-sub">Konto ZenOS • ZenCloud</div>
+                </div>
             </div>
-            <button id="btn-360" class="pill">OFF</button>
+            <span class="chev">›</span>
         </div>
+
+        <div class="group-card" id="list-top"></div>
+        <div class="group-card" id="list-mid"></div>
+        <div class="group-card" id="list-low"></div>
+        <div class="group-card" id="list-apps"></div>
+
+        <!-- Sekcja odkrywana po 5 kliknięciach w profil -->
+        <div id="dev-section">
+            <div class="sec-head">Opcje programisty</div>
+            <div class="group-card">
+                <div class="row-item static">
+                    <div class="row-left">
+                        <div class="icon-sq" style="background:#111827;">📐</div>
+                        <div>
+                            <div class="row-title">Rozdzielczość 360 × 720 px</div>
+                            <div id="res-360-sub" style="font-size:12px;color:var(--muted);">Pełny ekran</div>
+                        </div>
+                    </div>
+                    <label class="ios-switch">
+                        <input id="sw-360" type="checkbox" onchange="toggleViewport360(this.checked)">
+                        <span class="ios-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div id="empty-search" class="empty-search">Brak pasujących ustawień</div>
+    </div>
+
+    <!-- PODSTRONA -->
+    <div id="subpage-view" class="subpage">
+        <div class="topbar">
+            <button class="pill-btn" onclick="closeSubpage()">‹ Ustawienia</button>
+            <strong id="sub-top-title" style="font-size:15px;"></strong>
+            <span style="width:60px;"></span>
+        </div>
+        <h2 id="sub-heading" class="sub-title"></h2>
+        <div id="sub-body"></div>
     </div>
 
     <script>
-        let tapCount = 0;
+        const STORAGE_KEY = 'zenos_settings_v1';
 
-        function handleProfileTap() {
-            tapCount++;
-            if (tapCount >= 5) {
-                document.getElementById('dev-group').classList.add('visible');
+        const SECTIONS = [
+            { id: 'account', group: 'top', title: 'Konto ZenOS', icon: '👤', color: '#0a84ff', value: 'Zalogowany', keys: 'konto zenos profil zencloud' },
+            { id: 'wifi', group: 'top', title: 'Wi-Fi', icon: '📶', color: '#007aff', valueKey: 'wifiOn', keys: 'wifi siec internet' },
+            { id: 'bluetooth', group: 'top', title: 'Bluetooth', icon: '🔵', color: '#007aff', valueKey: 'btOn', keys: 'bluetooth urzadzenia audio' },
+            { id: 'cellular', group: 'top', title: 'Sieć komórkowa', icon: '📡', color: '#30d158', valueKey: 'cellularOn', keys: 'siec komorkowa lte dane' },
+
+            { id: 'notifications', group: 'mid', title: 'Powiadomienia', icon: '🔔', color: '#ff3b30', valueKey: 'notifOn', keys: 'powiadomienia alerty dzwieki' },
+            { id: 'sounds', group: 'mid', title: 'Dźwięki i wibracje', icon: '🔊', color: '#ff2d55', valueKey: 'volume', suffix: '%', keys: 'dzwieki wibracje glosnosc' },
+            { id: 'focus', group: 'mid', title: 'Skupienie', icon: '🌙', color: '#5e5ce6', valueKey: 'focusOn', keys: 'skupienie focus nie przeszkadzac' },
+            { id: 'screentime', group: 'mid', title: 'Czas przed ekranem', icon: '⏳', color: '#5856d6', value: 'Aktywny', keys: 'czas przed ekranem limity' },
+
+            { id: 'general', group: 'low', title: 'Ogólne', icon: '⚙️', color: '#8e8e93', value: 'v1.0.2', keys: 'ogolne informacje system wersja' },
+            { id: 'display', group: 'low', title: 'Ekran i jasność', icon: '☀️', color: '#0a84ff', valueKey: 'theme', keys: 'ekran jasnosc motyw ciemny jasny' },
+            { id: 'homescreen', group: 'low', title: 'Ekran główny', icon: '🏠', color: '#32ade6', value: 'Liquid Glass', keys: 'ekran glowny ikony pulpit' },
+            { id: 'accessibility', group: 'low', title: 'Dostępność', icon: '♿', color: '#0a84ff', valueKey: 'reduceMotion', keys: 'dostepnosc ruch animacje' },
+            { id: 'privacy', group: 'low', title: 'Prywatność i ochrona', icon: '🛡️', color: '#007aff', valueKey: 'locationOn', keys: 'prywatnosc ochrona lokalizacja' },
+            { id: 'battery', group: 'low', title: 'Bateria', icon: '🔋', color: '#30d158', valueKey: 'batteryPct', suffix: '%', keys: 'bateria ladowanie oszczedzanie' },
+
+            { id: 'apps', group: 'apps', title: 'Aplikacje', icon: '📱', color: '#007aff', value: '15', keys: 'aplikacje programy lista' }
+        ];
+
+        const defaultSettings = {
+            userName: 'Użytkownik ZenOS',
+            userHandle: 'zenos.local',
+            theme: 'dark',
+            wifiOn: true,
+            wifiSsid: 'ZenNet_5G',
+            btOn: false,
+            cellularOn: true,
+            notifOn: true,
+            volume: 75,
+            hapticsOn: true,
+            focusOn: false,
+            reduceMotion: false,
+            locationOn: false,
+            brightness: 85,
+            lowPowerMode: false,
+            batteryPct: 100,
+            charging: false,
+            viewport360: false
+        };
+
+        function loadSettings() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                return { ...defaultSettings, ...(raw ? JSON.parse(raw) : {}) };
+            } catch {
+                return { ...defaultSettings };
             }
         }
 
-        function toggleRes360() {
-            const next = !Boolean(parent.Kernel?.viewport360);
-            parent.postMessage({ type: 'SET_VIEWPORT_360', enabled: next }, '*');
-            syncAll();
+        let settings = loadSettings();
+        let profileTaps = 0;
+
+        function saveSettings() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+            } catch {}
+            applyThemeToSystem();
+            pushToParentKernel();
         }
 
-        function syncAll() {
-            const saver = Boolean(parent.BatterySaver?.isEnabled?.());
-            const focus = Boolean(parent.FocusMode?.isEnabled?.());
-            const st = parent.IconTheme?.getStyle?.() || 'liquid';
-            const wpId = parent.WallpaperManager?.currentId || 'wp-1';
-            const res360 = Boolean(parent.Kernel?.viewport360);
-            const snap = parent.DeviceTelemetry?.getSnapshot?.() || { level: 100, charging: false };
+        function applyThemeToSystem() {
+            const isLight = settings.theme === 'light';
+            document.body.classList.toggle('light', isLight);
+            try {
+                if (parent && parent.document && parent.document.body) {
+                    parent.document.body.classList.toggle('theme-light', isLight);
+                    parent.document.body.classList.toggle('theme-dark', !isLight);
+                }
+            } catch {}
+        }
 
-            document.getElementById('sys-sub').textContent = `ZenOS v1.0.2 • Bateria ${snap.level}%${snap.charging ? ' • Ładowanie' : ''}`;
+        function pushToParentKernel() {
+            try {
+                parent.postMessage({
+                    type: 'SETTINGS_SYNC',
+                    settings: {
+                        theme: settings.theme,
+                        brightness: settings.brightness,
+                        focusMode: settings.focusOn,
+                        batterySaver: settings.lowPowerMode,
+                        viewport360: settings.viewport360
+                    }
+                }, '*');
+            } catch {}
+        }
 
-            const bSaver = document.getElementById('btn-saver');
-            bSaver.textContent = saver ? 'ON' : 'OFF';
-            bSaver.classList.toggle('on', saver);
+        function readRealHardware() {
+            try {
+                const snap = parent.DeviceTelemetry?.getSnapshot?.();
+                if (snap) {
+                    if (typeof snap.level === 'number') settings.batteryPct = snap.level;
+                    if (typeof snap.charging === 'boolean') settings.charging = snap.charging;
+                }
+            } catch {}
+            if (typeof parent.Kernel?.viewport360 === 'boolean') {
+                settings.viewport360 = parent.Kernel.viewport360;
+            }
+        }
 
-            const bFocus = document.getElementById('btn-focus');
-            bFocus.textContent = focus ? 'ON' : 'OFF';
-            bFocus.classList.toggle('on', focus);
+        function formatRowRight(sec) {
+            if (sec.value !== undefined) return sec.value;
+            if (sec.valueKey === 'theme') return settings.theme === 'light' ? 'Jasny' : 'Ciemny';
+            if (sec.valueKey === 'batteryPct') return `${settings.batteryPct}%`;
+            if (sec.suffix) return `${settings[sec.valueKey]}${sec.suffix}`;
+            return settings[sec.valueKey] ? 'Wł.' : 'Wył.';
+        }
 
-            const b360 = document.getElementById('btn-360');
-            b360.textContent = res360 ? 'ON' : 'OFF';
-            b360.classList.toggle('on', res360);
-            document.getElementById('res-status').textContent = res360 ? '360 × 720 px aktywne' : 'Pełny ekran';
+        function renderMainList() {
+            readRealHardware();
+            document.getElementById('prof-name').textContent = settings.userName;
+            document.getElementById('prof-sub').textContent = `Konto ZenOS • ${settings.userHandle}`;
+            document.getElementById('sw-360').checked = Boolean(settings.viewport360);
+            document.getElementById('res-360-sub').textContent = settings.viewport360 ? '360 × 720 px aktywne' : 'Pełny ekran';
 
-            document.getElementById('cur-style-lbl').textContent = st;
-            document.querySelectorAll('.st-btn').forEach(b => {
-                b.classList.toggle('active', b.dataset.st === st);
+            const groups = {
+                top: document.getElementById('list-top'),
+                mid: document.getElementById('list-mid'),
+                low: document.getElementById('list-low'),
+                apps: document.getElementById('list-apps')
+            };
+
+            Object.keys(groups).forEach(gKey => {
+                const items = SECTIONS.filter(s => s.group === gKey);
+                groups[gKey].innerHTML = items.map(sec => `
+                    <div class="row-item" data-keys="${sec.keys} ${sec.title.toLowerCase()}" onclick="openSubpage('${sec.id}')">
+                        <div class="row-left">
+                            <div class="icon-sq" style="background:${sec.color};">${sec.icon}</div>
+                            <span class="row-title">${sec.title}</span>
+                        </div>
+                        <div class="row-right">
+                            <span>${formatRowRight(sec)}</span>
+                            <span class="chev">›</span>
+                        </div>
+                    </div>
+                `).join('');
+            });
+            applySearch();
+        }
+
+        function applySearch() {
+            const q = document.getElementById('search-input').value.trim().toLowerCase();
+            document.getElementById('search-clear').classList.toggle('visible', q.length > 0);
+            let visibleCount = 0;
+
+            ['list-top', 'list-mid', 'list-low', 'list-apps'].forEach(id => {
+                const group = document.getElementById(id);
+                const rows = Array.from(group.querySelectorAll('.row-item'));
+                let groupVisible = 0;
+                rows.forEach(r => {
+                    const match = !q || (r.dataset.keys || '').includes(q);
+                    r.style.display = match ? 'flex' : 'none';
+                    if (match) {
+                        groupVisible++;
+                        visibleCount++;
+                    }
+                });
+                group.style.display = groupVisible > 0 ? 'block' : 'none';
             });
 
-            const wps = (parent.ZenManifest && parent.ZenManifest.wallpapers) || [];
-            document.getElementById('wp-grid').innerHTML = wps.map(w => `
-                <div class="wp-swatch ${w.id === wpId ? 'active' : ''}" style="background:${w.css};" onclick="pickWp('${w.id}')" title="${w.name}"></div>
-            `).join('');
+            document.getElementById('empty-search').style.display = (q && visibleCount === 0) ? 'block' : 'none';
         }
 
-        function toggleSaver() {
-            parent.BatterySaver?.toggle?.();
-            syncAll();
-        }
-        function toggleFocus() {
-            parent.FocusMode?.toggle?.();
-            syncAll();
-        }
-        function setIconStyle(styleName) {
-            parent.IconTheme?.setStyle?.(styleName, true);
-            syncAll();
-        }
-        function pickWp(id) {
-            parent.WallpaperManager?.applyWallpaper?.(id, true);
-            syncAll();
-        }
-        function filterRows() {
-            const q = document.getElementById('q').value.trim().toLowerCase();
-            document.querySelectorAll('#group-main .row').forEach(r => {
-                const k = (r.dataset.k || '') + ' ' + r.textContent.toLowerCase();
-                r.style.display = !q || k.includes(q) ? 'flex' : 'none';
-            });
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+            applySearch();
         }
 
-        syncAll();
+        function handleProfileClick() {
+            profileTaps++;
+            if (profileTaps >= 5) {
+                document.getElementById('dev-section').classList.add('unlocked');
+            }
+            if (profileTaps < 5) {
+                openSubpage('account');
+            }
+        }
+
+        function toggleViewport360(enabled) {
+            settings.viewport360 = Boolean(enabled);
+            document.getElementById('res-360-sub').textContent = settings.viewport360 ? '360 × 720 px aktywne' : 'Pełny ekran';
+            saveSettings();
+            try {
+                parent.postMessage({ type: 'SET_VIEWPORT_360', enabled: settings.viewport360 }, '*');
+            } catch {}
+        }
+
+        function switchRowHtml(label, key, onChangeExtra) {
+            const checked = Boolean(settings[key]) ? 'checked' : '';
+            return `
+                <div class="row-item static">
+                    <span class="row-title">${label}</span>
+                    <label class="ios-switch">
+                        <input type="checkbox" ${checked} onchange="setBool('${key}', this.checked, ${onChangeExtra || 'null'})">
+                        <span class="ios-slider"></span>
+                    </label>
+                </div>
+            `;
+        }
+
+        window.setBool = function(key, val, extraFn) {
+            settings[key] = Boolean(val);
+            if (typeof extraFn === 'function') extraFn(settings[key]);
+            saveSettings();
+        };
+
+        window.setThemeMode = function(mode) {
+            settings.theme = mode;
+            saveSettings();
+            openSubpage('display');
+        };
+
+        window.setBrightnessVal = function(val) {
+            settings.brightness = Number(val);
+            const lbl = document.getElementById('lbl-bright');
+            if (lbl) lbl.textContent = `${settings.brightness}%`;
+            saveSettings();
+            try {
+                parent.postMessage({ type: 'SET_BRIGHTNESS', value: settings.brightness }, '*');
+            } catch {}
+        };
+
+        window.setVolumeVal = function(val) {
+            settings.volume = Number(val);
+            const lbl = document.getElementById('lbl-vol');
+            if (lbl) lbl.textContent = `${settings.volume}%`;
+            saveSettings();
+        };
+
+        window.saveAccountName = function(val) {
+            settings.userName = val.trim() || 'Użytkownik ZenOS';
+            saveSettings();
+        };
+
+        function openSubpage(id) {
+            const sec = SECTIONS.find(s => s.id === id) || SECTIONS[0];
+            document.getElementById('main-view').style.display = 'none';
+            const sub = document.getElementById('subpage-view');
+            sub.classList.add('active');
+            document.getElementById('sub-top-title').textContent = sec.title;
+            document.getElementById('sub-heading').textContent = sec.title;
+
+            const body = document.getElementById('sub-body');
+            if (id === 'account') {
+                body.innerHTML = `
+                    <div class="group-card">
+                        <div class="row-item static">
+                            <span class="row-title">Nazwa profilu</span>
+                            <input type="text" value="${settings.userName}" onchange="saveAccountName(this.value)" style="background:transparent;border:none;color:var(--muted);text-align:right;font-size:15px;outline:none;">
+                        </div>
+                        <div class="row-item static">
+                            <span class="row-title">Identyfikator</span>
+                            <span style="color:var(--muted);">${settings.userHandle}</span>
+                        </div>
+                    </div>
+                `;
+            } else if (id === 'wifi') {
+                body.innerHTML = `
+                    <div class="group-card">${switchRowHtml('Wi-Fi', 'wifiOn')}</div>
+                    <div class="sec-head">Dostępne sieci</div>
+                    <div class="group-card">
+                        <div class="row-item static"><span>${settings.wifiSsid}</span><span style="color:var(--accent);">${settings.wifiOn ? 'Połączono' : 'Wyłączone'}</span></div>
+                        <div class="row-item static"><span>ZenOS_Guest</span><span style="color:var(--muted);">WPA2</span></div>
+                    </div>
+                `;
+            } else if (id === 'bluetooth') {
+                body.innerHTML = `
+                    <div class="group-card">${switchRowHtml('Bluetooth', 'btOn')}</div>
+                    <div class="meta-note">Wyświetlane są wyłącznie stany ustawień obsługiwane przez środowisko.</div>
+                `;
+            } else if (id === 'cellular') {
+                body.innerHTML = `
+                    <div class="group-card">${switchRowHtml('Dane komórkowe', 'cellularOn')}</div>
+                    <div class="group-card"><div class="row-item static"><span>Operator</span><span style="color:var(--muted);">ZenMobile</span></div></div>
+                `;
+            } else if (id === 'notifications') {
+                body.innerHTML = `
+                    <div class="group-card">${switchRowHtml('Zezwalaj na powiadomienia', 'notifOn')}</div>
+                `;
+            } else if (id === 'sounds') {
+                body.innerHTML = `
+                    <div class="group-card">
+                        <div class="slider-box">
+                            <div class="slider-top"><span>Głośność</span><strong id="lbl-vol">${settings.volume}%</strong></div>
+                            <input type="range" min="0" max="100" value="${settings.volume}" oninput="setVolumeVal(this.value)">
+                        </div>
+                        ${switchRowHtml('Wibracje interfejsu', 'hapticsOn')}
+                    </div>
+                `;
+            } else if (id === 'focus') {
+                body.innerHTML = `
+                    <div class="group-card">${switchRowHtml('Tryb skupienia', 'focusOn', '(v) => { try { parent.FocusMode?.setEnabled?.(v); } catch {} }')}</div>
+                    <div class="meta-note">Wycisza rozpraszające powiadomienia podczas pracy.</div>
+                `;
+            } else if (id === 'screentime') {
+                body.innerHTML = `
+                    <div class="group-card">
+                        <div class="row-item static"><span>Dzisiejsza aktywność</span><span style="color:var(--muted);">Aktywna sesja</span></div>
+                        <div class="row-item static"><span>Limity aplikacji</span><span style="color:var(--muted);">Brak</span></div>
+                    </div>
+                `;
+            } else if (id === 'general') {
+                body.innerHTML = `
+                    <div class="group-card">
+                        <div class="row-item static"><span>System</span><span style="color:var(--muted);">ZenOS</span></div>
+                        <div class="row-item static"><span>Wersja</span><span style="color:var(--muted);">v1.0.2</span></div>
+                        <div class="row-item static"><span>Profil docelowy</span><span style="color:var(--muted);">Lekki / DRA-L21</span></div>
+                    </div>
+                `;
+            } else if (id === 'display') {
+                body.innerHTML = `
+                    <div class="sec-head">Wygląd</div>
+                    <div class="group-card">
+                        <div class="seg-row">
+                            <button class="seg-btn ${settings.theme === 'dark' ? 'active' : ''}" onclick="setThemeMode('dark')">Ciemny</button>
+                            <button class="seg-btn ${settings.theme === 'light' ? 'active' : ''}" onclick="setThemeMode('light')">Jasny</button>
+                        </div>
+                    </div>
+                    <div class="sec-head">Jasność</div>
+                    <div class="group-card">
+                        <div class="slider-box">
+                            <div class="slider-top"><span>Jasność ekranu</span><strong id="lbl-bright">${settings.brightness}%</strong></div>
+                            <input type="range" min="15" max="100" value="${settings.brightness}" oninput="setBrightnessVal(this.value)">
+                        </div>
+                    </div>
+                `;
+            } else if (id === 'homescreen') {
+                body.innerHTML = `
+                    <div class="group-card">
+                        <div class="row-item" onclick="openAppFromSettings('kalkulator')"><span>Kalkulator</span><span class="chev">›</span></div>
+                        <div class="row-item" onclick="openAppFromSettings('zegar')"><span>Zegar</span><span class="chev">›</span></div>
+                        <div class="row-item" onclick="openAppFromSettings('notatki')"><span>Notatki</span><span class="chev">›</span></div>
+                    </div>
+                `;
+            } else if (id === 'accessibility') {
+                body.innerHTML = `
+                    <div class="group-card">${switchRowHtml('Ograniczenie ruchu', 'reduceMotion')}</div>
+                    <div class="meta-note">Pomocne przy uruchamianiu na starszych lub słabszych urządzeniach.</div>
+                `;
+            } else if (id === 'privacy') {
+                body.innerHTML = `
+                    <div class="group-card">${switchRowHtml('Usługi lokalizacji', 'locationOn')}</div>
+                `;
+            } else if (id === 'battery') {
+                body.innerHTML = `
+                    <div class="group-card">
+                        <div class="row-item static"><span>Poziom baterii</span><strong>${settings.batteryPct}%</strong></div>
+                        <div class="row-item static"><span>Ładowanie</span><span style="color:var(--muted);">${settings.charging ? 'Podłączono' : 'Nie podłączono'}</span></div>
+                        ${switchRowHtml('Tryb oszczędzania energii', 'lowPowerMode', '(v) => { try { if (parent.BatterySaver?.isEnabled?.() !== v) parent.BatterySaver?.toggle?.(); } catch {} }')}
+                    </div>
+                `;
+            } else if (id === 'apps') {
+                const appsList = (parent.ZenManifest && parent.ZenManifest.apps) || [];
+                body.innerHTML = `
+                    <div class="group-card">
+                        ${appsList.map(a => `
+                            <div class="row-item" onclick="openAppFromSettings('${a.id}')">
+                                <span>${a.name}</span>
+                                <span class="chev">›</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+        }
+
+        function closeSubpage() {
+            document.getElementById('subpage-view').classList.remove('active');
+            document.getElementById('main-view').style.display = 'block';
+            renderMainList();
+        }
+
+        function openAppFromSettings(appId) {
+            try {
+                parent.Kernel?.openApp?.(appId);
+            } catch {}
+        }
+
+        function goHome() {
+            try {
+                parent.Kernel?.goHome?.();
+            } catch {}
+        }
+
+        applyThemeToSystem();
+        renderMainList();
     </script>
 </body>
 </html>
