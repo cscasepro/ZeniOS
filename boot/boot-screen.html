@@ -3,32 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZeniOS Boot</title>
+    <title>ZenOS Boot</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
+            width: 100vw;
             height: 100vh;
-            background: #030712;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
+            background: #04060b;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 20px;
+            gap: 18px;
             overflow: hidden;
         }
         .logo-wrap {
-            width: 112px;
-            height: 112px;
-            border-radius: 28px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            width: 104px;
+            height: 104px;
+            border-radius: 26px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.25);
             display: flex;
             justify-content: center;
             align-items: center;
             overflow: hidden;
-            box-shadow: 0 0 40px rgba(56, 189, 248, 0.25);
         }
         .logo-wrap img {
             width: 100%;
@@ -37,51 +37,36 @@
         }
         .fallback-icon {
             display: none;
-            font-size: 46px;
+            font-size: 42px;
             font-weight: 700;
-            color: #38bdf8;
         }
-        .title {
-            font-size: 20px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-        .version {
-            font-size: 12px;
-            color: #94a3b8;
-            margin-top: -14px;
-        }
+        .title { font-size: 20px; font-weight: 700; }
+        .version { font-size: 12px; color: rgba(255, 255, 255, 0.65); margin-top: -12px; }
         .bar-track {
-            width: 190px;
-            height: 5px;
+            width: 170px;
+            height: 4px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.15);
             overflow: hidden;
         }
         .bar-fill {
             width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, #38bdf8, #a855f7);
+            background: linear-gradient(90deg, #60a5fa, #ffffff);
             transition: width 0.25s ease;
         }
-        .status-text {
-            font-size: 12px;
-            color: #cbd5e1;
-            min-height: 16px;
-        }
+        .status-text { font-size: 12px; color: rgba(255, 255, 255, 0.8); min-height: 16px; }
     </style>
 </head>
 <body>
     <div class="logo-wrap">
-        <img id="boot-logo" src="../Boot_Loading/Zenios_loading.png" alt="ZeniOS Loading">
+        <img id="boot-logo" src="../Boot_Loading/Zenios_loading.png" alt="ZenOS Loading">
         <span id="boot-fallback" class="fallback-icon">Z</span>
     </div>
-    <div class="title">ZeniOS</div>
-    <div class="version">v1.0.2</div>
-    <div class="bar-track">
-        <div id="boot-bar" class="bar-fill"></div>
-    </div>
-    <div id="boot-status" class="status-text">Inicjalizacja rozruchu...</div>
+    <div class="title">ZenOS</div>
+    <div class="version">v1.0.2 • Liquid Glass</div>
+    <div class="bar-track"><div id="boot-bar" class="bar-fill"></div></div>
+    <div id="boot-status" class="status-text">Uruchamianie systemu...</div>
 
     <script>
         const img = document.getElementById('boot-logo');
@@ -90,7 +75,6 @@
             img.style.display = 'none';
             fallback.style.display = 'inline';
         };
-
         window.addEventListener('message', (e) => {
             if (!e.data || e.data.type !== 'BOOT_PROGRESS') return;
             if (typeof e.data.progress === 'number') {
