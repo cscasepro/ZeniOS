@@ -1,37 +1,38 @@
 const FocusMode = {
-    STORAGE_KEY: 'zenios_focus_mode',
     enabled: false,
+    listeners: new Set(),
 
     init() {
-        const saved = typeof StorageManager !== 'undefined' ? StorageManager.get(this.STORAGE_KEY, false) : false;
-        this.setEnabled(Boolean(saved), false);
+        this.enabled = Boolean(StorageManager.get('focus_mode', false));
+        this.applyState(this.enabled, false);
     },
 
-    setEnabled(state, persist = true) {
-        this.enabled = Boolean(state);
-        document.body.classList.toggle('focus-mode-active', this.enabled);
-
-        const badge = document.getElementById('focus-badge');
-        if (badge) {
-            badge.style.display = this.enabled ? 'inline-block' : 'none';
-        }
-
-        if (persist && typeof StorageManager !== 'undefined') {
-            StorageManager.set(this.STORAGE_KEY, this.enabled);
-        }
-
-        if (typeof Notifications !== 'undefined') {
-            Notifications.broadcast();
-        }
-
-        document.querySelectorAll('.app-frame').forEach(frame => {
-            frame.contentWindow?.postMessage({ type: 'OS_FOCUS_MODE', enabled: this.enabled }, '*');
-        });
-
+    isEnabled() {
         return this.enabled;
     },
 
+    setEnabled(val, persist = true) {
+        this.enabled = Boolean(val);
+        if (persist) StorageManager.set('focus_mode', this.enabled);
+        this.applyState(this.enabled, true);
+    },
+
     toggle() {
-        return this.setEnabled(!this.enabled, true);
+        this.setEnabled(!this.enabled, true);
+        return this.enabled;
+    },
+
+    applyState(active, notify) {
+        const badge = document.getElementById('focus-badge');
+        if (badge) badge.style.display = active ? 'inline-block' : 'none';
+        if (notify) {
+            this.listeners.forEach(fn => fn(active));
+            window.postMessage({ type: 'FOCUS_MODE_CHANGED', enabled: active }, '*');
+        }
+    },
+
+    onChange(fn) {
+        this.listeners.add(fn);
+        return () => this.listeners.delete(fn);
     }
 };
