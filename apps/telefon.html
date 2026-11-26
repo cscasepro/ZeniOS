@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telefon</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body {
+            min-height: 100vh;
+            background: #090d16;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .num-display {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 12px 14px;
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            min-height: 52px;
+            letter-spacing: 1px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .key {
+            height: 48px;
+            border-radius: 14px;
+            border: none;
+            background: rgba(30, 41, 59, 0.88);
+            color: #f8fafc;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .key:active { opacity: 0.75; }
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-call {
+            flex: 1;
+            padding: 11px;
+            border-radius: 14px;
+            border: none;
+            background: #22c55e;
+            color: #052e16;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-del {
+            padding: 11px 14px;
+            border-radius: 14px;
+            border: none;
+            background: rgba(239, 68, 68, 0.22);
+            color: #fca5a5;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .call-banner {
+            background: rgba(34, 197, 94, 0.16);
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            border-radius: 14px;
+            padding: 10px 12px;
+            font-size: 12px;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .hist-item {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div id="num" class="num-display"></div>
+
+    <div class="keypad">
+        <button class="key" onclick="press('1')">1</button>
+        <button class="key" onclick="press('2')">2</button>
+        <button class="key" onclick="press('3')">3</button>
+        <button class="key" onclick="press('4')">4</button>
+        <button class="key" onclick="press('5')">5</button>
+        <button class="key" onclick="press('6')">6</button>
+        <button class="key" onclick="press('7')">7</button>
+        <button class="key" onclick="press('8')">8</button>
+        <button class="key" onclick="press('9')">9</button>
+        <button class="key" onclick="press('*')">*</button>
+        <button class="key" onclick="press('0')">0</button>
+        <button class="key" onclick="press('#')">#</button>
+    </div>
+
+    <div class="actions">
+        <button class="btn-call" onclick="startCall()">📞 Zadzwoń</button>
+        <button class="btn-del" onclick="backspace()">⌫</button>
+    </div>
+
+    <div id="call-banner" class="call-banner">
+        <span id="call-text">Połączenie aktywne...</span>
+        <button style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;" onclick="endCall()">Rozłącz</button>
+    </div>
+
+    <div id="history" class="history"></div>
+
+    <script>
+        let number = '';
+        let callTimer = null;
+        let callSec = 0;
+
+        function press(ch) {
+            if (number.length >= 16) return;
+            number += ch;
+            document.getElementById('num').textContent = number;
+        }
+
+        function backspace() {
+            number = number.slice(0, -1);
+            document.getElementById('num').textContent = number;
+        }
+
+        function getCalls() {
+            const p = window.parent;
+            return (p && p.StorageManager && p.StorageManager.get('call_history', [])) || [];
+        }
+
+        function startCall() {
+            if (!number) return;
+            endCall();
+            callSec = 0;
+            const banner = document.getElementById('call-banner');
+            const text = document.getElementById('call-text');
+            banner.style.display = 'flex';
+            text.textContent = `Rozmowa z ${number} (00:00)`;
+
+            const p = window.parent;
+            const calls = getCalls();
+            calls.unshift({ number, time: new Date().toTimeString().slice(0, 5) });
+            if (p && p.StorageManager) {
+                p.StorageManager.set('call_history', calls.slice(0, 20));
+            }
+            if (p && p.Notifications) {
+                p.Notifications.push('Telefon', `Połączenie z numerem ${number}`, 'telefon');
+            }
+            renderHistory();
+
+            callTimer = setInterval(() => {
+                callSec += 1;
+                const mm = String(Math.floor(callSec / 60)).padStart(2, '0');
+                const ss = String(callSec % 60).padStart(2, '0');
+                text.textContent = `Rozmowa z ${number} (${mm}:${ss})`;
+            }, 1000);
+        }
+
+        function endCall() {
+            if (callTimer) {
+                clearInterval(callTimer);
+                callTimer = null;
+            }
+            document.getElementById('call-banner').style.display = 'none';
+        }
+
+        function renderHistory() {
+            const calls = getCalls();
+            const box = document.getElementById('history');
+            box.innerHTML = '';
+            calls.slice(0, 6).forEach(c => {
+                const row = document.createElement('div');
+                row.className = 'hist-item';
+                row.innerHTML = `<span>${esc(c.number)}</span><span style="color:#94a3b8;">${esc(c.time)}</span>`;
+                box.appendChild(row);
+            });
+        }
+
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'OS_PRIORITY' && e.data.level === 'BACKGROUND') {
+                endCall();
+            }
+        });
+
+        renderHistory();
+    </script>
+</body>
+</html>
