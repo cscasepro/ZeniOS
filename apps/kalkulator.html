@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body {
+            height: 100vh;
+            background: #090d16;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 18px;
+            gap: 14px;
+        }
+        .screen {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 16px;
+            text-align: right;
+        }
+        .expr {
+            font-size: 13px;
+            color: #94a3b8;
+            min-height: 18px;
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .val {
+            font-size: 36px;
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .keys {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        button {
+            height: 56px;
+            border-radius: 16px;
+            border: none;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            background: rgba(30, 41, 59, 0.9);
+            color: #f8fafc;
+        }
+        button:active { opacity: 0.75; }
+        .op { background: rgba(56, 189, 248, 0.25); color: #7dd3fc; }
+        .eq { background: #38bdf8; color: #090d16; }
+        .clr { background: rgba(239, 68, 68, 0.25); color: #fca5a5; }
+    </style>
+</head>
+<body>
+    <div class="screen">
+        <div id="expr" class="expr"></div>
+        <div id="val" class="val">0</div>
+    </div>
+    <div class="keys">
+        <button class="clr" onclick="clearAll()">C</button>
+        <button class="op" onclick="pushVal('(')">(</button>
+        <button class="op" onclick="pushVal(')')">)</button>
+        <button class="op" onclick="pushVal('/')">÷</button>
+
+        <button onclick="pushVal('7')">7</button>
+        <button onclick="pushVal('8')">8</button>
+        <button onclick="pushVal('9')">9</button>
+        <button class="op" onclick="pushVal('*')">×</button>
+
+        <button onclick="pushVal('4')">4</button>
+        <button onclick="pushVal('5')">5</button>
+        <button onclick="pushVal('6')">6</button>
+        <button class="op" onclick="pushVal('-')">−</button>
+
+        <button onclick="pushVal('1')">1</button>
+        <button onclick="pushVal('2')">2</button>
+        <button onclick="pushVal('3')">3</button>
+        <button class="op" onclick="pushVal('+')">+</button>
+
+        <button onclick="pushVal('0')">0</button>
+        <button onclick="pushVal('.')">.</button>
+        <button onclick="backspace()">⌫</button>
+        <button class="eq" onclick="calculate()">=</button>
+    </div>
+
+    <script>
+        let current = '';
+
+        function render(resultText = null) {
+            document.getElementById('expr').textContent = current;
+            document.getElementById('val').textContent = resultText !== null ? resultText : (current || '0');
+        }
+
+        function pushVal(ch) {
+            current += ch;
+            render();
+        }
+
+        function backspace() {
+            current = current.slice(0, -1);
+            render();
+        }
+
+        function clearAll() {
+            current = '';
+            render();
+        }
+
+        function calculate() {
+            if (!current) return;
+            try {
+                if (!/^[0-9+\-*/().\s]+$/.test(current)) {
+                    throw new Error('Nieprawidłowe znaki');
+                }
+                const res = Function(`"use strict"; return (${current});`)();
+                if (typeof res !== 'number' || !Number.isFinite(res)) {
+                    throw new Error('Błąd obliczeń');
+                }
+                const formatted = String(Math.round(res * 1e9) / 1e9);
+                render(formatted);
+                current = formatted;
+            } catch (_) {
+                render('Błąd');
+                current = '';
+            }
+        }
+    </script>
+</body>
+</html>
