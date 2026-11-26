@@ -1,44 +1,46 @@
 const BatterySaver = {
-    STORAGE_KEY: 'zenios_battery_saver',
     enabled: false,
+    listeners: new Set(),
 
     init() {
-        const saved = typeof StorageManager !== 'undefined'
-            ? StorageManager.get(this.STORAGE_KEY, false)
-            : false;
-        this.setEnabled(Boolean(saved), false);
+        this.enabled = Boolean(StorageManager.get('battery_saver', false));
+        this.applyState(this.enabled, false);
     },
 
-    setEnabled(state, persist = true) {
-        this.enabled = Boolean(state);
-        document.body.classList.toggle('battery-saver-mode', this.enabled);
-
-        const badge = document.getElementById('battery-badge');
-        if (badge) {
-            badge.style.display = this.enabled ? 'inline-block' : 'none';
-        }
-
-        if (persist && typeof StorageManager !== 'undefined') {
-            StorageManager.set(this.STORAGE_KEY, this.enabled);
-        }
-
-        if (typeof PerformanceManager !== 'undefined') {
-            PerformanceManager.applyPolicy();
-        }
-
-        // Powiadom aplikacje o zmianie trybu zasilania
-        document.querySelectorAll('.app-frame').forEach(frame => {
-            frame.contentWindow?.postMessage({ type: 'OS_BATTERY_SAVER', enabled: this.enabled }, '*');
-        });
-
+    isEnabled() {
         return this.enabled;
     },
 
-    toggle() {
-        return this.setEnabled(!this.enabled, true);
+    setEnabled(val, persist = true) {
+        this.enabled = Boolean(val);
+        if (persist) StorageManager.set('battery_saver', this.enabled);
+        this.applyState(this.enabled, true);
     },
 
-    getMaxTabs() {
-        return this.enabled ? 2 : 4;
+    toggle() {
+        this.setEnabled(!this.enabled, true);
+        return this.enabled;
+    },
+
+    applyState(active, notify) {
+        document.body.classList.toggle('battery-saver-mode', active);
+        const badge = document.getElementById('battery-badge');
+        if (badge) badge.style.display = active ? 'inline-block' : 'none';
+
+        if (active && typeof PerformanceManager !== 'undefined') {
+            PerformanceManager.throttleBackground(true);
+        } else if (!active && typeof PerformanceManager !== 'undefined') {
+            PerformanceManager.throttleBackground(false);
+        }
+
+        if (notify) {
+            this.listeners.forEach(fn => fn(active));
+            window.postMessage({ type: 'BATTERY_SAVER_CHANGED', enabled: active }, '*');
+        }
+    },
+
+    onChange(fn) {
+        this.listeners.add(fn);
+        return () => this.listeners.delete(fn);
     }
 };
