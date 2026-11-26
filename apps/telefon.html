@@ -5,303 +5,1014 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Telefon — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body {
-            min-height: 100vh;
-            background: #ffffff;
-            color: #111827;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-            padding: 48px 16px 104px;
+        :root {
+            --bg: #000000;
+            --surface: rgba(24, 25, 30, 0.9);
+            --surface-2: rgba(42, 44, 52, 0.96);
+            --glass: rgba(28, 30, 38, 0.76);
+            --border: rgba(255, 255, 255, 0.16);
+            --text: #ffffff;
+            --muted: #8e8e93;
+            --sep: rgba(255, 255, 255, 0.11);
+            --accent: #0a84ff;
+            --green: #30d158;
+            --red: #ff453a;
+            --motion: 0.2s;
         }
+
+        body.theme-light {
+            --bg: #ffffff;
+            --surface: #f4f4f8;
+            --surface-2: #e5e5ec;
+            --glass: rgba(255, 255, 255, 0.84);
+            --border: rgba(0, 0, 0, 0.1);
+            --text: #000000;
+            --muted: #6e6e73;
+            --sep: rgba(0, 0, 0, 0.09);
+            --accent: #007aff;
+            --green: #34c759;
+            --red: #ff3b30;
+        }
+
+        body.reduced-motion,
+        body.reduced-motion * {
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+            overflow-y: auto;
+            padding: 44px 14px 102px;
+            transition: background var(--motion) ease, color var(--motion) ease;
+        }
+
+        .glass-pill {
+            background: var(--glass);
+            backdrop-filter: blur(18px) saturate(170%);
+            -webkit-backdrop-filter: blur(18px) saturate(170%);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform var(--motion) ease;
+        }
+
+        .glass-pill:active {
+            transform: scale(0.95);
+        }
+
         .topbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            min-height: 36px;
+            margin-bottom: 6px;
         }
-        .pill-btn {
-            background: #f2f2f7;
-            border: none;
-            color: #111827;
-            padding: 7px 14px;
-            border-radius: 999px;
-            font-size: 13px;
-            font-weight: 600;
+
+        .big-title {
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.6px;
+            margin: 2px 4px 10px;
+        }
+
+        .tab-panel {
+            display: none;
+            animation: fadeIn var(--motion) ease;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-list {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .row-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 14px;
+            border-bottom: 1px solid var(--sep);
             cursor: pointer;
         }
-        .view-sec { display: none; }
-        .view-sec.active { display: block; }
-        .fav-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 14px 8px;
-            margin: 14px 0 22px;
-            text-align: center;
+
+        .row-item:last-child {
+            border-bottom: none;
         }
-        .fav-item {
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .search-box {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 14px;
+            padding: 9px 12px;
+            font-size: 14px;
+            outline: none;
+            margin-bottom: 10px;
+        }
+
+        /* Klawiatura numeryczna */
+        .dialed-display {
+            min-height: 48px;
+            font-size: 30px;
+            font-weight: 600;
+            text-align: center;
+            letter-spacing: 1px;
+            padding: 8px 12px;
+            word-break: break-all;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .keypad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 76px);
+            justify-content: center;
+            gap: 12px 22px;
+            margin: 10px auto 16px;
+        }
+
+        .key-btn {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
+            justify-content: center;
             cursor: pointer;
-            font-size: 12px;
+            transition: transform 0.1s ease, background 0.15s ease;
         }
-        .fav-avatar {
-            width: 58px;
-            height: 72px;
-            border-radius: 18px;
-            background: linear-gradient(145deg, #dbeafe, #93c5fd);
-            color: #1e3a8a;
-            font-weight: 800;
+
+        .key-btn:active {
+            transform: scale(0.92);
+            background: var(--surface-2);
+        }
+
+        .key-digit {
+            font-size: 28px;
+            font-weight: 500;
+            line-height: 1.05;
+        }
+
+        .key-sub {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1.4px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .dial-actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+            margin-top: 4px;
+        }
+
+        .call-circle-btn {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            border: none;
+            background: var(--green);
+            color: #ffffff;
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 10px 24px rgba(48, 209, 88, 0.35);
+        }
+
+        .mini-circle-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        /* Arkusz kontaktu */
+        .sheet {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 70;
+            background: var(--bg);
+            padding: 44px 16px 88px;
+            overflow-y: auto;
+        }
+
+        .sheet.open {
+            display: block;
+        }
+
+        .form-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--sep);
+            font-size: 14px;
+        }
+
+        .form-row:last-child {
+            border-bottom: none;
+        }
+
+        .form-row input,
+        .form-row textarea {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-size: 14px;
+            text-align: right;
+            outline: none;
+            max-width: 65%;
+            font-family: inherit;
+        }
+
+        /* Ekran rozmowy */
+        .incall-screen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 90;
+            background: radial-gradient(circle at 50% 20%, #1d3557 0%, #0b132b 55%, #05070e 100%);
+            color: #ffffff;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 58px 24px 44px;
+            text-align: center;
+        }
+
+        .incall-screen.open {
+            display: flex;
+            animation: fadeIn var(--motion) ease;
+        }
+
+        .incall-avatar {
+            width: 104px;
+            height: 104px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin: 0 auto 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            font-weight: 700;
+            overflow: hidden;
+        }
+
+        .incall-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .incall-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px 12px;
+            justify-items: center;
+            margin-bottom: 24px;
+        }
+
+        .ic-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .ic-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
             font-size: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-        .sec-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
-        .call-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 4px;
-            border-bottom: 1px solid #f2f2f7;
-        }
-        .call-badge {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            background: #eff6ff;
-            color: #0a84ff;
-            border: none;
-            font-size: 16px;
             cursor: pointer;
         }
-        .dial-screen {
-            text-align: center;
-            font-size: 32px;
-            font-weight: 600;
-            min-height: 44px;
-            margin: 14px 0 18px;
-            letter-spacing: 1px;
+
+        .ic-btn.toggled {
+            background: #ffffff;
+            color: #0b132b;
         }
-        .keypad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 14px;
-            max-width: 280px;
-            margin: 0 auto 20px;
-        }
-        .key-circle {
+
+        .end-call-btn {
             width: 72px;
             height: 72px;
-            margin: 0 auto;
             border-radius: 50%;
             border: none;
-            background: #f2f2f7;
-            color: #111827;
+            background: var(--red);
+            color: #ffffff;
             font-size: 26px;
-            font-weight: 500;
+            margin: 0 auto;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            box-shadow: 0 12px 28px rgba(255, 69, 58, 0.45);
         }
-        .key-sub { font-size: 9px; letter-spacing: 1.4px; color: #6b7280; font-weight: 700; }
-        .call-green {
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            border: none;
-            background: #30d158;
-            color: #ffffff;
-            font-size: 28px;
-            cursor: pointer;
-        }
-        .active-call-overlay {
+
+        /* Dolna nawigacja 5 zakładek */
+        .bottom-nav {
             position: fixed;
-            inset: 0;
-            background: linear-gradient(160deg, #1e293b, #090d16);
-            color: #ffffff;
+            left: 10px;
+            right: 10px;
+            bottom: 18px;
             z-index: 40;
-            display: none;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            padding: 74px 24px 68px;
-        }
-        .active-call-overlay.open { display: flex; }
-        .hangup-btn {
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            border: none;
-            background: #ff3b30;
-            color: #ffffff;
-            font-size: 26px;
-            cursor: pointer;
-        }
-        .dock-bar {
-            position: fixed;
-            bottom: 54px;
-            left: 16px;
-            right: 16px;
-            height: 60px;
-            border-radius: 30px;
-            background: rgba(248, 250, 252, 0.9);
-            border: 1px solid rgba(226, 232, 240, 0.95);
-            backdrop-filter: blur(20px);
-            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.1);
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            align-items: center;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2px;
+            padding: 6px 4px;
+            border-radius: 999px;
+            background: var(--glass);
+            backdrop-filter: blur(22px) saturate(175%);
+            -webkit-backdrop-filter: blur(22px) saturate(175%);
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
         }
-        .d-tab {
+
+        .nav-btn {
             background: none;
             border: none;
-            font-size: 11px;
-            font-weight: 600;
-            color: #6b7280;
+            color: var(--muted);
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 2px;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 4px 2px;
+            border-radius: 16px;
             cursor: pointer;
         }
-        .d-tab.active { color: #0a84ff; }
+
+        .nav-btn.active {
+            color: var(--accent);
+        }
     </style>
 </head>
 <body>
     <div class="topbar">
-        <button class="pill-btn" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
-        <strong style="font-size:17px;">Telefon</strong>
-        <button class="pill-btn" onclick="switchTab('keypad')">Klawiatura</button>
+        <button class="glass-pill" onclick="goHome()">‹ Pulpit</button>
+        <div id="top-actions" style="display:flex;gap:6px;">
+            <button id="btn-add-contact" class="glass-pill" style="display:none;" onclick="openContactEditor(null)">+ Kontakt</button>
+            <button id="btn-device-contacts" class="glass-pill" style="display:none;" onclick="importDeviceContactsIfSupported()">Importuj</button>
+        </div>
     </div>
 
-    <section id="sec-calls" class="view-sec active">
-        <div class="fav-grid" id="fav-grid"></div>
-        <div class="sec-title">Ostatnie</div>
-        <div id="recents-calls"></div>
+    <h1 id="page-title" class="big-title">Ulubione</h1>
+
+    <!-- 1. ULUBIONE -->
+    <section id="tab-favorites" class="tab-panel active">
+        <div id="favorites-list" class="card-list"></div>
     </section>
 
-    <section id="sec-contacts" class="view-sec">
-        <div class="sec-title">Kontakty</div>
-        <div id="contacts-list"></div>
+    <!-- 2. OSTATNIE -->
+    <section id="tab-recents" class="tab-panel">
+        <div class="filter-row">
+            <button class="glass-pill" data-cf="all" onclick="setCallFilter('all')">Wszystkie</button>
+            <button class="glass-pill" data-cf="outgoing" onclick="setCallFilter('outgoing')">Wychodzące</button>
+            <button class="glass-pill" data-cf="incoming" onclick="setCallFilter('incoming')">Przychodzące</button>
+            <button class="glass-pill" data-cf="missed" onclick="setCallFilter('missed')">Nieodebrane</button>
+        </div>
+        <div id="recents-list" class="card-list"></div>
     </section>
 
-    <section id="sec-keypad" class="view-sec">
-        <div id="dial-out" class="dial-screen"></div>
-        <div class="keypad" id="keypad-grid"></div>
-        <div style="display:flex;justify-content:center;gap:24px;align-items:center;">
-            <button class="pill-btn" onclick="backspace()">⌫</button>
-            <button class="call-green" onclick="startCall(document.getElementById('dial-out').textContent || '112')">📞</button>
-            <span style="width:48px;"></span>
+    <!-- 3. KONTAKTY -->
+    <section id="tab-contacts" class="tab-panel">
+        <input id="contact-search" class="search-box" type="text" placeholder="Szukaj kontaktu lub numeru..." oninput="renderContacts()">
+        <div id="contacts-list" class="card-list"></div>
+    </section>
+
+    <!-- 4. KLAWIATURA -->
+    <section id="tab-keypad" class="tab-panel">
+        <div id="dialed-number" class="dialed-display"></div>
+
+        <div class="keypad-grid">
+            <button class="key-btn" onclick="pressKey('1')"><span class="key-digit">1</span><span class="key-sub">&nbsp;</span></button>
+            <button class="key-btn" onclick="pressKey('2')"><span class="key-digit">2</span><span class="key-sub">ABC</span></button>
+            <button class="key-btn" onclick="pressKey('3')"><span class="key-digit">3</span><span class="key-sub">DEF</span></button>
+            <button class="key-btn" onclick="pressKey('4')"><span class="key-digit">4</span><span class="key-sub">GHI</span></button>
+            <button class="key-btn" onclick="pressKey('5')"><span class="key-digit">5</span><span class="key-sub">JKL</span></button>
+            <button class="key-btn" onclick="pressKey('6')"><span class="key-digit">6</span><span class="key-sub">MNO</span></button>
+            <button class="key-btn" onclick="pressKey('7')"><span class="key-digit">7</span><span class="key-sub">PQRS</span></button>
+            <button class="key-btn" onclick="pressKey('8')"><span class="key-digit">8</span><span class="key-sub">TUV</span></button>
+            <button class="key-btn" onclick="pressKey('9')"><span class="key-digit">9</span><span class="key-sub">WXYZ</span></button>
+            <button class="key-btn" onclick="pressKey('*')"><span class="key-digit">*</span><span class="key-sub">&nbsp;</span></button>
+            <button class="key-btn" onclick="pressKey('0')"><span class="key-digit">0</span><span class="key-sub">+</span></button>
+            <button class="key-btn" onclick="pressKey('#')"><span class="key-digit">#</span><span class="key-sub">&nbsp;</span></button>
+        </div>
+
+        <div class="dial-actions">
+            <button class="mini-circle-btn" onclick="saveDialedAsContact()" title="Zapisz jako kontakt">＋👤</button>
+            <button class="call-circle-btn" onclick="startCall(dialedNumber)" aria-label="Zadzwoń">📞</button>
+            <button class="mini-circle-btn" onclick="backspaceDial()" title="Usuń cyfrę">⌫</button>
         </div>
     </section>
 
-    <div id="call-modal" class="active-call-overlay">
-        <div style="text-align:center;">
-            <div style="font-size:13px;opacity:0.75;">Połączenie aktywne</div>
-            <div id="call-target" style="font-size:32px;font-weight:700;margin-top:6px;">Kontakt</div>
-            <div id="call-timer" style="font-size:16px;opacity:0.85;margin-top:6px;">00:00</div>
+    <!-- 5. POCZTA GŁOSOWA -->
+    <section id="tab-voicemail" class="tab-panel">
+        <div id="voicemail-list" class="card-list"></div>
+    </section>
+
+    <!-- EDYTOR KONTAKTU -->
+    <div id="contact-sheet" class="sheet">
+        <div class="topbar">
+            <button class="glass-pill" onclick="closeContactEditor()">Anuluj</button>
+            <strong id="contact-sheet-title" style="font-size:16px;">Nowy kontakt</strong>
+            <button class="glass-pill" style="color:var(--accent);" onclick="saveContact()">Zapisz</button>
         </div>
-        <div style="display:flex;gap:24px;font-size:24px;">
-            <button class="pill-btn" style="padding:14px 18px;" onclick="alert('Mikrofon przełączony')">🎙️</button>
-            <button class="pill-btn" style="padding:14px 18px;" onclick="alert('Głośnik przełączony')">🔊</button>
+
+        <div style="text-align:center;margin:12px 0;">
+            <div id="c-avatar-preview" class="incall-avatar" style="width:78px;height:78px;font-size:26px;">?</div>
+            <label class="glass-pill" style="cursor:pointer;">
+                Zdjęcie kontaktu
+                <input type="file" accept="image/*" style="display:none;" onchange="handleContactPhoto(event)">
+            </label>
         </div>
-        <button class="hangup-btn" onclick="endCall()">✕</button>
+
+        <div class="form-card">
+            <div class="form-row"><span>Imię</span><input id="c-first" type="text" placeholder="Imię"></div>
+            <div class="form-row"><span>Nazwisko</span><input id="c-last" type="text" placeholder="Nazwisko"></div>
+            <div class="form-row"><span>Telefon</span><input id="c-phone" type="tel" placeholder="+48 ..."></div>
+            <div class="form-row"><span>E-mail</span><input id="c-email" type="email" placeholder="adres@domena.pl"></div>
+            <div class="form-row"><span>Notatki</span><input id="c-notes" type="text" placeholder="Dodatkowe informacje"></div>
+            <div class="form-row"><span>Ulubiony</span><input id="c-fav" type="checkbox"></div>
+        </div>
     </div>
 
-    <div class="dock-bar">
-        <button id="tab-calls" class="d-tab active" onclick="switchTab('calls')"><span>📞</span><span>Połączenia</span></button>
-        <button id="tab-contacts" class="d-tab" onclick="switchTab('contacts')"><span>👤</span><span>Kontakty</span></button>
-        <button id="tab-keypad" class="d-tab" onclick="switchTab('keypad')"><span>⌨️</span><span>Klawiatura</span></button>
+    <!-- EKRAN ROZMOWY -->
+    <div id="incall-screen" class="incall-screen">
+        <div>
+            <div id="incall-avatar" class="incall-avatar">?</div>
+            <h2 id="incall-name" style="font-size:28px;font-weight:700;margin-bottom:4px;"></h2>
+            <div id="incall-number" style="font-size:15px;color:rgba(255,255,255,0.78);margin-bottom:6px;"></div>
+            <div id="incall-timer" style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.85);font-variant-numeric:tabular-nums;">00:00</div>
+            <div id="incall-status" style="font-size:12px;color:rgba(255,255,255,0.62);margin-top:4px;"></div>
+        </div>
+
+        <div>
+            <div class="incall-controls">
+                <div class="ic-wrap">
+                    <button id="btn-mute" class="ic-btn" onclick="toggleMute()">🔇</button>
+                    <span>Wycisz</span>
+                </div>
+                <div class="ic-wrap">
+                    <button class="ic-btn" onclick="switchTab('keypad'); closeInCallScreen(false);">⌨️</button>
+                    <span>Klawiatura</span>
+                </div>
+                <div class="ic-wrap">
+                    <button id="btn-speaker" class="ic-btn" onclick="toggleSpeaker()">🔊</button>
+                    <span>Głośnik</span>
+                </div>
+                <div class="ic-wrap">
+                    <button class="ic-btn" onclick="openContactEditor(null)">➕</button>
+                    <span>Dodaj</span>
+                </div>
+            </div>
+
+            <button class="end-call-btn" onclick="endCall()" aria-label="Zakończ połączenie">☎</button>
+        </div>
     </div>
+
+    <nav class="bottom-nav">
+        <button id="nav-favorites" class="nav-btn active" onclick="switchTab('favorites')"><span>★</span><span>Ulubione</span></button>
+        <button id="nav-recents" class="nav-btn" onclick="switchTab('recents')"><span>🕒</span><span>Ostatnie</span></button>
+        <button id="nav-contacts" class="nav-btn" onclick="switchTab('contacts')"><span>👤</span><span>Kontakty</span></button>
+        <button id="nav-keypad" class="nav-btn" onclick="switchTab('keypad')"><span>⠿</span><span>Klawiatura</span></button>
+        <button id="nav-voicemail" class="nav-btn" onclick="switchTab('voicemail')"><span>📼</span><span>Poczta</span></button>
+    </nav>
 
     <script>
-        const people = [
-            { name: 'Anna', phone: '+48 600 100 201', time: '09:41', type: '↗ wychodzące' },
-            { name: 'Marek', phone: '+48 600 100 202', time: 'Wczoraj', type: '↙ przychodzące' },
-            { name: 'Zofia', phone: '+48 600 100 203', time: 'Wczoraj', type: '↙ nieodebrane' },
-            { name: 'Tomasz', phone: '+48 600 100 204', time: 'Wtorek', type: '↗ wychodzące' }
+        const CONTACTS_KEY = 'zenos_contacts_v1';
+        const CALLS_KEY = 'zenos_call_history_v1';
+        const VOICEMAIL_KEY = 'zenos_voicemail_v1';
+        const SETTINGS_KEY = 'zenos_settings_v1';
+
+        const defaultContacts = [
+            { id: 'c-1', firstName: 'Anna', lastName: 'Kowalska', phone: '+48 601 234 567', email: 'anna.kowalska@example.pl', notes: 'Zespół projektowy', photo: '', favorite: true },
+            { id: 'c-2', firstName: 'Marek', lastName: 'Nowak', phone: '+48 502 987 654', email: 'marek.nowak@example.pl', notes: '', photo: '', favorite: true }
         ];
 
-        document.getElementById('fav-grid').innerHTML = people.map(p => `
-            <div class="fav-item" onclick="startCall('${p.name}')">
-                <div class="fav-avatar">${p.name[0]}</div>
-                <span>${p.name}</span>
-            </div>
-        `).join('');
-
-        document.getElementById('recents-calls').innerHTML = people.map(p => `
-            <div class="call-row">
-                <div>
-                    <div style="font-weight:700;font-size:15px;color:${p.type.includes('nieodebrane') ? '#ff3b30' : '#111827'};">${p.name}</div>
-                    <div style="font-size:12.5px;color:#6b7280;">${p.type} • ${p.phone}</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <span style="font-size:12.5px;color:#6b7280;">${p.time}</span>
-                    <button class="call-badge" onclick="startCall('${p.name}')">📞</button>
-                </div>
-            </div>
-        `).join('');
-
-        document.getElementById('contacts-list').innerHTML = people.map(p => `
-            <div class="call-row" onclick="startCall('${p.name}')">
-                <div><strong>${p.name}</strong><div style="font-size:12.5px;color:#6b7280;">${p.phone}</div></div>
-                <span style="color:#0a84ff;font-size:13px;font-weight:600;">Zadzwoń</span>
-            </div>
-        `).join('');
-
-        const keys = [
-            ['1', ''], ['2', 'ABC'], ['3', 'DEF'],
-            ['4', 'GHI'], ['5', 'JKL'], ['6', 'MNO'],
-            ['7', 'PQRS'], ['8', 'TUV'], ['9', 'WXYZ'],
-            ['*', ''], ['0', '+'], ['#', '']
+        const defaultCalls = [
+            { id: 'h-1', name: 'Anna Kowalska', number: '+48 601 234 567', direction: 'outgoing', timestamp: new Date().toISOString(), durationSec: 94 }
         ];
-        const kp = document.getElementById('keypad-grid');
-        keys.forEach(([d, sub]) => {
-            const btn = document.createElement('button');
-            btn.className = 'key-circle';
-            btn.innerHTML = `<span>${d}</span>${sub ? `<span class="key-sub">${sub}</span>` : ''}`;
-            btn.onclick = () => {
-                const el = document.getElementById('dial-out');
-                el.textContent += d;
+
+        const defaultVoicemails = [];
+
+        function loadJson(key, fallback) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return structuredClone(fallback);
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? parsed : structuredClone(fallback);
+            } catch {
+                return structuredClone(fallback);
+            }
+        }
+
+        let contacts = loadJson(CONTACTS_KEY, defaultContacts);
+        let callHistory = loadJson(CALLS_KEY, defaultCalls);
+        let voicemails = loadJson(VOICEMAIL_KEY, defaultVoicemails);
+
+        let currentTab = 'favorites';
+        let callFilter = 'all';
+        let dialedNumber = '';
+        let editingContactId = null;
+        let pendingPhotoDataUrl = '';
+
+        let activeCall = null; // { name, number, startedAt, timerId, muted, speaker }
+
+        function syncTheme() {
+            try {
+                const raw = localStorage.getItem(SETTINGS_KEY);
+                if (raw) {
+                    const s = JSON.parse(raw);
+                    document.body.classList.toggle('theme-light', s.theme === 'light');
+                    document.body.classList.toggle('reduced-motion', Boolean(s.reduceMotion));
+                }
+            } catch {}
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
+                localStorage.setItem(CALLS_KEY, JSON.stringify(callHistory));
+                localStorage.setItem(VOICEMAIL_KEY, JSON.stringify(voicemails));
+            } catch {}
+            try {
+                parent.postMessage({ type: 'CONTACTS_UPDATED', count: contacts.length }, '*');
+            } catch {}
+        }
+
+        function fullName(c) {
+            return `${c.firstName || ''} ${c.lastName || ''}`.trim() || c.phone || 'Nieznany';
+        }
+
+        function initials(name) {
+            const parts = String(name || '').trim().split(/\s+/);
+            return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '?';
+        }
+
+        function findContactByNumber(num) {
+            const clean = String(num || '').replace(/\s+/g, '');
+            return contacts.find(c => String(c.phone || '').replace(/\s+/g, '') === clean);
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            const titles = {
+                favorites: 'Ulubione',
+                recents: 'Ostatnie',
+                contacts: 'Kontakty',
+                keypad: 'Klawiatura',
+                voicemail: 'Poczta głosowa'
             };
-            kp.appendChild(btn);
-        });
-
-        function backspace() {
-            const el = document.getElementById('dial-out');
-            el.textContent = el.textContent.slice(0, -1);
-        }
-
-        function switchTab(name) {
-            ['calls', 'contacts', 'keypad'].forEach(t => {
-                document.getElementById(`sec-${t}`).classList.toggle('active', t === name);
-                document.getElementById(`tab-${t}`)?.classList.toggle('active', t === name);
+            document.getElementById('page-title').textContent = titles[tab];
+            ['favorites', 'recents', 'contacts', 'keypad', 'voicemail'].forEach(t => {
+                document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
+                document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
             });
+            document.getElementById('btn-add-contact').style.display = tab === 'contacts' ? 'inline-block' : 'none';
+            const hasContactsPicker = Boolean(navigator.contacts && typeof navigator.contacts.select === 'function');
+            document.getElementById('btn-device-contacts').style.display = (tab === 'contacts' && hasContactsPicker) ? 'inline-block' : 'none';
+            renderAll();
         }
 
-        let callSec = 0, callTimer = null;
-        function startCall(target) {
-            document.getElementById('call-target').textContent = target;
-            callSec = 0;
-            document.getElementById('call-timer').textContent = '00:00';
-            document.getElementById('call-modal').classList.add('open');
-            clearInterval(callTimer);
-            callTimer = setInterval(() => {
-                callSec++;
-                const m = String(Math.floor(callSec / 60)).padStart(2, '0');
-                const s = String(callSec % 60).padStart(2, '0');
-                document.getElementById('call-timer').textContent = `${m}:${s}`;
+        function renderFavorites() {
+            const favs = contacts.filter(c => c.favorite);
+            const box = document.getElementById('favorites-list');
+            if (!favs.length) {
+                box.innerHTML = `<div class="row-item" style="cursor:default;"><span style="color:var(--muted);">Brak ulubionych kontaktów. Oznacz kontakt gwiazdką w zakładce Kontakty.</span></div>`;
+                return;
+            }
+            box.innerHTML = favs.map(c => {
+                const name = fullName(c);
+                const av = c.photo ? `<img src="${c.photo}" alt="${name}">` : initials(name);
+                return `
+                    <div class="row-item" onclick="startCall('${c.phone}', '${name.replace(/'/g, "\\'")}')">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div class="avatar">${av}</div>
+                            <div>
+                                <div style="font-weight:600;font-size:15px;">${name}</div>
+                                <div style="font-size:12px;color:var(--muted);">${c.phone || ''}</div>
+                            </div>
+                        </div>
+                        <span style="color:var(--green);font-size:18px;">📞</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setCallFilter(f) {
+            callFilter = f;
+            renderRecents();
+        }
+
+        function formatDuration(sec) {
+            if (!sec && sec !== 0) return '';
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return `${m} min ${String(s).padStart(2, '0')} s`;
+        }
+
+        function renderRecents() {
+            const list = callHistory.filter(h => callFilter === 'all' || h.direction === callFilter);
+            const box = document.getElementById('recents-list');
+            if (!list.length) {
+                box.innerHTML = `<div class="row-item" style="cursor:default;"><span style="color:var(--muted);">Brak wpisów w historii połączeń.</span></div>`;
+                return;
+            }
+            const dirLabel = { outgoing: '↗ Wychodzące', incoming: '↙ Przychodzące', missed: '⊘ Nieodebrane' };
+            box.innerHTML = list.map(h => {
+                const isMissed = h.direction === 'missed';
+                const dt = new Date(h.timestamp).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+                const dur = h.durationSec ? ` • ${formatDuration(h.durationSec)}` : '';
+                return `
+                    <div class="row-item" onclick="startCall('${h.number}', '${(h.name || h.number).replace(/'/g, "\\'")}')">
+                        <div>
+                            <div style="font-weight:600;font-size:14.5px;color:${isMissed ? 'var(--red)' : 'var(--text)'};">${h.name || h.number}</div>
+                            <div style="font-size:12px;color:var(--muted);">${dirLabel[h.direction] || ''} • ${dt}${dur}</div>
+                        </div>
+                        <span style="color:var(--accent);font-size:17px;">📞</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderContacts() {
+            const q = (document.getElementById('contact-search')?.value || '').trim().toLowerCase();
+            const list = contacts
+                .filter(c => {
+                    if (!q) return true;
+                    return `${fullName(c)} ${c.phone || ''} ${c.email || ''}`.toLowerCase().includes(q);
+                })
+                .sort((a, b) => fullName(a).localeCompare(fullName(b), 'pl'));
+
+            const box = document.getElementById('contacts-list');
+            if (!list.length) {
+                box.innerHTML = `<div class="row-item" style="cursor:default;"><span style="color:var(--muted);">Brak kontaktów.</span></div>`;
+                return;
+            }
+            box.innerHTML = list.map(c => {
+                const name = fullName(c);
+                const av = c.photo ? `<img src="${c.photo}" alt="${name}">` : initials(name);
+                return `
+                    <div class="row-item" onclick="openContactEditor('${c.id}')">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div class="avatar">${av}</div>
+                            <div>
+                                <div style="font-weight:600;font-size:15px;">${c.favorite ? '★ ' : ''}${name}</div>
+                                <div style="font-size:12px;color:var(--muted);">${c.phone || ''}</div>
+                            </div>
+                        </div>
+                        <button class="glass-pill" onclick="event.stopPropagation(); startCall('${c.phone}', '${name.replace(/'/g, "\\'")}')">📞</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderVoicemail() {
+            const box = document.getElementById('voicemail-list');
+            if (!voicemails.length) {
+                box.innerHTML = `<div class="row-item" style="cursor:default;"><span style="color:var(--muted);">Brak wiadomości poczty głosowej.</span></div>`;
+                return;
+            }
+            box.innerHTML = voicemails.map(v => `
+                <div class="row-item" style="cursor:default;">
+                    <div>
+                        <div style="font-weight:600;">${v.from || v.number}</div>
+                        <div style="font-size:12px;color:var(--muted);">${v.date || ''} • ${v.duration || ''}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function pressKey(k) {
+            dialedNumber += k;
+            document.getElementById('dialed-number').textContent = dialedNumber;
+        }
+
+        function backspaceDial() {
+            dialedNumber = dialedNumber.slice(0, -1);
+            document.getElementById('dialed-number').textContent = dialedNumber;
+        }
+
+        function saveDialedAsContact() {
+            if (!dialedNumber.trim()) return;
+            openContactEditor(null, dialedNumber.trim());
+        }
+
+        function openContactEditor(id, prefillPhone = '') {
+            editingContactId = id;
+            const existing = id ? contacts.find(c => c.id === id) : null;
+            pendingPhotoDataUrl = existing?.photo || '';
+
+            document.getElementById('contact-sheet-title').textContent = existing ? 'Edytuj kontakt' : 'Nowy kontakt';
+            document.getElementById('c-first').value = existing?.firstName || '';
+            document.getElementById('c-last').value = existing?.lastName || '';
+            document.getElementById('c-phone').value = existing?.phone || prefillPhone || '';
+            document.getElementById('c-email').value = existing?.email || '';
+            document.getElementById('c-notes').value = existing?.notes || '';
+            document.getElementById('c-fav').checked = Boolean(existing?.favorite);
+
+            const prev = document.getElementById('c-avatar-preview');
+            prev.innerHTML = pendingPhotoDataUrl ? `<img src="${pendingPhotoDataUrl}" alt="">` : initials(fullName({ firstName: existing?.firstName, lastName: existing?.lastName, phone: existing?.phone || prefillPhone }));
+            document.getElementById('contact-sheet').classList.add('open');
+        }
+
+        function handleContactPhoto(ev) {
+            const file = ev.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                pendingPhotoDataUrl = String(reader.result || '');
+                document.getElementById('c-avatar-preview').innerHTML = `<img src="${pendingPhotoDataUrl}" alt="">`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function closeContactEditor() {
+            editingContactId = null;
+            pendingPhotoDataUrl = '';
+            document.getElementById('contact-sheet').classList.remove('open');
+        }
+
+        function saveContact() {
+            const firstName = document.getElementById('c-first').value.trim();
+            const lastName = document.getElementById('c-last').value.trim();
+            const phone = document.getElementById('c-phone').value.trim();
+            if (!firstName && !lastName && !phone) return;
+
+            const record = {
+                id: editingContactId || `c-${Date.now()}`,
+                firstName,
+                lastName,
+                phone,
+                email: document.getElementById('c-email').value.trim(),
+                notes: document.getElementById('c-notes').value.trim(),
+                photo: pendingPhotoDataUrl,
+                favorite: document.getElementById('c-fav').checked
+            };
+
+            if (editingContactId) {
+                const idx = contacts.findIndex(c => c.id === editingContactId);
+                if (idx !== -1) contacts[idx] = record;
+            } else {
+                contacts.push(record);
+            }
+
+            saveData();
+            closeContactEditor();
+            renderAll();
+        }
+
+        async function importDeviceContactsIfSupported() {
+            if (!navigator.contacts || typeof navigator.contacts.select !== 'function') return;
+            try {
+                const picked = await navigator.contacts.select(['name', 'tel', 'email'], { multiple: true });
+                if (Array.isArray(picked)) {
+                    for (const p of picked) {
+                        const nm = Array.isArray(p.name) ? p.name[0] : (p.name || '');
+                        const parts = String(nm).trim().split(/\s+/);
+                        const tel = Array.isArray(p.tel) ? p.tel[0] : (p.tel || '');
+                        const mail = Array.isArray(p.email) ? p.email[0] : (p.email || '');
+                        if (nm || tel) {
+                            contacts.push({
+                                id: `c-dev-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+                                firstName: parts[0] || '',
+                                lastName: parts.slice(1).join(' ') || '',
+                                phone: tel,
+                                email: mail,
+                                notes: '',
+                                photo: '',
+                                favorite: false
+                            });
+                        }
+                    }
+                    saveData();
+                    renderAll();
+                }
+            } catch {}
+        }
+
+        // Ekran rozmowy (przygotowany także pod natywny mostek Android / ZenOSTelephonyBridge)
+        function startCall(number, knownName = '') {
+            const num = String(number || '').trim();
+            if (!num) return;
+            const match = findContactByNumber(num);
+            const displayName = knownName || (match ? fullName(match) : num);
+
+            // Hook pod przyszłą integrację z telefonią Android (jeśli dostępna)
+            try {
+                if (window.ZenOSTelephonyBridge && typeof window.ZenOSTelephonyBridge.dial === 'function') {
+                    window.ZenOSTelephonyBridge.dial(num);
+                }
+            } catch {}
+
+            let sec = 0;
+            activeCall = {
+                name: displayName,
+                number: num,
+                photo: match?.photo || '',
+                startedAt: new Date().toISOString(),
+                muted: false,
+                speaker: false,
+                seconds: 0
+            };
+
+            document.getElementById('incall-name').textContent = displayName;
+            document.getElementById('incall-number').textContent = num;
+            document.getElementById('incall-avatar').innerHTML = activeCall.photo ? `<img src="${activeCall.photo}" alt="">` : initials(displayName);
+            document.getElementById('incall-timer').textContent = '00:00';
+            document.getElementById('incall-status').textContent = 'Sesja ekranu rozmowy (brak sieci GSM w przeglądarce)';
+            document.getElementById('btn-mute').classList.remove('toggled');
+            document.getElementById('btn-speaker').classList.remove('toggled');
+            document.getElementById('incall-screen').classList.add('open');
+
+            if (activeCall.timerId) clearInterval(activeCall.timerId);
+            activeCall.timerId = setInterval(() => {
+                if (!activeCall) return;
+                sec += 1;
+                activeCall.seconds = sec;
+                const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+                const ss = String(sec % 60).padStart(2, '0');
+                document.getElementById('incall-timer').textContent = `${mm}:${ss}`;
             }, 1000);
         }
 
-        function endCall() {
-            clearInterval(callTimer);
-            document.getElementById('call-modal').classList.remove('open');
+        function toggleMute() {
+            if (!activeCall) return;
+            activeCall.muted = !activeCall.muted;
+            document.getElementById('btn-mute').classList.toggle('toggled', activeCall.muted);
         }
+
+        function toggleSpeaker() {
+            if (!activeCall) return;
+            activeCall.speaker = !activeCall.speaker;
+            document.getElementById('btn-speaker').classList.toggle('toggled', activeCall.speaker);
+        }
+
+        function closeInCallScreen(recordHistory = true) {
+            if (activeCall?.timerId) clearInterval(activeCall.timerId);
+            if (recordHistory && activeCall) {
+                callHistory.unshift({
+                    id: `h-${Date.now()}`,
+                    name: activeCall.name,
+                    number: activeCall.number,
+                    direction: 'outgoing',
+                    timestamp: activeCall.startedAt,
+                    durationSec: activeCall.seconds || 0
+                });
+                saveData();
+            }
+            activeCall = null;
+            document.getElementById('incall-screen').classList.remove('open');
+            renderRecents();
+        }
+
+        function endCall() {
+            try {
+                if (window.ZenOSTelephonyBridge && typeof window.ZenOSTelephonyBridge.hangup === 'function') {
+                    window.ZenOSTelephonyBridge.hangup();
+                }
+            } catch {}
+            closeInCallScreen(true);
+        }
+
+        // Mostek pod zdarzenia przychodzące z systemu / Androida
+        window.ZenOSTelephonyBridge = window.ZenOSTelephonyBridge || {
+            dial(num) { /* nadpisywane przez powłokę Android/ZenOS */ },
+            hangup() { /* nadpisywane przez powłokę Android/ZenOS */ },
+            onIncomingCall(payload) {
+                if (!payload || !payload.number) return;
+                callHistory.unshift({
+                    id: `h-${Date.now()}`,
+                    name: payload.name || payload.number,
+                    number: payload.number,
+                    direction: 'incoming',
+                    timestamp: new Date().toISOString(),
+                    durationSec: 0
+                });
+                saveData();
+                try {
+                    parent.NotificationsManager?.push?.({
+                        app: 'Telefon',
+                        title: 'Połączenie przychodzące',
+                        body: payload.name ? `${payload.name} (${payload.number})` : payload.number
+                    });
+                } catch {}
+                renderRecents();
+            }
+        };
+
+        function renderAll() {
+            syncTheme();
+            renderFavorites();
+            renderRecents();
+            renderContacts();
+            renderVoicemail();
+        }
+
+        function goHome() {
+            try { parent.Kernel?.goHome?.(); } catch {}
+        }
+
+        window.addEventListener('message', (e) => {
+            if (e.data?.type === 'SETTINGS_SYNC') renderAll();
+            if (e.data?.type === 'INCOMING_CALL' && e.data.payload) {
+                window.ZenOSTelephonyBridge.onIncomingCall(e.data.payload);
+            }
+        });
+
+        renderAll();
     </script>
 </body>
 </html>
