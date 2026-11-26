@@ -5,186 +5,506 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Latarka — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body {
-            min-height: 100vh;
-            background: radial-gradient(circle at 50% 35%, #1c2233 0%, #090c14 75%);
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+        :root {
+            --bg: #050609;
+            --glass: rgba(28, 30, 38, 0.72);
+            --border: rgba(255, 255, 255, 0.18);
+            --text: #ffffff;
+            --muted: rgba(255, 255, 255, 0.68);
+            --accent: #ffd60a;
+            --beam-spread: 0.5;
+            --glow-opacity: 0;
+            --motion: 0.22s;
+        }
+
+        body.reduced-motion,
+        body.reduced-motion * {
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+            overflow: hidden;
+        }
+
+        .torch-app {
+            position: relative;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 54px 20px 36px;
+            padding: 48px 20px 44px;
+            background: radial-gradient(circle at 50% 42%, rgba(255, 214, 10, calc(var(--glow-opacity) * 0.22)) 0%, rgba(12, 14, 22, 0.96) 65%, #050609 100%);
+            transition: background var(--motion) ease;
         }
+
+        .glass-pill {
+            background: var(--glass);
+            backdrop-filter: blur(18px) saturate(170%);
+            -webkit-backdrop-filter: blur(18px) saturate(170%);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 999px;
+            padding: 7px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform var(--motion) ease;
+        }
+
+        .glass-pill:active {
+            transform: scale(0.95);
+        }
+
         .topbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            z-index: 3;
         }
-        .glass-btn {
-            background: rgba(255, 255, 255, 0.14);
-            border: 1px solid rgba(255, 255, 255, 0.28);
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--glass);
             backdrop-filter: blur(18px);
-            color: #ffffff;
-            padding: 8px 14px;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
             border-radius: 999px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
-            cursor: pointer;
+            color: var(--muted);
         }
-        .center-panel {
-            margin: auto;
-            width: 100%;
-            max-width: 320px;
-            border-radius: 36px;
-            padding: 28px 22px;
-            background: rgba(18, 20, 26, 0.72);
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.35);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #636366;
         }
-        .beam-stage {
-            width: 190px;
-            height: 150px;
+
+        .status-dot.hardware-on {
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        /* Centralna sekcja z przyciskiem i poświatą */
+        .center-stage {
             position: relative;
+            z-index: 2;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-end;
+            justify-content: center;
+            gap: 18px;
         }
-        .arc-meter {
-            position: absolute;
-            top: 8px;
-            width: 136px;
-            height: 68px;
-            border-top: 3px solid rgba(255, 255, 255, 0.7);
-            border-radius: 136px 136px 0 0;
-            opacity: 0.35;
-            transition: opacity 0.2s ease, transform 0.2s ease;
-        }
+
         .beam-cone {
             position: absolute;
-            bottom: 44px;
-            width: 120px;
-            height: 92px;
-            clip-path: polygon(34% 100%, 66% 100%, 96% 0%, 4% 0%);
-            background: linear-gradient(to top, rgba(167, 139, 250, 0.45), rgba(255, 255, 255, 0.02));
-            opacity: 0;
-            transition: opacity 0.2s ease;
+            bottom: 132px;
+            width: calc(90px + var(--beam-spread) * 140px);
+            height: 150px;
+            border-radius: 50% 50% 20% 20% / 80% 80% 20% 20%;
+            background: linear-gradient(to top, rgba(255, 255, 255, calc(var(--glow-opacity) * 0.28)), rgba(255, 214, 10, calc(var(--glow-opacity) * 0.08)) 65%, transparent 100%);
+            filter: blur(10px);
+            opacity: var(--glow-opacity);
             pointer-events: none;
+            transition: width var(--motion) ease, opacity var(--motion) ease;
         }
-        .beam-cone.active {
-            opacity: var(--beam-opacity, 0.85);
-        }
-        .torch-icon-btn {
-            width: 74px;
-            height: 74px;
+
+        .torch-main-btn {
+            position: relative;
+            width: 124px;
+            height: 124px;
             border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            background: rgba(255, 255, 255, 0.12);
+            border: 1.5px solid var(--border);
+            background: var(--glass);
+            backdrop-filter: blur(22px) saturate(175%);
+            -webkit-backdrop-filter: blur(22px) saturate(175%);
             color: #ffffff;
-            font-size: 32px;
+            font-size: 42px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            z-index: 2;
-            transition: transform 0.2s cubic-bezier(0.22, 1.18, 0.36, 1), background 0.2s ease;
+            box-shadow: 0 16px 38px rgba(0, 0, 0, 0.45), 0 0 calc(var(--glow-opacity) * 44px) rgba(255, 214, 10, calc(var(--glow-opacity) * 0.55));
+            transition: transform var(--motion) ease, background var(--motion) ease, color var(--motion) ease, box-shadow var(--motion) ease;
         }
-        .torch-icon-btn.on {
-            background: #7c3aed;
-            box-shadow: 0 0 28px rgba(139, 92, 246, 0.7);
+
+        .torch-main-btn:active:not(:disabled) {
+            transform: scale(0.93);
         }
-        .torch-icon-btn:active {
-            transform: scale(0.9);
+
+        .torch-main-btn.active {
+            background: #ffffff;
+            color: #0b0d14;
+            border-color: #ffffff;
         }
-        .slider-wrap {
-            width: 100%;
+
+        .torch-main-btn:disabled {
+            opacity: 0.42;
+            cursor: not-allowed;
+        }
+
+        .state-title {
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .state-desc {
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+            max-width: 280px;
+            line-height: 1.4;
+        }
+
+        /* Panel regulacji jasności i szerokości wiązki */
+        .controls-card {
+            z-index: 3;
+            background: var(--glass);
+            backdrop-filter: blur(20px) saturate(170%);
+            -webkit-backdrop-filter: blur(20px) saturate(170%);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 14px 16px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 12px;
         }
-        .slider-header {
+
+        .ctrl-row {
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            gap: 12px;
             font-size: 13px;
-            color: rgba(255, 255, 255, 0.85);
         }
-        input[type="range"] {
-            width: 100%;
-            accent-color: #8b5cf6;
-            cursor: pointer;
+
+        .ctrl-row label {
+            font-weight: 600;
+            color: var(--muted);
+            min-width: 115px;
+        }
+
+        .ctrl-row input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent);
+        }
+
+        .ctrl-row input[type="range"]:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .val-txt {
+            min-width: 44px;
+            text-align: right;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
         }
     </style>
 </head>
 <body>
-    <div class="topbar">
-        <button class="glass-btn" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
-        <span style="font-weight:700;font-size:16px;">Latarka</span>
-        <span id="state-pill" style="font-size:12px;opacity:0.75;">WYŁ.</span>
-    </div>
-
-    <div class="center-panel">
-        <div class="beam-stage">
-            <div id="arc" class="arc-meter"></div>
-            <div id="beam" class="beam-cone"></div>
-            <button id="toggle-btn" class="torch-icon-btn" onclick="toggleLight()">🔦</button>
-        </div>
-
-        <div class="slider-wrap">
-            <div class="slider-header">
-                <span>Jasność światła</span>
-                <span id="pct-label">80%</span>
+    <div class="torch-app">
+        <div class="topbar">
+            <button class="glass-pill" onclick="goHome()">‹ Pulpit</button>
+            <div class="status-badge">
+                <span id="status-dot" class="status-dot"></span>
+                <span id="status-chip-txt">Sprawdzanie LED...</span>
             </div>
-            <input id="level-slider" type="range" min="10" max="100" value="80" oninput="setLevel(this.value)">
+        </div>
+
+        <div class="center-stage">
+            <div class="beam-cone"></div>
+            <button id="btn-torch" class="torch-main-btn" onclick="toggleTorch()" aria-label="Przełącz latarkę">🔦</button>
+            <div id="state-title" class="state-title">Latarka wyłączona</div>
+            <div id="state-desc" class="state-desc">Sprawdzanie dostępności sprzętowej diody LED.</div>
+        </div>
+
+        <div class="controls-card">
+            <div class="ctrl-row">
+                <label for="rng-brightness">Jasność LED</label>
+                <input id="rng-brightness" type="range" min="10" max="100" step="5" value="80" oninput="onBrightnessInput(this.value)" disabled>
+                <span id="val-brightness" class="val-txt">80%</span>
+            </div>
+
+            <div class="ctrl-row">
+                <label for="rng-beam">Szerokość wiązki</label>
+                <input id="rng-beam" type="range" min="0" max="100" step="5" value="50" oninput="onBeamInput(this.value)" disabled>
+                <span id="val-beam" class="val-txt">50%</span>
+            </div>
         </div>
     </div>
-
-    <div></div>
 
     <script>
-        let isOn = false;
-        let level = 80;
+        const TORCH_PREFS_KEY = 'zenos_torch_prefs_v1';
+        const SETTINGS_KEY = 'zenos_settings_v1';
 
-        function applyVisuals() {
-            const beam = document.getElementById('beam');
-            const arc = document.getElementById('arc');
-            const btn = document.getElementById('toggle-btn');
-            const pill = document.getElementById('state-pill');
-            const pct = document.getElementById('pct-label');
+        const defaultPrefs = {
+            enabled: false,
+            brightness: 80,
+            beam: 50
+        };
 
-            pct.textContent = `${level}%`;
-            beam.style.setProperty('--beam-opacity', String((level / 100) * 0.95));
-            arc.style.opacity = isOn ? String(0.35 + (level / 100) * 0.65) : '0.25';
+        function loadPrefs() {
+            try {
+                const raw = localStorage.getItem(TORCH_PREFS_KEY);
+                if (!raw) return structuredClone(defaultPrefs);
+                return { ...structuredClone(defaultPrefs), ...JSON.parse(raw) };
+            } catch {
+                return structuredClone(defaultPrefs);
+            }
+        }
 
-            if (isOn) {
-                beam.classList.add('active');
-                btn.classList.add('on');
-                pill.textContent = 'WŁ.';
-            } else {
-                beam.classList.remove('active');
-                btn.classList.remove('on');
-                pill.textContent = 'WYŁ.';
+        let prefs = loadPrefs();
+        let hardwareAvailable = false;
+        let brightnessSupported = false;
+        let beamSupported = false;
+        let hardwareActive = false;
+        let torchTrack = null;
+        let torchStream = null;
+
+        function syncZenOSTheme() {
+            try {
+                const raw = localStorage.getItem(SETTINGS_KEY);
+                if (raw) {
+                    const s = JSON.parse(raw);
+                    document.body.classList.toggle('reduced-motion', Boolean(s.reduceMotion));
+                    if (s.accent) document.documentElement.style.setProperty('--accent', s.accent);
+                }
+            } catch {}
+        }
+
+        function savePrefs() {
+            try {
+                localStorage.setItem(TORCH_PREFS_KEY, JSON.stringify(prefs));
+            } catch {}
+            try {
+                parent.postMessage({
+                    type: 'TORCH_STATE',
+                    active: hardwareActive,
+                    intensity: prefs.brightness,
+                    beam: prefs.beam
+                }, '*');
+            } catch {}
+        }
+
+        // Wykrywa, czy środowisko pozwala na prawdziwe sterowanie diodą LED (mostek Android lub MediaStreamTrack torch)
+        async function probeHardwareTorch() {
+            const hasNativeBridge = Boolean(
+                window.ZenOSTorchBridge &&
+                typeof window.ZenOSTorchBridge.setTorch === 'function'
+            );
+
+            if (hasNativeBridge) {
+                hardwareAvailable = true;
+                brightnessSupported = typeof window.ZenOSTorchBridge.setBrightness === 'function';
+                beamSupported = typeof window.ZenOSTorchBridge.setBeamWidth === 'function';
+                updateCapabilitiesUI();
+                if (prefs.enabled) {
+                    await setHardwareTorch(true);
+                }
+                return;
             }
 
-            parent.postMessage({ type: 'TORCH_STATE', active: isOn, intensity: level }, '*');
+            if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+                try {
+                    const testStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { ideal: 'environment' } },
+                        audio: false
+                    });
+                    const track = testStream.getVideoTracks?.()[0];
+                    const caps = track?.getCapabilities?.();
+                    hardwareAvailable = Boolean(caps && 'torch' in caps);
+                    brightnessSupported = false; // Standardowa specyfikacja Web torch to boolean
+                    beamSupported = false;
+                    track?.stop?.();
+                } catch {
+                    hardwareAvailable = false;
+                }
+            } else {
+                hardwareAvailable = false;
+            }
+
+            updateCapabilitiesUI();
+            if (prefs.enabled && hardwareAvailable) {
+                await setHardwareTorch(true);
+            }
         }
 
-        function toggleLight() {
-            isOn = !isOn;
-            applyVisuals();
+        function updateCapabilitiesUI() {
+            const dot = document.getElementById('status-dot');
+            const chip = document.getElementById('status-chip-txt');
+            const btn = document.getElementById('btn-torch');
+            const brRange = document.getElementById('rng-brightness');
+            const bmRange = document.getElementById('rng-beam');
+            const titleEl = document.getElementById('state-title');
+            const descEl = document.getElementById('state-desc');
+
+            brRange.disabled = !brightnessSupported;
+            bmRange.disabled = !beamSupported;
+
+            document.getElementById('val-brightness').textContent = `${prefs.brightness}%`;
+            document.getElementById('val-beam').textContent = `${prefs.beam}%`;
+            brRange.value = String(prefs.brightness);
+            bmRange.value = String(prefs.beam);
+            document.documentElement.style.setProperty('--beam-spread', String(prefs.beam / 100));
+
+            if (!hardwareAvailable) {
+                hardwareActive = false;
+                btn.disabled = true;
+                btn.classList.remove('active');
+                dot.classList.remove('hardware-on');
+                chip.textContent = 'LED niedostępna';
+                titleEl.textContent = 'Latarka niedostępna';
+                descEl.textContent = 'Środowisko lub urządzenie nie udostępnia sterowania diodą LED. Gotowe na moduł Android.';
+                document.documentElement.style.setProperty('--glow-opacity', '0');
+                return;
+            }
+
+            btn.disabled = false;
+            chip.textContent = hardwareActive ? 'Dioda LED WŁ.' : 'Dioda LED WYŁ.';
+            dot.classList.toggle('hardware-on', hardwareActive);
+            btn.classList.toggle('active', hardwareActive);
+
+            const glow = hardwareActive ? Math.max(0.25, prefs.brightness / 100) : 0;
+            document.documentElement.style.setProperty('--glow-opacity', String(glow));
+
+            if (hardwareActive) {
+                titleEl.textContent = 'Latarka włączona';
+                descEl.textContent = brightnessSupported
+                    ? `Jasność diody LED: ${prefs.brightness}%.`
+                    : 'Dioda LED urządzenia jest aktywna.';
+            } else {
+                titleEl.textContent = 'Latarka wyłączona';
+                descEl.textContent = 'Dotknij przycisku, aby włączyć diodę LED.';
+            }
         }
 
-        function setLevel(val) {
-            level = Number(val);
-            if (level > 0 && !isOn) isOn = true;
-            applyVisuals();
+        async function setHardwareTorch(turnOn) {
+            if (!hardwareAvailable) {
+                hardwareActive = false;
+                updateCapabilitiesUI();
+                return false;
+            }
+
+            try {
+                if (window.ZenOSTorchBridge && typeof window.ZenOSTorchBridge.setTorch === 'function') {
+                    const ok = await window.ZenOSTorchBridge.setTorch(Boolean(turnOn), prefs.brightness, prefs.beam);
+                    hardwareActive = Boolean(ok !== false && turnOn);
+                    if (turnOn && brightnessSupported) {
+                        window.ZenOSTorchBridge.setBrightness(prefs.brightness);
+                    }
+                    if (turnOn && beamSupported) {
+                        window.ZenOSTorchBridge.setBeamWidth(prefs.beam);
+                    }
+                    prefs.enabled = hardwareActive;
+                    savePrefs();
+                    updateCapabilitiesUI();
+                    return hardwareActive;
+                }
+
+                if (turnOn) {
+                    torchStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { ideal: 'environment' } },
+                        audio: false
+                    });
+                    torchTrack = torchStream.getVideoTracks?.[0] || null;
+                    if (!torchTrack) throw new Error('Brak ścieżki wideo');
+                    await torchTrack.applyConstraints({ advanced: [{ torch: true }] });
+                    hardwareActive = true;
+                } else {
+                    if (torchTrack) {
+                        try { await torchTrack.applyConstraints({ advanced: [{ torch: false }] }); } catch {}
+                        torchTrack.stop();
+                        torchTrack = null;
+                    }
+                    if (torchStream) {
+                        torchStream.getTracks().forEach(t => t.stop());
+                        torchStream = null;
+                    }
+                    hardwareActive = false;
+                }
+            } catch {
+                hardwareActive = false;
+            }
+
+            prefs.enabled = hardwareActive;
+            savePrefs();
+            updateCapabilitiesUI();
+            return hardwareActive;
         }
 
-        applyVisuals();
+        async function toggleTorch() {
+            if (!hardwareAvailable) return;
+            await setHardwareTorch(!hardwareActive);
+        }
+
+        function onBrightnessInput(val) {
+            prefs.brightness = Number(val);
+            document.getElementById('val-brightness').textContent = `${prefs.brightness}%`;
+            if (hardwareActive && brightnessSupported && window.ZenOSTorchBridge?.setBrightness) {
+                window.ZenOSTorchBridge.setBrightness(prefs.brightness);
+            }
+            if (hardwareActive) {
+                document.documentElement.style.setProperty('--glow-opacity', String(Math.max(0.25, prefs.brightness / 100)));
+            }
+            savePrefs();
+        }
+
+        function onBeamInput(val) {
+            prefs.beam = Number(val);
+            document.getElementById('val-beam').textContent = `${prefs.beam}%`;
+            document.documentElement.style.setProperty('--beam-spread', String(prefs.beam / 100));
+            if (hardwareActive && beamSupported && window.ZenOSTorchBridge?.setBeamWidth) {
+                window.ZenOSTorchBridge.setBeamWidth(prefs.beam);
+            }
+            savePrefs();
+        }
+
+        // Mostek pod przyszłą natywną integrację z diodą LED w Androidzie
+        window.ZenOSTorchBridge = window.ZenOSTorchBridge || {
+            async setTorch(enabled, brightness, beam) {
+                return Boolean(enabled);
+            },
+            setBrightness(percent) {},
+            setBeamWidth(percent) {}
+        };
+
+        function goHome() {
+            try { parent.Kernel?.goHome?.(); } catch {}
+        }
+
+        window.addEventListener('message', (e) => {
+            if (!e.data || !e.data.type) return;
+            if (e.data.type === 'SETTINGS_SYNC') syncZenOSTheme();
+            if (e.data.type === 'TORCH_COMMAND' && typeof e.data.active === 'boolean') {
+                setHardwareTorch(e.data.active);
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (hardwareActive) setHardwareTorch(false);
+        });
+
+        syncZenOSTheme();
+        probeHardwareTorch();
     </script>
 </body>
 </html>
