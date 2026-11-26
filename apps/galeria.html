@@ -5,257 +5,1347 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Galeria — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        :root {
+            --bg: #000000;
+            --surface: rgba(24, 25, 30, 0.88);
+            --surface-2: rgba(42, 44, 52, 0.95);
+            --glass: rgba(28, 30, 38, 0.72);
+            --border: rgba(255, 255, 255, 0.16);
+            --text: #ffffff;
+            --muted: #8e8e93;
+            --sep: rgba(255, 255, 255, 0.12);
+            --accent: #0a84ff;
+            --danger: #ff453a;
+            --cols: 3;
+            --motion: 0.2s;
+        }
+
+        body.theme-light {
+            --bg: #ffffff;
+            --surface: rgba(244, 244, 248, 0.92);
+            --surface-2: rgba(229, 229, 236, 0.96);
+            --glass: rgba(255, 255, 255, 0.78);
+            --border: rgba(0, 0, 0, 0.1);
+            --text: #000000;
+            --muted: #6e6e73;
+            --sep: rgba(0, 0, 0, 0.09);
+            --accent: #007aff;
+            --danger: #ff3b30;
+        }
+
+        body.reduced-motion,
+        body.reduced-motion * {
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
-            min-height: 100vh;
-            background: #090b10;
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-            padding-bottom: 92px;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+            overflow-y: auto;
+            padding: 44px 12px 104px;
+            transition: background var(--motion) ease, color var(--motion) ease;
         }
-        .header {
-            padding: 50px 16px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-        }
+
         .glass-pill {
-            background: rgba(255, 255, 255, 0.16);
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            backdrop-filter: blur(18px);
-            color: #ffffff;
-            padding: 7px 14px;
+            background: var(--glass);
+            backdrop-filter: blur(18px) saturate(170%);
+            -webkit-backdrop-filter: blur(18px) saturate(170%);
+            border: 1px solid var(--border);
+            color: var(--text);
             border-radius: 999px;
+            padding: 6px 12px;
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
+            transition: transform var(--motion) ease;
         }
-        .search-wrap {
-            padding: 0 16px 10px;
-            display: none;
+
+        .glass-pill:active {
+            transform: scale(0.95);
         }
-        .search-wrap.open { display: block; }
-        .search-wrap input {
-            width: 100%;
-            padding: 10px 14px;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            background: rgba(255, 255, 255, 0.12);
+
+        .glass-pill.primary {
+            background: var(--accent);
+            border-color: var(--accent);
             color: #ffffff;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 36px;
+            margin-bottom: 6px;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .big-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin: 4px 4px 10px;
+        }
+
+        .big-title {
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.6px;
+        }
+
+        .count-sub {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .toolbar-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 140px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 14px;
+            padding: 8px 12px;
+            font-size: 13.5px;
             outline: none;
         }
+
+        .tab-panel {
+            display: none;
+            animation: fadeIn var(--motion) ease;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Siatka zdjęć z regulowaną liczbą kolumn */
         .photo-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2px;
+            grid-template-columns: repeat(var(--cols), 1fr);
+            gap: 3px;
         }
-        .tile {
-            aspect-ratio: 1;
-            overflow: hidden;
+
+        .photo-tile {
             position: relative;
+            aspect-ratio: 1 / 1;
+            background: var(--surface);
+            overflow: hidden;
             cursor: pointer;
-            background: #1c1f2b;
         }
-        .tile img, .tile-fill {
+
+        .photo-tile img,
+        .photo-tile video {
             width: 100%;
             height: 100%;
             object-fit: cover;
             display: block;
         }
-        .albums-list {
+
+        .tile-badge {
+            position: absolute;
+            right: 5px;
+            bottom: 5px;
+            font-size: 11px;
+            background: rgba(0, 0, 0, 0.55);
+            color: #ffffff;
+            padding: 2px 5px;
+            border-radius: 6px;
+        }
+
+        .select-mark {
             display: none;
-            padding: 10px 16px;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1.5px solid #ffffff;
+            background: rgba(0, 0, 0, 0.35);
+            color: #ffffff;
+            font-size: 12px;
+            align-items: center;
+            justify-content: center;
         }
-        .albums-list.active { display: grid; }
-        .album-card {
-            border-radius: 18px;
-            padding: 16px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            cursor: pointer;
+
+        body.selecting .select-mark {
+            display: flex;
         }
-        .bottom-dock {
-            position: fixed;
-            bottom: 54px;
-            left: 16px;
-            right: 16px;
+
+        .photo-tile.selected .select-mark {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Pusty stan galerii */
+        .empty-state {
+            text-align: center;
+            padding: 56px 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            margin-top: 12px;
+        }
+
+        /* Kolekcje / Albumy / Wspomnienia */
+        .sec-title {
+            font-size: 17px;
+            font-weight: 700;
+            margin: 14px 4px 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        .albums-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 10px;
         }
-        .seg-pill {
-            flex: 1;
+
+        .album-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .album-cover {
+            height: 108px;
+            background: var(--surface-2);
             display: flex;
-            padding: 4px;
-            border-radius: 999px;
-            background: rgba(30, 32, 40, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.24);
-            backdrop-filter: blur(22px);
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
         }
-        .seg-btn {
-            flex: 1;
+
+        .album-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .album-meta {
             padding: 8px 10px;
-            border-radius: 999px;
-            border: none;
-            background: transparent;
-            color: #ffffff;
-            font-size: 12.5px;
-            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .album-name {
+            font-size: 13.5px;
+            font-weight: 700;
+        }
+
+        .album-cnt {
+            font-size: 11.5px;
+            color: var(--muted);
+        }
+
+        .memory-card {
+            position: relative;
+            height: 150px;
+            border-radius: 22px;
+            overflow: hidden;
+            margin-bottom: 10px;
+            background: var(--surface-2);
             cursor: pointer;
+            display: flex;
+            align-items: flex-end;
+            padding: 14px;
         }
-        .seg-btn.active {
-            background: rgba(255, 255, 255, 0.9);
-            color: #090d16;
+
+        .memory-card img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
-        .search-circle {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.24);
-            background: rgba(30, 32, 40, 0.85);
-            color: #ffffff;
-            font-size: 16px;
-            cursor: pointer;
+
+        .memory-overlay {
+            position: relative;
+            z-index: 2;
+            background: rgba(0, 0, 0, 0.52);
+            backdrop-filter: blur(10px);
+            padding: 8px 12px;
+            border-radius: 14px;
         }
-        .viewer {
+
+        /* Pełnoekranowy podgląd zdjęcia/wideo i edytor */
+        .viewer-modal {
+            display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.96);
-            z-index: 40;
-            display: none;
+            z-index: 80;
+            background: #000000;
+            color: #ffffff;
             flex-direction: column;
             justify-content: space-between;
-            padding: 52px 18px 66px;
         }
-        .viewer.open { display: flex; }
-        .viewer-body {
+
+        .viewer-modal.open {
+            display: flex;
+        }
+
+        .viewer-top {
+            padding: 44px 14px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.55);
+        }
+
+        .viewer-stage {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            position: relative;
+            touch-action: pan-y pinch-zoom;
         }
-        .viewer-body img, .viewer-body .full-art {
+
+        .viewer-stage img,
+        .viewer-stage video {
             max-width: 100%;
-            max-height: 72vh;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform var(--motion) ease, filter var(--motion) ease;
+        }
+
+        .viewer-bottom {
+            padding: 10px 16px 32px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.65);
+        }
+
+        .v-act-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 6px 10px;
+        }
+
+        .editor-panel {
+            display: none;
+            background: rgba(20, 21, 26, 0.95);
+            border-top: 1px solid var(--border);
+            padding: 12px 16px 26px;
+            gap: 10px;
+            flex-direction: column;
+        }
+
+        .editor-panel.open {
+            display: flex;
+        }
+
+        .slider-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12.5px;
+            gap: 10px;
+        }
+
+        .slider-row input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent);
+        }
+
+        .info-sheet {
+            display: none;
+            position: fixed;
+            left: 12px;
+            right: 12px;
+            bottom: 84px;
+            z-index: 95;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
             border-radius: 20px;
+            padding: 14px;
+            font-size: 13px;
+        }
+
+        .info-sheet.open {
+            display: block;
+        }
+
+        /* Dolna nawigacja w stylu iOS 26 */
+        .bottom-nav {
+            position: fixed;
+            left: 16px;
+            right: 16px;
+            bottom: 20px;
+            z-index: 40;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            padding: 6px;
+            border-radius: 999px;
+            background: var(--glass);
+            backdrop-filter: blur(22px) saturate(175%);
+            -webkit-backdrop-filter: blur(22px) saturate(175%);
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+        }
+
+        .nav-tab {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            padding: 8px 6px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .nav-tab.active {
+            background: var(--surface-2);
+            color: var(--accent);
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div>
-            <h1 style="font-size:30px;font-weight:800;">Biblioteka</h1>
-            <div id="count-lbl" style="font-size:12.5px;color:rgba(255,255,255,0.72);">Wszystkie zdjęcia</div>
+    <div class="topbar">
+        <button class="glass-pill" onclick="goHome()">‹ Pulpit</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <label class="glass-pill primary" style="cursor:pointer;">
+                + Importuj
+                <input id="file-import-input" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp" multiple style="display:none;" onchange="handleImportFiles(event)">
+            </label>
+            <button id="btn-select-mode" class="glass-pill" onclick="toggleSelectMode()">Zaznacz</button>
         </div>
-        <button class="glass-pill" onclick="parent.Kernel?.goHome()">Pulpit</button>
     </div>
 
-    <div id="search-box" class="search-wrap">
-        <input id="q" type="text" placeholder="Szukaj zdjęć lub albumów..." oninput="renderGrid()">
+    <div class="big-header">
+        <h1 id="main-title" class="big-title">Biblioteka</h1>
+        <span id="items-count-label" class="count-sub">0 elementów</span>
     </div>
 
-    <div id="grid" class="photo-grid"></div>
-    <div id="albums" class="albums-list">
-        <div class="album-card" onclick="filterAlbum('Wszystkie')"><strong>Ostatnio zapisane</strong><div style="font-size:12px;opacity:0.7;margin-top:4px;">Wszystkie ujęcia</div></div>
-        <div class="album-card" onclick="filterAlbum('Tapety')"><strong>Tapety ZenOS</strong><div style="font-size:12px;opacity:0.7;margin-top:4px;">Kolekcja systemowa</div></div>
-    </div>
-
-    <div class="bottom-dock">
-        <div class="seg-pill">
-            <button id="tab-lib" class="seg-btn active" onclick="switchView('lib')">Biblioteka</button>
-            <button id="tab-alb" class="seg-btn" onclick="switchView('alb')">Albumy</button>
+    <!-- ZAKŁADKA 1: BIBLIOTEKA -->
+    <section id="tab-library" class="tab-panel active">
+        <div class="toolbar-row">
+            <input id="search-box" class="search-input" type="text" placeholder="Szukaj po nazwie, dacie lub typie..." oninput="renderLibrary()">
+            <button id="btn-filter-media" class="glass-pill" onclick="cycleMediaFilter()">Wszystkie</button>
+            <button id="btn-sort-order" class="glass-pill" onclick="toggleSortOrder()">Najnowsze ↓</button>
+            <button class="glass-pill" onclick="cycleGridColumns()" title="Zmień wielkość miniaturek">⊞</button>
         </div>
-        <button class="search-circle" onclick="toggleSearch()">🔍</button>
-    </div>
 
-    <div id="viewer" class="viewer">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div id="batch-bar" class="toolbar-row" style="display:none;">
+            <button class="glass-pill" onclick="batchFavorite()">★ Ulubione</button>
+            <button class="glass-pill" onclick="batchAddToAlbum()">+ Do albumu</button>
+            <button class="glass-pill" style="color:var(--danger);" onclick="batchDelete()">Usuń</button>
+        </div>
+
+        <div id="empty-gallery" class="empty-state" style="display:none;">
+            <div style="font-size:36px;margin-bottom:8px;">🖼️</div>
+            <div style="font-size:17px;font-weight:700;margin-bottom:4px;">Brak zdjęć i filmów</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+                Zaimportuj pliki z urządzenia lub zrób zdjęcie w aplikacji Aparat.
+            </div>
+            <label class="glass-pill primary" style="cursor:pointer;">
+                Wybierz zdjęcia z urządzenia
+                <input type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp" multiple style="display:none;" onchange="handleImportFiles(event)">
+            </label>
+        </div>
+
+        <div id="library-grid" class="photo-grid"></div>
+        <div id="load-more-wrap" style="text-align:center;margin-top:12px;display:none;">
+            <button id="btn-load-more" class="glass-pill" onclick="increaseRenderLimit()">Pokaż więcej</button>
+        </div>
+    </section>
+
+    <!-- ZAKŁADKA 2: KOLEKCJE -->
+    <section id="tab-collections" class="tab-panel">
+        <div class="toolbar-row">
+            <input id="new-album-name" class="search-input" type="text" placeholder="Nazwa nowego albumu...">
+            <button class="glass-pill primary" onclick="createCustomAlbum()">Nowy album</button>
+        </div>
+
+        <div id="active-album-banner" class="toolbar-row" style="display:none;">
+            <button class="glass-pill" onclick="clearActiveAlbum()">‹ Wszystkie albumy</button>
+            <strong id="active-album-title" style="font-size:15px;"></strong>
+            <button id="btn-rename-album" class="glass-pill" onclick="renameActiveAlbum()">Zmień nazwę</button>
+        </div>
+
+        <div id="album-items-grid" class="photo-grid" style="margin-bottom:14px;"></div>
+
+        <div class="sec-title">Albumy i kategorie</div>
+        <div id="system-albums-grid" class="albums-grid"></div>
+
+        <div class="sec-title">Własne albumy</div>
+        <div id="custom-albums-grid" class="albums-grid"></div>
+    </section>
+
+    <!-- ZAKŁADKA 3: WSPOMNIENIA -->
+    <section id="tab-memories" class="tab-panel">
+        <div class="sec-title">Automatyczne wspomnienia</div>
+        <div id="memories-list"></div>
+    </section>
+
+    <!-- PEŁNOEKRANOWY PODGLĄD I EDYTOR -->
+    <div id="viewer-modal" class="viewer-modal">
+        <div class="viewer-top">
             <button class="glass-pill" onclick="closeViewer()">‹ Wróć</button>
-            <span id="v-title" style="font-size:14px;font-weight:600;">Podgląd</span>
-            <span style="width:64px;"></span>
+            <div style="text-align:center;">
+                <div id="viewer-title" style="font-size:13.5px;font-weight:700;"></div>
+                <div id="viewer-date" style="font-size:11px;color:rgba(255,255,255,0.72);"></div>
+            </div>
+            <button class="glass-pill" onclick="toggleEditorPanel()">Edytuj</button>
         </div>
-        <div id="v-body" class="viewer-body"></div>
-        <div style="text-align:center;font-size:12px;opacity:0.7;">ZenOS Galeria</div>
+
+        <div id="viewer-stage" class="viewer-stage">
+            <img id="viewer-img" src="" alt="" style="display:none;">
+            <video id="viewer-video" src="" controls playsinline style="display:none;"></video>
+        </div>
+
+        <div id="editor-panel" class="editor-panel">
+            <div class="toolbar-row" style="margin-bottom:2px;">
+                <button class="glass-pill" onclick="rotateEditor(-90)">↶ Obrót -90°</button>
+                <button class="glass-pill" onclick="rotateEditor(90)">↷ Obrót +90°</button>
+                <button class="glass-pill" onclick="cycleCropPreset()">Kadrowanie: <span id="crop-lbl">Brak</span></button>
+                <button class="glass-pill" onclick="undoEdit()">Cofnij</button>
+                <button class="glass-pill" onclick="redoEdit()">Ponów</button>
+            </div>
+            <div class="toolbar-row" style="margin-bottom:2px;">
+                <button class="glass-pill" onclick="setFilterPreset('none')">Oryginał</button>
+                <button class="glass-pill" onclick="setFilterPreset('grayscale(100%)')">Cz-B</button>
+                <button class="glass-pill" onclick="setFilterPreset('sepia(70%)')">Sepia</button>
+                <button class="glass-pill" onclick="setFilterPreset('contrast(1.25) saturate(1.35)')">Żywy</button>
+            </div>
+            <div class="slider-row">
+                <span>Jasność</span>
+                <input id="ed-bright" type="range" min="50" max="150" value="100" oninput="syncEditSliders()">
+            </div>
+            <div class="slider-row">
+                <span>Kontrast</span>
+                <input id="ed-contrast" type="range" min="50" max="150" value="100" oninput="syncEditSliders()">
+            </div>
+            <div class="slider-row">
+                <span>Nasycenie</span>
+                <input id="ed-sat" type="range" min="0" max="200" value="100" oninput="syncEditSliders()">
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;">
+                <button class="glass-pill primary" onclick="saveEditedCopy()">Zapisz kopię</button>
+            </div>
+        </div>
+
+        <div id="info-sheet" class="info-sheet">
+            <div style="font-weight:700;margin-bottom:6px;">Informacje o pliku</div>
+            <div id="info-content" style="color:var(--muted);line-height:1.5;"></div>
+        </div>
+
+        <div class="viewer-bottom">
+            <button class="v-act-btn" onclick="shareCurrentItem()" title="Udostępnij">⬆️ </button>
+            <button id="btn-viewer-fav" class="v-act-btn" onclick="toggleFavoriteCurrent()" title="Ulubione">☆</button>
+            <button class="v-act-btn" onclick="toggleInfoSheet()" title="Informacje">ℹ️</button>
+            <button class="v-act-btn" onclick="toggleHiddenCurrent()" title="Ukryj">🙈</button>
+            <button class="v-act-btn" style="color:var(--danger);" onclick="deleteCurrentItem()" title="Usuń">🗑️</button>
+        </div>
     </div>
+
+    <nav class="bottom-nav">
+        <button id="nav-library" class="nav-tab active" onclick="switchTab('library')">Biblioteka</button>
+        <button id="nav-collections" class="nav-tab" onclick="switchTab('collections')">Kolekcje</button>
+        <button id="nav-memories" class="nav-tab" onclick="switchTab('memories')">Wspomnienia</button>
+    </nav>
 
     <script>
-        const builtIn = [
-            { id: 1, title: 'Błękitny horyzont', album: 'Tapety', bg: 'linear-gradient(135deg, #2563eb, #0f172a)' },
-            { id: 2, title: 'Szkło i światło', album: 'Tapety', bg: 'linear-gradient(135deg, #38bdf8, #818cf8)' },
-            { id: 3, title: 'Ciepły zmierzch', album: 'Tapety', bg: 'linear-gradient(135deg, #f59e0b, #7c2d12)' },
-            { id: 4, title: 'Górskie jezioro', album: 'Ostatnie', bg: 'linear-gradient(135deg, #10b981, #064e3b)' },
-            { id: 5, title: 'Nocne niebo', album: 'Ostatnie', bg: 'linear-gradient(135deg, #6366f1, #1e1b4b)' },
-            { id: 6, title: 'Złote wydmy', album: 'Ostatnie', bg: 'linear-gradient(135deg, #fbbf24, #92400e)' }
-        ];
-        let albumFilter = 'Wszystkie';
+        const DB_NAME = 'ZenOSGalleryDB';
+        const STORE_NAME = 'media';
+        const META_KEY = 'zenos_gallery_meta_v1';
+        const LEGACY_KEY = 'zenos_gallery_v1';
+        const SETTINGS_KEY = 'zenos_settings_v1';
 
-        function getAllPhotos() {
-            const saved = parent.StorageManager?.get('gallery_photos', []) || [];
-            return [...saved, ...builtIn];
-        }
+        let db = null;
+        let items = [];
+        let meta = {
+            customAlbums: [], // { id, name, itemIds: [] }
+            hiddenIds: [],
+            deletedIds: []
+        };
 
-        function renderGrid() {
-            const q = document.getElementById('q').value.trim().toLowerCase();
-            const list = getAllPhotos().filter(p => {
-                const matchA = albumFilter === 'Wszystkie' || p.album === albumFilter;
-                const matchQ = !q || p.title.toLowerCase().includes(q);
-                return matchA && matchQ;
-            });
-            document.getElementById('count-lbl').textContent = `${list.length} elementów • ${albumFilter}`;
-            const grid = document.getElementById('grid');
-            grid.innerHTML = '';
-            list.forEach(item => {
-                const tile = document.createElement('div');
-                tile.className = 'tile';
-                tile.onclick = () => openViewer(item);
-                if (item.dataUrl) {
-                    tile.innerHTML = `<img src="${item.dataUrl}" alt="${item.title}">`;
-                } else {
-                    tile.innerHTML = `<div class="tile-fill" style="background:${item.bg};"></div>`;
+        let currentTab = 'library';
+        let mediaFilter = 'all'; // 'all' | 'image' | 'video'
+        let sortDesc = true;
+        let gridCols = 3;
+        let renderLimit = 48; // wirtualizacja / limit partii dla 2 GB RAM
+
+        let selectMode = false;
+        let selectedIds = new Set();
+        let activeAlbumId = null;
+
+        let viewerIndex = -1;
+        let viewerZoom = 1;
+        let editState = { rot: 0, crop: 'none', preset: 'none', bright: 100, contrast: 100, sat: 100 };
+        let undoStack = [];
+        let redoStack = [];
+
+        function syncTheme() {
+            try {
+                const raw = localStorage.getItem(SETTINGS_KEY);
+                if (raw) {
+                    const s = JSON.parse(raw);
+                    document.body.classList.toggle('theme-light', s.theme === 'light');
+                    document.body.classList.toggle('reduced-motion', Boolean(s.reduceMotion));
                 }
-                grid.appendChild(tile);
+            } catch {}
+        }
+
+        function openDB() {
+            return new Promise((resolve) => {
+                if (!('indexedDB' in window)) return resolve(null);
+                const req = indexedDB.open(DB_NAME, 1);
+                req.onupgradeneeded = (e) => {
+                    const d = e.target.result;
+                    if (!d.objectStoreNames.contains(STORE_NAME)) {
+                        d.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+                req.onsuccess = (e) => resolve(e.target.result);
+                req.onerror = () => resolve(null);
             });
         }
 
-        function switchView(mode) {
-            document.getElementById('tab-lib').classList.toggle('active', mode === 'lib');
-            document.getElementById('tab-alb').classList.toggle('active', mode === 'alb');
-            document.getElementById('grid').style.display = mode === 'lib' ? 'grid' : 'none';
-            document.getElementById('albums').classList.toggle('active', mode === 'alb');
-        }
+        async function loadAllMedia() {
+            try {
+                const rawMeta = localStorage.getItem(META_KEY);
+                if (rawMeta) meta = { ...meta, ...JSON.parse(rawMeta) };
+            } catch {}
 
-        function filterAlbum(alb) {
-            albumFilter = alb;
-            switchView('lib');
-            renderGrid();
-        }
+            // Migracja ewentualnych pozycji zapisanych przez Aparat w localStorage
+            let legacyList = [];
+            try {
+                const rawLeg = localStorage.getItem(LEGACY_KEY);
+                if (rawLeg) {
+                    const parsed = JSON.parse(rawLeg);
+                    legacyList = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.items) ? parsed.items : []);
+                }
+            } catch {}
 
-        function toggleSearch() {
-            const box = document.getElementById('search-box');
-            box.classList.toggle('open');
-            if (box.classList.contains('open')) document.getElementById('q').focus();
-        }
+            db = await openDB();
+            if (db) {
+                items = await new Promise((resolve) => {
+                    const tx = db.transaction(STORE_NAME, 'readonly');
+                    const store = tx.objectStore(STORE_NAME);
+                    const req = store.getAll();
+                    req.onsuccess = () => resolve(req.result || []);
+                    req.onerror = () => resolve([]);
+                });
 
-        function openViewer(item) {
-            document.getElementById('v-title').textContent = item.title;
-            const body = document.getElementById('v-body');
-            if (item.dataUrl) {
-                body.innerHTML = `<img src="${item.dataUrl}" alt="${item.title}">`;
+                if (legacyList.length) {
+                    const existingIds = new Set(items.map(x => x.id));
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    for (const leg of legacyList) {
+                        if (leg && leg.id && !existingIds.has(leg.id)) {
+                            const norm = normalizeItem(leg);
+                            store.put(norm);
+                            items.push(norm);
+                        }
+                    }
+                }
             } else {
-                body.innerHTML = `<div class="full-art" style="width:88vw;height:56vh;background:${item.bg};"></div>`;
+                items = legacyList.map(normalizeItem);
             }
-            document.getElementById('viewer').classList.add('open');
+
+            items = items.map(normalizeItem);
+            renderAll();
+        }
+
+        function normalizeItem(raw) {
+            const nameLower = String(raw.name || '').toLowerCase();
+            return {
+                id: raw.id || `m-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                name: raw.name || (raw.type === 'video' ? 'Nagranie wideo' : 'Zdjęcie'),
+                type: raw.type === 'video' ? 'video' : 'image',
+                dataUrl: raw.dataUrl || '',
+                size: Number(raw.size || 0),
+                createdAt: raw.createdAt || new Date().toISOString(),
+                favorite: Boolean(raw.favorite),
+                isScreenshot: Boolean(raw.isScreenshot || nameLower.includes('screenshot') || nameLower.includes('zrzut')),
+                isSelfie: Boolean(raw.isSelfie || nameLower.includes('selfie')),
+                isPortrait: Boolean(raw.isPortrait || raw.mode === 'portrait')
+            };
+        }
+
+        function saveMeta() {
+            try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch {}
+        }
+
+        async function putItem(item) {
+            const idx = items.findIndex(x => x.id === item.id);
+            if (idx === -1) items.unshift(item);
+            else items[idx] = item;
+
+            if (db) {
+                await new Promise((resolve) => {
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    tx.objectStore(STORE_NAME).put(item);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => resolve();
+                });
+            }
+        }
+
+        async function removeItemPermanent(id) {
+            items = items.filter(x => x.id !== id);
+            meta.hiddenIds = meta.hiddenIds.filter(x => x !== id);
+            meta.deletedIds = meta.deletedIds.filter(x => x !== id);
+            meta.customAlbums.forEach(a => { a.itemIds = (a.itemIds || []).filter(x => x !== id); });
+            saveMeta();
+            if (db) {
+                await new Promise((resolve) => {
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    tx.objectStore(STORE_NAME).delete(id);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => resolve();
+                });
+            }
+        }
+
+        function handleImportFiles(ev) {
+            const files = Array.from(ev.target.files || []);
+            if (!files.length) return;
+
+            files.forEach((file, idx) => {
+                const isVid = file.type.startsWith('video/') || /\.(mp4|webm|mov|m4v)$/i.test(file.name);
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    const newItem = normalizeItem({
+                        id: `imp-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 5)}`,
+                        name: file.name,
+                        type: isVid ? 'video' : 'image',
+                        dataUrl: String(reader.result || ''),
+                        size: file.size,
+                        createdAt: file.lastModified ? new Date(file.lastModified).toISOString() : new Date().toISOString()
+                    });
+                    await putItem(newItem);
+                    renderAll();
+                };
+                reader.readAsDataURL(file);
+            });
+            ev.target.value = '';
+        }
+
+        function getActiveLibraryItems() {
+            const q = (document.getElementById('search-box')?.value || '').trim().toLowerCase();
+            return items
+                .filter(it => !meta.deletedIds.includes(it.id) && !meta.hiddenIds.includes(it.id))
+                .filter(it => mediaFilter === 'all' || it.type === mediaFilter)
+                .filter(it => {
+                    if (!q) return true;
+                    return `${it.name} ${it.createdAt} ${it.type}`.toLowerCase().includes(q);
+                })
+                .sort((a, b) => {
+                    const ta = new Date(a.createdAt).getTime();
+                    const tb = new Date(b.createdAt).getTime();
+                    return sortDesc ? tb - ta : ta - tb;
+                });
+        }
+
+        const lazyObserver = ('IntersectionObserver' in window)
+            ? new IntersectionObserver((entries) => {
+                entries.forEach(ent => {
+                    if (!ent.isIntersecting) return;
+                    const el = ent.target;
+                    const src = el.getAttribute('data-src');
+                    if (src && !el.getAttribute('src')) {
+                        el.setAttribute('src', src);
+                    }
+                    lazyObserver.unobserve(el);
+                });
+            }, { rootMargin: '140px' })
+            : null;
+
+        function buildTileHtml(it) {
+            const isSel = selectedIds.has(it.id);
+            const badge = it.type === 'video' ? `<span class="tile-badge">▶</span>` : (it.favorite ? `<span class="tile-badge">♥</span>` : '');
+            const mediaEl = it.type === 'video'
+                ? `<video data-src="${it.dataUrl}" preload="metadata" muted playsinline></video>`
+                : `<img data-src="${it.dataUrl}" alt="${it.name}" loading="lazy">`;
+
+            return `
+                <div class="photo-tile ${isSel ? 'selected' : ''}" onclick="onTileClick('${it.id}')">
+                    ${mediaEl}
+                    ${badge}
+                    <div class="select-mark">${isSel ? '✓' : ''}</div>
+                </div>
+            `;
+        }
+
+        function attachLazyMedia(container) {
+            container.querySelectorAll('[data-src]').forEach(el => {
+                if (lazyObserver) lazyObserver.observe(el);
+                else el.setAttribute('src', el.getAttribute('data-src'));
+            });
+        }
+
+        function renderLibrary() {
+            const list = getActiveLibraryItems();
+            document.getElementById('items-count-label').textContent = `${list.length} elementów`;
+
+            const emptyBox = document.getElementById('empty-gallery');
+            const grid = document.getElementById('library-grid');
+            const moreWrap = document.getElementById('load-more-wrap');
+
+            if (!list.length) {
+                emptyBox.style.display = 'block';
+                grid.innerHTML = '';
+                moreWrap.style.display = 'none';
+                return;
+            }
+
+            emptyBox.style.display = 'none';
+            const slice = list.slice(0, renderLimit);
+            grid.innerHTML = slice.map(buildTileHtml).join('');
+            attachLazyMedia(grid);
+
+            moreWrap.style.display = list.length > renderLimit ? 'block' : 'none';
+        }
+
+        function increaseRenderLimit() {
+            renderLimit += 48;
+            renderLibrary();
+        }
+
+        function cycleMediaFilter() {
+            const order = ['all', 'image', 'video'];
+            const labels = { all: 'Wszystkie', image: 'Zdjęcia', video: 'Filmy' };
+            mediaFilter = order[(order.indexOf(mediaFilter) + 1) % order.length];
+            document.getElementById('btn-filter-media').textContent = labels[mediaFilter];
+            renderLibrary();
+        }
+
+        function toggleSortOrder() {
+            sortDesc = !sortDesc;
+            document.getElementById('btn-sort-order').textContent = sortDesc ? 'Najnowsze ↓' : 'Najstarsze ↑';
+            renderLibrary();
+        }
+
+        function cycleGridColumns() {
+            gridCols = gridCols === 3 ? 4 : (gridCols === 4 ? 2 : 3);
+            document.documentElement.style.setProperty('--cols', String(gridCols));
+        }
+
+        function toggleSelectMode() {
+            selectMode = !selectMode;
+            if (!selectMode) selectedIds.clear();
+            document.body.classList.toggle('selecting', selectMode);
+            document.getElementById('btn-select-mode').textContent = selectMode ? 'Gotowe' : 'Zaznacz';
+            document.getElementById('batch-bar').style.display = selectMode ? 'flex' : 'none';
+            renderLibrary();
+        }
+
+        function onTileClick(id) {
+            if (selectMode) {
+                if (selectedIds.has(id)) selectedIds.delete(id);
+                else selectedIds.add(id);
+                renderLibrary();
+                return;
+            }
+            const visibleList = getActiveLibraryItems();
+            const idx = visibleList.findIndex(x => x.id === id);
+            if (idx !== -1) openViewer(visibleList, idx);
+        }
+
+        async function batchFavorite() {
+            for (const id of selectedIds) {
+                const it = items.find(x => x.id === id);
+                if (it) { it.favorite = true; await putItem(it); }
+            }
+            toggleSelectMode();
+            renderAll();
+        }
+
+        function batchAddToAlbum() {
+            if (!meta.customAlbums.length) {
+                createCustomAlbum('Album');
+            }
+            const targetAlbum = meta.customAlbums[0];
+            if (targetAlbum) {
+                targetAlbum.itemIds = Array.from(new Set([...(targetAlbum.itemIds || []), ...selectedIds]));
+                saveMeta();
+            }
+            toggleSelectMode();
+            renderAll();
+        }
+
+        function batchDelete() {
+            for (const id of selectedIds) {
+                if (!meta.deletedIds.includes(id)) meta.deletedIds.push(id);
+            }
+            saveMeta();
+            toggleSelectMode();
+            renderAll();
+        }
+
+        /* KOLEKCJE I ALBUMY */
+        function getSystemAlbums() {
+            const active = items.filter(x => !meta.deletedIds.includes(x.id) && !meta.hiddenIds.includes(x.id));
+            return [
+                { id: 'sys-all', name: 'Wszystkie zdjęcia', list: active },
+                { id: 'sys-recent', name: 'Ostatnie', list: [...active].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 20) },
+                { id: 'sys-fav', name: 'Ulubione', list: active.filter(x => x.favorite) },
+                { id: 'sys-vid', name: 'Filmy', list: active.filter(x => x.type === 'video') },
+                { id: 'sys-scr', name: 'Zrzuty ekranu', list: active.filter(x => x.isScreenshot) },
+                { id: 'sys-selfie', name: 'Selfie', list: active.filter(x => x.isSelfie) },
+                { id: 'sys-port', name: 'Portrety', list: active.filter(x => x.isPortrait) },
+                { id: 'sys-hid', name: 'Ukryte', list: items.filter(x => meta.hiddenIds.includes(x.id) && !meta.deletedIds.includes(x.id)) },
+                { id: 'sys-del', name: 'Ostatnio usunięte', list: items.filter(x => meta.deletedIds.includes(x.id)) }
+            ];
+        }
+
+        function renderCollections() {
+            const sys = getSystemAlbums();
+            document.getElementById('system-albums-grid').innerHTML = sys.map(alb => {
+                const cover = alb.list[0];
+                const coverHtml = cover && cover.type === 'image' && cover.dataUrl
+                    ? `<img src="${cover.dataUrl}" alt="${alb.name}" loading="lazy">`
+                    : `<span>${alb.list.length ? '📁' : '∅'}</span>`;
+                return `
+                    <div class="album-card" onclick="openAlbumView('${alb.id}')">
+                        <div class="album-cover">${coverHtml}</div>
+                        <div class="album-meta">
+                            <span class="album-name">${alb.name}</span>
+                            <span class="album-cnt">${alb.list.length}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('custom-albums-grid').innerHTML = meta.customAlbums.length
+                ? meta.customAlbums.map(alb => {
+                    const list = items.filter(x => (alb.itemIds || []).includes(x.id) && !meta.deletedIds.includes(x.id));
+                    const cover = list[0];
+                    const coverHtml = cover && cover.type === 'image' && cover.dataUrl
+                        ? `<img src="${cover.dataUrl}" alt="${alb.name}" loading="lazy">`
+                        : `<span>🖼️</span>`;
+                    return `
+                        <div class="album-card" onclick="openAlbumView('${alb.id}')">
+                            <div class="album-cover">${coverHtml}</div>
+                            <div class="album-meta">
+                                <span class="album-name">${alb.name}</span>
+                                <span class="album-cnt">${list.length}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+                : `<div style="color:var(--muted);font-size:13px;padding:6px;">Brak własnych albumów.</div>`;
+
+            renderActiveAlbumItems();
+        }
+
+        function createCustomAlbum(fallbackName = '') {
+            const inp = document.getElementById('new-album-name');
+            const name = (inp?.value || '').trim() || fallbackName;
+            if (!name) return;
+            meta.customAlbums.push({ id: `alb-${Date.now()}`, name, itemIds: [] });
+            if (inp) inp.value = '';
+            saveMeta();
+            renderCollections();
+        }
+
+        function openAlbumView(id) {
+            activeAlbumId = id;
+            renderActiveAlbumItems();
+        }
+
+        function clearActiveAlbum() {
+            activeAlbumId = null;
+            renderActiveAlbumItems();
+        }
+
+        function renameActiveAlbum() {
+            const custom = meta.customAlbums.find(a => a.id === activeAlbumId);
+            if (!custom) return;
+            const next = prompt('Nowa nazwa albumu:', custom.name);
+            if (next && next.trim()) {
+                custom.name = next.trim();
+                saveMeta();
+                renderCollections();
+            }
+        }
+
+        function renderActiveAlbumItems() {
+            const banner = document.getElementById('active-album-banner');
+            const grid = document.getElementById('album-items-grid');
+            if (!activeAlbumId) {
+                banner.style.display = 'none';
+                grid.innerHTML = '';
+                return;
+            }
+
+            let list = [];
+            let title = '';
+            let isCustom = false;
+
+            const sys = getSystemAlbums().find(a => a.id === activeAlbumId);
+            if (sys) {
+                title = sys.name;
+                list = sys.list;
+            } else {
+                const custom = meta.customAlbums.find(a => a.id === activeAlbumId);
+                if (custom) {
+                    title = custom.name;
+                    isCustom = true;
+                    list = items.filter(x => (custom.itemIds || []).includes(x.id) && !meta.deletedIds.includes(x.id));
+                }
+            }
+
+            banner.style.display = 'flex';
+            document.getElementById('active-album-title').textContent = title;
+            document.getElementById('btn-rename-album').style.display = isCustom ? 'inline-block' : 'none';
+
+            grid.innerHTML = list.length
+                ? list.map(buildTileHtml).join('')
+                : `<div style="grid-column:1/-1;color:var(--muted);font-size:13px;padding:10px;">Ten album jest pusty.</div>`;
+            attachLazyMedia(grid);
+        }
+
+        /* WSPOMNIENIA (grupowanie po miesiącu i roku) */
+        function renderMemories() {
+            const active = items.filter(x => !meta.deletedIds.includes(x.id) && !meta.hiddenIds.includes(x.id));
+            const groups = new Map();
+            for (const it of active) {
+                const d = new Date(it.createdAt);
+                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                const label = d.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' });
+                if (!groups.has(key)) groups.set(key, { key, label, items: [] });
+                groups.get(key).items.push(it);
+            }
+
+            const list = Array.from(groups.values());
+            const container = document.getElementById('memories-list');
+            if (!list.length) {
+                container.innerHTML = `<div style="color:var(--muted);font-size:13.5px;padding:12px;">Wspomnienia pojawią się automatycznie po dodaniu zdjęć.</div>`;
+                return;
+            }
+
+            container.innerHTML = list.map((g, idx) => {
+                const first = g.items.find(x => x.type === 'image') || g.items[0];
+                const imgHtml = first && first.type === 'image' && first.dataUrl
+                    ? `<img src="${first.dataUrl}" alt="${g.label}" loading="lazy">`
+                    : '';
+                return `
+                    <div class="memory-card" onclick="openMemoryGroup(${idx})">
+                        ${imgHtml}
+                        <div class="memory-overlay">
+                            <div style="font-size:16px;font-weight:700;text-transform:capitalize;">${g.label}</div>
+                            <div style="font-size:12px;color:rgba(255,255,255,0.82);">${g.items.length} ujęć</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            window._memoryGroups = list;
+        }
+
+        function openMemoryGroup(idx) {
+            const grp = window._memoryGroups?.[idx];
+            if (grp && grp.items.length) openViewer(grp.items, 0);
+        }
+
+        /* PODGLĄD I EDYTOR */
+        let viewerPlaylist = [];
+
+        function openViewer(playlist, idx) {
+            viewerPlaylist = playlist;
+            viewerIndex = idx;
+            viewerZoom = 1;
+            resetEditorState();
+            document.getElementById('viewer-modal').classList.add('open');
+            renderViewerItem();
         }
 
         function closeViewer() {
-            document.getElementById('viewer').classList.remove('open');
+            document.getElementById('viewer-modal').classList.remove('open');
+            document.getElementById('info-sheet').classList.remove('open');
+            document.getElementById('editor-panel').classList.remove('open');
+            const vid = document.getElementById('viewer-video');
+            vid.pause();
         }
 
-        renderGrid();
+        function renderViewerItem() {
+            const it = viewerPlaylist[viewerIndex];
+            if (!it) return closeViewer();
+
+            document.getElementById('viewer-title').textContent = it.name;
+            document.getElementById('viewer-date').textContent = new Date(it.createdAt).toLocaleString('pl-PL');
+            document.getElementById('btn-viewer-fav').textContent = it.favorite ? '♥' : '☆';
+
+            const img = document.getElementById('viewer-img');
+            const vid = document.getElementById('viewer-video');
+            if (it.type === 'video') {
+                img.style.display = 'none';
+                vid.style.display = 'block';
+                vid.src = it.dataUrl;
+            } else {
+                vid.pause();
+                vid.style.display = 'none';
+                img.style.display = 'block';
+                img.src = it.dataUrl;
+            }
+            applyViewerTransform();
+        }
+
+        function applyViewerTransform() {
+            const img = document.getElementById('viewer-img');
+            const filterStr = `brightness(${editState.bright}%) contrast(${editState.contrast}%) saturate(${editState.sat}%) ${editState.preset === 'none' ? '' : editState.preset}`;
+            let clip = 'none';
+            if (editState.crop === '4:3') clip = 'inset(6% 2%)';
+            if (editState.crop === '1:1') clip = 'inset(10%)';
+            img.style.transform = `scale(${viewerZoom}) rotate(${editState.rot}deg)`;
+            img.style.filter = filterStr;
+            img.style.clipPath = clip;
+        }
+
+        function resetEditorState() {
+            editState = { rot: 0, crop: 'none', preset: 'none', bright: 100, contrast: 100, sat: 100 };
+            undoStack = [];
+            redoStack = [];
+            document.getElementById('ed-bright').value = 100;
+            document.getElementById('ed-contrast').value = 100;
+            document.getElementById('ed-sat').value = 100;
+            document.getElementById('crop-lbl').textContent = 'Brak';
+        }
+
+        function pushUndo() {
+            undoStack.push({ ...editState });
+            redoStack = [];
+        }
+
+        function undoEdit() {
+            if (!undoStack.length) return;
+            redoStack.push({ ...editState });
+            editState = undoStack.pop();
+            applyViewerTransform();
+        }
+
+        function redoEdit() {
+            if (!redoStack.length) return;
+            undoStack.push({ ...editState });
+            editState = redoStack.pop();
+            applyViewerTransform();
+        }
+
+        function toggleEditorPanel() {
+            document.getElementById('editor-panel').classList.toggle('open');
+        }
+
+        function rotateEditor(deg) {
+            pushUndo();
+            editState.rot = (editState.rot + deg) % 360;
+            applyViewerTransform();
+        }
+
+        function cycleCropPreset() {
+            pushUndo();
+            const crops = ['none', '4:3', '1:1'];
+            editState.crop = crops[(crops.indexOf(editState.crop) + 1) % crops.length];
+            document.getElementById('crop-lbl').textContent = editState.crop === 'none' ? 'Brak' : editState.crop;
+            applyViewerTransform();
+        }
+
+        function setFilterPreset(preset) {
+            pushUndo();
+            editState.preset = preset;
+            applyViewerTransform();
+        }
+
+        function syncEditSliders() {
+            editState.bright = Number(document.getElementById('ed-bright').value);
+            editState.contrast = Number(document.getElementById('ed-contrast').value);
+            editState.sat = Number(document.getElementById('ed-sat').value);
+            applyViewerTransform();
+        }
+
+        async function saveEditedCopy() {
+            const it = viewerPlaylist[viewerIndex];
+            if (!it || it.type !== 'image') return;
+
+            const img = new Image();
+            img.onload = async () => {
+                const canvas = document.createElement('canvas');
+                const swap = Math.abs(editState.rot) % 180 === 90;
+                canvas.width = swap ? img.naturalHeight : img.naturalWidth;
+                canvas.height = swap ? img.naturalWidth : img.naturalHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.filter = `brightness(${editState.bright}%) contrast(${editState.contrast}%) saturate(${editState.sat}%) ${editState.preset === 'none' ? '' : editState.preset}`;
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate((editState.rot * Math.PI) / 180);
+                ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+
+                const copy = normalizeItem({
+                    id: `edit-${Date.now()}`,
+                    name: `Edytowane_${it.name}`,
+                    type: 'image',
+                    dataUrl: canvas.toDataURL('image/jpeg', 0.9),
+                    createdAt: new Date().toISOString()
+                });
+                await putItem(copy);
+                renderAll();
+                closeViewer();
+            };
+            img.src = it.dataUrl;
+        }
+
+        async function toggleFavoriteCurrent() {
+            const it = viewerPlaylist[viewerIndex];
+            if (!it) return;
+            it.favorite = !it.favorite;
+            await putItem(it);
+            renderViewerItem();
+            renderAll();
+        }
+
+        function toggleInfoSheet() {
+            const it = viewerPlaylist[viewerIndex];
+            const sheet = document.getElementById('info-sheet');
+            if (!it) return;
+            const kb = it.size ? `${Math.round(it.size / 1024)} KB` : 'Nieznany';
+            document.getElementById('info-content').innerHTML = `
+                Nazwa: <strong>${it.name}</strong><br>
+                Typ: ${it.type === 'video' ? 'Wideo' : 'Zdjęcie'}<br>
+                Data: ${new Date(it.createdAt).toLocaleString('pl-PL')}<br>
+                Rozmiar: ${kb}
+            `;
+            sheet.classList.toggle('open');
+        }
+
+        function toggleHiddenCurrent() {
+            const it = viewerPlaylist[viewerIndex];
+            if (!it) return;
+            if (meta.hiddenIds.includes(it.id)) {
+                meta.hiddenIds = meta.hiddenIds.filter(x => x !== it.id);
+            } else {
+                meta.hiddenIds.push(it.id);
+            }
+            saveMeta();
+            renderAll();
+            closeViewer();
+        }
+
+        async function deleteCurrentItem() {
+            const it = viewerPlaylist[viewerIndex];
+            if (!it) return;
+            if (meta.deletedIds.includes(it.id)) {
+                await removeItemPermanent(it.id);
+            } else {
+                meta.deletedIds.push(it.id);
+                saveMeta();
+            }
+            renderAll();
+            closeViewer();
+        }
+
+        async function shareCurrentItem() {
+            const it = viewerPlaylist[viewerIndex];
+            if (!it) return;
+            try {
+                if (navigator.share && it.dataUrl) {
+                    const res = await fetch(it.dataUrl);
+                    const blob = await res.blob();
+                    const file = new File([blob], it.name, { type: blob.type });
+                    await navigator.share({ title: it.name, files: [file] });
+                    return;
+                }
+            } catch {}
+            const a = document.createElement('a');
+            a.href = it.dataUrl;
+            a.download = it.name;
+            a.click();
+        }
+
+        // Przesuwanie w lewo/prawo między zdjęciami oraz podwójne kliknięcie do przybliżenia
+        let touchStartX = 0;
+        const stage = document.getElementById('viewer-stage');
+        stage.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+        stage.addEventListener('touchend', (e) => {
+            if (viewerZoom > 1 || e.changedTouches.length !== 1) return;
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            if (dx < -55 && viewerIndex < viewerPlaylist.length - 1) {
+                viewerIndex += 1;
+                resetEditorState();
+                renderViewerItem();
+            } else if (dx > 55 && viewerIndex > 0) {
+                viewerIndex -= 1;
+                resetEditorState();
+                renderViewerItem();
+            }
+        });
+        stage.addEventListener('dblclick', () => {
+            viewerZoom = viewerZoom > 1 ? 1 : 2;
+            applyViewerTransform();
+        });
+
+        function switchTab(tab) {
+            currentTab = tab;
+            ['library', 'collections', 'memories'].forEach(t => {
+                document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
+                document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+            });
+            const titles = { library: 'Biblioteka', collections: 'Kolekcje', memories: 'Wspomnienia' };
+            document.getElementById('main-title').textContent = titles[tab];
+            renderAll();
+        }
+
+        function renderAll() {
+            syncTheme();
+            renderLibrary();
+            renderCollections();
+            renderMemories();
+        }
+
+        function goHome() {
+            try { parent.Kernel?.goHome?.(); } catch {}
+        }
+
+        window.addEventListener('message', (e) => {
+            if (e.data?.type === 'GALLERY_UPDATED' || e.data?.type === 'SETTINGS_SYNC') {
+                loadAllMedia();
+            }
+        });
+
+        syncTheme();
+        loadAllMedia();
     </script>
 </body>
 </html>
