@@ -3,101 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lock Screen — ZenOS</title>
+    <title>Ekran blokady</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
-            width: 100vw;
-            height: 100vh;
-            padding: 64px 20px 26px;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(165deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 14, 26, 0.94) 55%, rgba(5, 7, 14, 0.98) 100%);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
             color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-            background: radial-gradient(circle at 70% 25%, rgba(37, 99, 235, 0.35), rgba(6, 9, 19, 0.72));
-            backdrop-filter: blur(16px);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            padding: 68px 20px 38px;
             overflow: hidden;
         }
-        .glass {
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08));
-            border: 1px solid rgba(255, 255, 255, 0.36);
-            backdrop-filter: blur(22px) saturate(180%);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), inset 0 1px 1px rgba(255, 255, 255, 0.55);
-        }
-        .top-block {
+        .clock-header {
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
         }
-        .date-txt {
-            font-size: 18px;
+        .date-line {
+            font-size: 16px;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.84);
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+            color: rgba(255, 255, 255, 0.92);
         }
-        .clock-glass {
-            font-size: clamp(86px, 24vw, 132px);
+        .big-clock {
+            font-size: 74px;
             font-weight: 700;
-            line-height: 0.96;
-            letter-spacing: -3px;
-            color: rgba(255, 255, 255, 0.36);
-            -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.75);
-            text-shadow: 0 10px 28px rgba(0, 0, 0, 0.25), inset 0 2px 6px rgba(255, 255, 255, 0.65);
+            line-height: 1;
+            letter-spacing: -1px;
+            font-variant-numeric: tabular-nums;
         }
-        .ls-widgets {
-            margin-top: 12px;
+        .status-pills {
             display: flex;
             gap: 8px;
+            margin-top: 8px;
             flex-wrap: wrap;
             justify-content: center;
         }
-        .ls-chip {
-            padding: 7px 13px;
+        .pill-glass {
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.26);
+            backdrop-filter: blur(18px);
+            padding: 5px 12px;
             border-radius: 999px;
             font-size: 12px;
             font-weight: 600;
         }
-        .notif-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 210px;
-            overflow-y: auto;
-        }
-        .notif-card {
-            padding: 12px 14px;
-            border-radius: 20px;
-            font-size: 13.5px;
-        }
-        .notif-head {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11.5px;
-            font-weight: 700;
-            opacity: 0.85;
-            margin-bottom: 2px;
-        }
-        .bottom-block {
+        .bottom-area {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 14px;
+            gap: 16px;
         }
-        .shortcuts {
+        .quick-actions {
             width: 100%;
-            max-width: 420px;
+            max-width: 320px;
             display: flex;
             justify-content: space-between;
-            padding: 0 8px;
+            align-items: center;
+            padding: 0 12px;
         }
         .circle-btn {
-            width: 52px;
-            height: 52px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            border: none;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(18px);
             color: #ffffff;
             font-size: 20px;
             display: flex;
@@ -105,113 +83,74 @@
             justify-content: center;
             cursor: pointer;
         }
-        .circle-btn.active {
-            background: #ffffff;
-            color: #090d16;
-        }
         .unlock-pill {
-            border: none;
+            width: 100%;
+            max-width: 310px;
+            padding: 12px 18px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(18px);
             color: #ffffff;
-            padding: 10px 20px;
-            border-radius: 999px;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
-            cursor: pointer;
-        }
-        .bar-ind {
-            width: 134px;
-            height: 5px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.85);
+            text-align: center;
             cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div class="top-block">
-        <div id="ls-date" class="date-txt">Czwartek, 26 listopada</div>
-        <div id="ls-clock" class="clock-glass">15:00</div>
-        <div class="ls-widgets">
-            <div class="ls-chip glass">🌤️ ZenOS • Liquid Glass</div>
-            <div id="ls-saver" class="ls-chip glass">⚡ TOP-1</div>
+    <div class="clock-header">
+        <div id="ls-date" class="date-line">Czwartek, 26 listopada</div>
+        <div id="ls-clock" class="big-clock">15:58</div>
+        <div class="status-pills">
+            <span id="ls-bat" class="pill-glass">🔋 100%</span>
+            <span class="pill-glass">⚡ TOP-1</span>
         </div>
     </div>
 
-    <div id="ls-notifs" class="notif-stack"></div>
-
-    <div class="bottom-block">
-        <div class="shortcuts">
-            <button id="torch-btn" class="circle-btn glass" onclick="toggleTorch()" title="Latarka">🔦</button>
-            <button class="circle-btn glass" onclick="openCamera()" title="Aparat">📷</button>
+    <div class="bottom-area">
+        <div class="quick-actions">
+            <button class="circle-btn" onclick="toggleTorch()" aria-label="Latarka">🔦</button>
+            <button class="circle-btn" onclick="openCamera()" aria-label="Aparat">📷</button>
         </div>
-        <button class="unlock-pill glass" onclick="unlock()">Przesuń w górę lub kliknij, aby odblokować</button>
-        <div class="bar-ind" onclick="unlock()"></div>
+
+        <button class="unlock-pill" onclick="unlock()">Przesuń w górę lub kliknij, aby odblokować</button>
     </div>
 
     <script>
         let torchOn = false;
-        let focusOn = false;
-        let items = [];
 
-        const days = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
-        const months = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
-
-        function updateTime() {
-            const now = new Date();
-            document.getElementById('ls-clock').textContent = now.toTimeString().slice(0, 5);
-            document.getElementById('ls-date').textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
-        }
-        updateTime();
-        setInterval(updateTime, 1000);
-
-        function renderNotifs() {
-            const box = document.getElementById('ls-notifs');
-            box.innerHTML = '';
-            if (focusOn) {
-                box.innerHTML = '<div class="notif-card glass"><div class="notif-head"><span>🌙 Tryb skupienia</span><span>teraz</span></div><div>Powiadomienia są wyciszone.</div></div>';
-                return;
+        function applyTelemetry(t) {
+            if (!t) return;
+            if (t.time) document.getElementById('ls-clock').textContent = t.time;
+            if (t.dateLabel) document.getElementById('ls-date').textContent = t.dateLabel;
+            if (typeof t.level === 'number') {
+                document.getElementById('ls-bat').textContent = `${t.charging ? '⚡' : '🔋'} ${t.level}%`;
             }
-            items.slice(0, 3).forEach(n => {
-                const div = document.createElement('div');
-                div.className = 'notif-card glass';
-                div.onclick = unlock;
-                div.innerHTML = `<div class="notif-head"><span>${n.title}</span><span>${n.time}</span></div><div>${n.body}</div>`;
-                box.appendChild(div);
-            });
         }
 
         function unlock() {
             parent.postMessage({ type: 'UNLOCK_DEVICE' }, '*');
         }
 
+        function toggleTorch() {
+            torchOn = !torchOn;
+            parent.postMessage({ type: 'TORCH_STATE', active: torchOn, intensity: 90 }, '*');
+        }
+
         function openCamera() {
             parent.postMessage({ type: 'OPEN_APP', appId: 'aparat' }, '*');
         }
 
-        function toggleTorch() {
-            torchOn = !torchOn;
-            document.getElementById('torch-btn').classList.toggle('active', torchOn);
-            parent.postMessage({ type: 'TORCH_STATE', active: torchOn, intensity: 85 }, '*');
-        }
-
-        let startY = 0;
-        document.body.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
-        document.body.addEventListener('touchend', e => {
-            if (startY - e.changedTouches[0].clientY > 60) unlock();
-        }, { passive: true });
-
-        window.addEventListener('message', e => {
-            if (!e.data || !e.data.type) return;
-            if (e.data.type === 'NOTIFICATIONS_UPDATED') {
-                items = e.data.items || [];
-                renderNotifs();
-            } else if (e.data.type === 'FOCUS_MODE_CHANGED') {
-                focusOn = Boolean(e.data.enabled);
-                renderNotifs();
-            } else if (e.data.type === 'BATTERY_SAVER_CHANGED') {
-                document.getElementById('ls-saver').textContent = e.data.enabled ? '🔋 Oszczędzanie' : '⚡ TOP-1';
-            }
+        window.addEventListener('message', (e) => {
+            if (!e.data) return;
+            if (e.data.type === 'TELEMETRY_UPDATED') applyTelemetry(e.data.telemetry);
         });
+
+        if (parent.DeviceTelemetry) {
+            applyTelemetry(parent.DeviceTelemetry.getSnapshot());
+        }
     </script>
 </body>
 </html>
