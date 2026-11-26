@@ -2,190 +2,240 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control Center</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Centrum sterowania — ZenOS</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
+            width: 100vw;
             height: 100vh;
-            background: rgba(10, 10, 14, 0.92);
-            backdrop-filter: blur(24px);
+            padding: 54px 18px 68px;
             color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-            padding: 52px 18px 24px;
+            background: rgba(5, 8, 15, 0.52);
+            backdrop-filter: blur(22px);
             display: flex;
             flex-direction: column;
             gap: 14px;
+            overflow-y: auto;
         }
-        .top-row {
+        .glass {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08));
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(24px) saturate(185%);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), inset 0 1px 1px rgba(255, 255, 255, 0.55);
+        }
+        .cc-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .title { font-size: 16px; font-weight: 700; }
-        .close-btn {
-            background: rgba(255, 255, 255, 0.16);
+        .pill-btn {
             border: none;
             color: #ffffff;
-            padding: 6px 12px;
+            padding: 7px 14px;
             border-radius: 999px;
-            font-size: 12px;
+            font-size: 12.5px;
             font-weight: 600;
             cursor: pointer;
         }
         .grid-2 {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 1fr 1fr;
             gap: 12px;
         }
-        .box-card {
-            background: rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 24px;
+        .card {
+            border-radius: 26px;
             padding: 14px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            min-height: 112px;
-        }
-        .round-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
             gap: 10px;
         }
-        .round-btn {
-            aspect-ratio: 1 / 1;
+        .toggles-2x2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .round-toggle {
+            height: 52px;
             border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: rgba(255, 255, 255, 0.14);
+            border: none;
             color: #ffffff;
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-size: 18px;
             cursor: pointer;
-            transition: background 0.15s ease;
         }
-        .round-btn.active {
+        .round-toggle.blue { background: #0a84ff; }
+        .round-toggle.on { background: #ffffff; color: #090d16; }
+        .slider-card {
+            border-radius: 26px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .slider-track {
+            width: 46px;
+            height: 126px;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.35);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .slider-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 85%;
             background: #ffffff;
-            color: #000000;
         }
-        .pill-btn {
-            background: rgba(255, 255, 255, 0.14);
-            border: 1px solid rgba(255, 255, 255, 0.14);
+        .focus-pill {
             border-radius: 999px;
-            padding: 12px 16px;
+            padding: 13px 18px;
+            border: none;
             color: #ffffff;
-            font-size: 13px;
+            font-size: 13.5px;
             font-weight: 600;
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
             cursor: pointer;
         }
-        .pill-btn.active {
-            background: #5e5ce6;
-            border-color: #7d7aff;
-        }
-        .sub { font-size: 11px; color: #b0b0b8; margin-top: 4px; }
+        .focus-pill.on { background: rgba(94, 92, 230, 0.85); }
     </style>
 </head>
 <body>
-    <div class="top-row">
-        <span class="title">Centrum sterowania</span>
-        <button class="close-btn" onclick="closeCC()">Gotowe</button>
+    <div class="cc-top">
+        <strong style="font-size:18px;">Centrum sterowania</strong>
+        <div style="display:flex;gap:8px;">
+            <button class="pill-btn glass" onclick="editOrder()">Dostosuj</button>
+            <button class="pill-btn glass" onclick="closeCc()">Gotowe</button>
+        </div>
     </div>
 
     <div class="grid-2">
-        <div class="box-card">
-            <div style="font-size:13px;font-weight:700;">Zasilanie i ekran</div>
-            <div id="power-info" class="sub">Priorytet TOP-1 aktywny</div>
-            <button id="btn-battery" class="pill-btn" style="margin-top:8px;" onclick="toggleBattery()">
-                <span>🔋 Bateria</span>
-                <span id="bat-state">OFF</span>
-            </button>
+        <div class="card glass">
+            <div class="toggles-2x2">
+                <button id="t-air" class="round-toggle glass" onclick="toggleFlag(this, 'blue')" title="Tryb samolotowy">✈️</button>
+                <button id="t-wifi" class="round-toggle glass blue" onclick="toggleFlag(this, 'blue')" title="Wi-Fi">📶</button>
+                <button id="t-bt" class="round-toggle glass blue" onclick="toggleFlag(this, 'blue')" title="Bluetooth">🔷</button>
+                <button id="t-saver" class="round-toggle glass" onclick="toggleSaver()" title="Ochrona baterii">🔋</button>
+            </div>
+            <div id="saver-txt" style="font-size:11.5px;opacity:0.85;">Ochrona baterii: OFF</div>
         </div>
 
-        <div class="box-card">
-            <div style="font-size:13px;font-weight:700;">Odtwarzacz</div>
-            <div class="sub">Nie odtwarza</div>
-            <div style="display:flex;gap:14px;font-size:18px;margin-top:8px;">
-                <span>⏮</span><span>▶</span><span>⏭</span>
+        <div class="card glass" style="justify-content:space-between;">
+            <div>
+                <div style="font-size:13px;font-weight:700;">Odtwarzacz</div>
+                <div style="font-size:11.5px;opacity:0.75;">Gotowy</div>
+            </div>
+            <div style="display:flex;justify-content:space-around;font-size:20px;cursor:pointer;">
+                <span>⏮</span><span>⏯</span><span>⏭</span>
             </div>
         </div>
     </div>
 
-    <button id="btn-focus" class="pill-btn" onclick="toggleFocus()">
-        <span>🌙 Skupienie</span>
-        <span id="focus-state">Wyłączone</span>
-    </button>
+    <div class="grid-2">
+        <div class="slider-card glass">
+            <span style="font-size:12px;font-weight:600;">☀️ Jasność</span>
+            <div class="slider-track" onclick="setBright(event)">
+                <div id="b-fill" class="slider-fill"></div>
+            </div>
+            <span id="b-val" style="font-size:11px;">85%</span>
+        </div>
 
-    <div class="round-row">
-        <button id="btn-torch" class="round-btn" onclick="toggleTorch()" title="Latarka">🔦</button>
-        <button class="round-btn" onclick="openApp('kalkulator')" title="Kalkulator">🧮</button>
-        <button class="round-btn" onclick="openApp('zegar')" title="Zegar">⏰</button>
-        <button class="round-btn" onclick="openApp('sprzatacz')" title="Sprzątacz">🧹</button>
+        <div class="slider-card glass">
+            <span style="font-size:12px;font-weight:600;">🔊 Głośność</span>
+            <div class="slider-track" onclick="setVol(event)">
+                <div id="v-fill" class="slider-fill" style="height:70%;"></div>
+            </div>
+            <span id="v-val" style="font-size:11px;">70%</span>
+        </div>
     </div>
 
-    <div class="grid-2">
-        <button class="pill-btn" onclick="openApp('ustawienia')">⚙️ Ustawienia</button>
-        <button class="pill-btn" onclick="openApp('aktualizacje')">🔄 Moduły v1.0.2</button>
+    <button id="focus-btn" class="focus-pill glass" onclick="toggleFocus()">
+        <span>🌙 Tryb skupienia</span>
+        <span id="focus-lbl">Wyłączony</span>
+    </button>
+
+    <div id="quick-row" class="grid-2">
+        <button id="torch-btn" class="pill-btn glass" style="padding:13px;border-radius:20px;font-size:13.5px;" onclick="toggleTorch()">🔦 Latarka</button>
+        <button class="pill-btn glass" style="padding:13px;border-radius:20px;font-size:13.5px;" onclick="openSettings()">⚙️ Ustawienia</button>
     </div>
 
     <script>
         let torchOn = false;
-        let batteryOn = false;
-        let focusOn = false;
 
-        function sync() {
-            document.getElementById('btn-torch').classList.toggle('active', torchOn);
-            document.getElementById('btn-battery').classList.toggle('active', batteryOn);
-            document.getElementById('bat-state').textContent = batteryOn ? 'OSZCZ' : 'OFF';
-            document.getElementById('power-info').textContent = batteryOn
-                ? 'Ochrona baterii hamuje tło'
-                : 'Priorytet TOP-1 aktywny';
+        function closeCc() {
+            parent.postMessage({ type: 'CLOSE_CONTROL_CENTER' }, '*');
+        }
 
-            document.getElementById('btn-focus').classList.toggle('active', focusOn);
-            document.getElementById('focus-state').textContent = focusOn ? 'Włączone' : 'Wyłączone';
+        function toggleFlag(btn, cls) {
+            btn.classList.toggle(cls);
+        }
+
+        function toggleSaver() {
+            parent.postMessage({ type: 'TOGGLE_BATTERY_SAVER' }, '*');
+        }
+
+        function toggleFocus() {
+            parent.postMessage({ type: 'TOGGLE_FOCUS_MODE' }, '*');
         }
 
         function toggleTorch() {
             torchOn = !torchOn;
-            sync();
-            window.parent.postMessage({ type: 'TOGGLE_FLASHLIGHT', state: torchOn }, '*');
+            document.getElementById('torch-btn').classList.toggle('on', torchOn);
+            parent.postMessage({ type: 'TORCH_STATE', active: torchOn, intensity: 85 }, '*');
         }
 
-        function toggleBattery() {
-            batteryOn = !batteryOn;
-            sync();
-            window.parent.postMessage({ type: 'TOGGLE_BATTERY_SAVER', state: batteryOn }, '*');
+        function openSettings() {
+            closeCc();
+            parent.postMessage({ type: 'OPEN_APP', appId: 'ustawienia' }, '*');
         }
 
-        function toggleFocus() {
-            focusOn = !focusOn;
-            sync();
-            window.parent.postMessage({ type: 'TOGGLE_FOCUS_MODE', state: focusOn }, '*');
+        function editOrder() {
+            const row = document.getElementById('quick-row');
+            if (row.children.length >= 2) row.appendChild(row.firstElementChild);
         }
 
-        function openApp(appId) {
-            closeCC();
-            window.parent.postMessage({ type: 'OPEN_APP', appId }, '*');
+        function setBright(e) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const ratio = Math.max(0.1, Math.min(1, 1 - (e.clientY - rect.top) / rect.height));
+            const pct = Math.round(ratio * 100);
+            document.getElementById('b-fill').style.height = `${pct}%`;
+            document.getElementById('b-val').textContent = `${pct}%`;
+            parent.postMessage({ type: 'SET_BRIGHTNESS', value: pct }, '*');
         }
 
-        function closeCC() {
-            window.parent.postMessage({ type: 'GO_HOME' }, '*');
+        function setVol(e) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const ratio = Math.max(0.05, Math.min(1, 1 - (e.clientY - rect.top) / rect.height));
+            const pct = Math.round(ratio * 100);
+            document.getElementById('v-fill').style.height = `${pct}%`;
+            document.getElementById('v-val').textContent = `${pct}%`;
         }
 
-        window.addEventListener('message', (e) => {
-            if (e.data && e.data.type === 'OVERLAY_OPENED') {
-                const p = window.parent;
-                if (p && p.BatterySaver) batteryOn = Boolean(p.BatterySaver.enabled);
-                if (p && p.FocusMode) focusOn = Boolean(p.FocusMode.enabled);
-                sync();
+        window.addEventListener('message', e => {
+            if (!e.data || !e.data.type) return;
+            if (e.data.type === 'CC_SYNC') {
+                document.getElementById('t-saver').classList.toggle('on', Boolean(e.data.batterySaver));
+                document.getElementById('saver-txt').textContent = `Ochrona baterii: ${e.data.batterySaver ? 'ON' : 'OFF'}`;
+                document.getElementById('focus-btn').classList.toggle('on', Boolean(e.data.focusMode));
+                document.getElementById('focus-lbl').textContent = e.data.focusMode ? 'Włączony' : 'Wyłączony';
+                if (typeof e.data.brightness === 'number') {
+                    document.getElementById('b-fill').style.height = `${e.data.brightness}%`;
+                    document.getElementById('b-val').textContent = `${e.data.brightness}%`;
+                }
+            } else if (e.data.type === 'BATTERY_SAVER_CHANGED') {
+                document.getElementById('t-saver').classList.toggle('on', Boolean(e.data.enabled));
+                document.getElementById('saver-txt').textContent = `Ochrona baterii: ${e.data.enabled ? 'ON' : 'OFF'}`;
+            } else if (e.data.type === 'FOCUS_MODE_CHANGED') {
+                document.getElementById('focus-btn').classList.toggle('on', Boolean(e.data.enabled));
+                document.getElementById('focus-lbl').textContent = e.data.enabled ? 'Włączony' : 'Wyłączony';
             }
         });
-
-        sync();
     </script>
 </body>
 </html>
