@@ -1,130 +1,211 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dyktafon</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dyktafon — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
             min-height: 100vh;
-            background: #090d16;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
-            padding: 16px;
+            background: #f8f8fa;
+            color: #111827;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+            padding: 48px 18px 72px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            justify-content: space-between;
+            gap: 16px;
         }
-        h1 { font-size: 20px; }
-        .rec-box {
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 18px;
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .link-btn {
+            background: none;
+            border: none;
+            color: #ff3b30;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .rec-card {
+            background: #ffffff;
+            border-radius: 26px;
             padding: 18px;
-            text-align: center;
+            box-shadow: 0 8px 26px rgba(0, 0, 0, 0.06);
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 14px;
         }
-        button {
-            padding: 11px 18px;
+        .wave-box {
+            width: 100%;
+            height: 120px;
+            border-radius: 16px;
+            background: #f2f2f7;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 0 12px;
+            overflow: hidden;
+        }
+        .wave-bar {
+            width: 3px;
+            height: 18%;
             border-radius: 999px;
-            border: none;
-            font-size: 13px;
-            font-weight: 700;
+            background: #ef4444;
+            transition: height 0.14s ease;
+        }
+        .playhead {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            background: #ff3b30;
+        }
+        .clock-readout {
+            font-size: 36px;
+            font-weight: 400;
+            font-variant-numeric: tabular-nums;
+        }
+        .controls-row {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+        }
+        .rec-outer {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            border: 3px solid #d1d5db;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
         }
-        .btn-rec { background: #ef4444; color: #ffffff; }
-        .btn-stop { background: #38bdf8; color: #090d16; }
-        .status { font-size: 12px; color: #cbd5e1; }
-        .list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+        .rec-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #ff3b30;
+            transition: border-radius 0.2s ease, transform 0.2s ease;
         }
-        .item {
-            background: rgba(30, 41, 59, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 14px;
-            padding: 10px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+        .rec-outer.recording .rec-inner {
+            border-radius: 8px;
+            transform: scale(0.55);
         }
-        audio { width: 100%; height: 32px; }
+        .saved-list {
+            background: #ffffff;
+            border-radius: 22px;
+            padding: 12px 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+        }
+        .saved-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f2f2f7;
+            font-size: 14px;
+        }
+        .saved-item:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
-    <h1>Dyktafon</h1>
-    <div class="rec-box">
-        <div id="rec-status" class="status">Gotowy do nagrywania</div>
-        <div style="display:flex;gap:8px;">
-            <button id="btn-start" class="btn-rec" onclick="startRec()">● Nagrywaj</button>
-            <button id="btn-stop" class="btn-stop" onclick="stopRec()" disabled>■ Stop</button>
+    <div class="topbar">
+        <button class="link-btn" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
+        <strong style="font-size:17px;">Dyktafon</strong>
+        <span style="width:52px;"></span>
+    </div>
+
+    <div class="rec-card">
+        <div style="text-align:center;">
+            <div style="font-size:17px;font-weight:700;">Nowe nagranie</div>
+            <div style="font-size:12.5px;color:#6b7280;">ZenOS • Mikrofon wbudowany</div>
+        </div>
+
+        <div id="wave" class="wave-box">
+            <div class="playhead"></div>
+        </div>
+
+        <div id="readout" class="clock-readout">00:00.00</div>
+
+        <div class="controls-row">
+            <div></div>
+            <div id="rec-btn" class="rec-outer" onclick="toggleRec()">
+                <div class="rec-inner"></div>
+            </div>
+            <button class="link-btn" style="justify-self:end;" onclick="saveRecording()">Zachowaj</button>
         </div>
     </div>
-    <div id="list" class="list"></div>
+
+    <div class="saved-list">
+        <div style="font-size:13px;font-weight:700;color:#6b7280;margin-bottom:6px;">Zapisane nagrania</div>
+        <div id="recordings">
+            <div class="saved-item">
+                <div><strong>Notatka głosowa 1</strong><div style="font-size:12px;color:#6b7280;">Dzisiaj • 00:23</div></div>
+                <span style="color:#ff3b30;font-weight:600;font-size:13px;">00:23</span>
+            </div>
+        </div>
+    </div>
 
     <script>
-        let recorder = null;
-        let chunks = [];
-        const recordings = [];
+        const wave = document.getElementById('wave');
+        const bars = [];
+        for (let i = 0; i < 42; i++) {
+            const b = document.createElement('div');
+            b.className = 'wave-bar';
+            wave.appendChild(b);
+            bars.push(b);
+        }
 
-        async function startRec() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                chunks = [];
-                recorder = new MediaRecorder(stream);
-                recorder.ondataavailable = (e) => {
-                    if (e.data && e.data.size > 0) chunks.push(e.data);
-                };
-                recorder.onstop = () => {
-                    stream.getTracks().forEach(t => t.stop());
-                    const blob = new Blob(chunks, { type: 'audio/webm' });
-                    const url = URL.createObjectURL(blob);
-                    recordings.unshift({
-                        name: `Nagranie ${recordings.length + 1} (${new Date().toTimeString().slice(0, 5)})`,
-                        url
+        let isRec = false, elapsed = 0, startTs = 0, loop = null;
+
+        function fmt(ms) {
+            const m = String(Math.floor(ms / 60000)).padStart(2, '0');
+            const s = String(Math.floor((ms % 60000) / 1000)).padStart(2, '0');
+            const cs = String(Math.floor((ms % 1000) / 10)).padStart(2, '0');
+            return `${m}:${s}.${cs}`;
+        }
+
+        function toggleRec() {
+            const btn = document.getElementById('rec-btn');
+            if (!isRec) {
+                isRec = true;
+                btn.classList.add('recording');
+                startTs = performance.now() - elapsed;
+                loop = setInterval(() => {
+                    elapsed = performance.now() - startTs;
+                    document.getElementById('readout').textContent = fmt(elapsed);
+                    bars.forEach(b => {
+                        b.style.height = `${14 + Math.random() * 76}%`;
                     });
-                    renderList();
-                };
-                recorder.start();
-                document.getElementById('btn-start').disabled = true;
-                document.getElementById('btn-stop').disabled = false;
-                document.getElementById('rec-status').textContent = 'Nagrywanie w toku...';
-            } catch (_) {
-                document.getElementById('rec-status').textContent = 'Brak dostępu do mikrofonu w tej przeglądarce.';
+                }, 110);
+            } else {
+                isRec = false;
+                btn.classList.remove('recording');
+                clearInterval(loop);
+                bars.forEach(b => { b.style.height = '18%'; });
             }
         }
 
-        function stopRec() {
-            if (recorder && recorder.state !== 'inactive') {
-                recorder.stop();
-            }
-            document.getElementById('btn-start').disabled = false;
-            document.getElementById('btn-stop').disabled = true;
-            document.getElementById('rec-status').textContent = 'Zapisano nagranie.';
+        function saveRecording() {
+            const dur = document.getElementById('readout').textContent.slice(0, 5);
+            const list = document.getElementById('recordings');
+            const row = document.createElement('div');
+            row.className = 'saved-item';
+            row.innerHTML = `<div><strong>Nagranie #${list.children.length + 1}</strong><div style="font-size:12px;color:#6b7280;">Właśnie teraz • ${dur}</div></div><span style="color:#ff3b30;font-weight:600;font-size:13px;">${dur}</span>`;
+            list.prepend(row);
+            elapsed = 0;
+            document.getElementById('readout').textContent = '00:00.00';
         }
-
-        function renderList() {
-            const box = document.getElementById('list');
-            box.innerHTML = '';
-            recordings.forEach(r => {
-                const div = document.createElement('div');
-                div.className = 'item';
-                div.innerHTML = `<div style="font-size:12px;font-weight:700;">${r.name}</div><audio controls src="${r.url}"></audio>`;
-                box.appendChild(div);
-            });
-        }
-
-        window.addEventListener('message', (e) => {
-            if (e.data && e.data.type === 'OS_PRIORITY' && e.data.level === 'BACKGROUND') {
-                if (recorder && recorder.state === 'recording') stopRec();
-            }
-        });
     </script>
 </body>
-  </html>
-  
+</html>
