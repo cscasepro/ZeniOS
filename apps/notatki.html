@@ -7,13 +7,14 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            min-height: 100vh;
+            width: 100%;
+            height: 100%;
             background: #f2f2f7;
             color: #111827;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-            padding: 48px 18px 86px;
+            padding: 46px 14px 62px;
+            overflow-y: auto;
         }
-        .gold { color: #eab308; }
         .topbar {
             display: flex;
             justify-content: space-between;
@@ -24,72 +25,58 @@
             background: none;
             border: none;
             color: #d97706;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
         }
-        h1 { font-size: 32px; font-weight: 800; margin-bottom: 10px; }
+        h1 { font-size: 28px; font-weight: 800; margin-bottom: 10px; }
         .search-input {
             width: 100%;
-            padding: 10px 14px;
+            padding: 9px 13px;
             border-radius: 12px;
             border: none;
             background: #e5e5ea;
-            font-size: 15px;
-            margin-bottom: 16px;
+            font-size: 14px;
+            margin-bottom: 14px;
             outline: none;
         }
         .sec-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
-            margin: 12px 0 8px;
+            margin: 10px 0 6px;
         }
         .note-card {
             background: #ffffff;
             border-radius: 16px;
-            padding: 14px 16px;
-            margin-bottom: 10px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
         }
         .pin-badge {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
+            width: 30px;
+            height: 30px;
+            border-radius: 9px;
             background: #f59e0b;
             color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 14px;
             flex-shrink: 0;
         }
-        .bottom-bar {
-            position: fixed;
-            bottom: 48px;
-            left: 0;
-            right: 0;
-            height: 48px;
-            padding: 0 20px;
-            background: rgba(242, 242, 247, 0.92);
-            backdrop-filter: blur(16px);
-            border-top: 1px solid rgba(0, 0, 0, 0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .new-btn {
-            background: #f59e0b;
-            color: #ffffff;
+        .del-btn {
+            background: #fee2e2;
+            color: #b91c1c;
             border: none;
-            padding: 7px 14px;
             border-radius: 999px;
-            font-size: 13px;
-            font-weight: 700;
+            padding: 4px 10px;
+            font-size: 11.5px;
+            font-weight: 600;
             cursor: pointer;
         }
         .editor-modal {
@@ -99,26 +86,22 @@
             z-index: 30;
             display: none;
             flex-direction: column;
-            padding: 48px 18px 66px;
-            gap: 12px;
+            padding: 46px 16px 36px;
+            gap: 10px;
         }
         .editor-modal.open { display: flex; }
-        .fmt-bar {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
+        .fmt-bar { display: flex; gap: 6px; flex-wrap: wrap; }
         .fmt-btn {
-            padding: 6px 11px;
-            border-radius: 10px;
+            padding: 5px 10px;
+            border-radius: 9px;
             border: 1px solid #e5e7eb;
             background: #f9fafb;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             cursor: pointer;
         }
         .ed-title {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
             border: none;
             outline: none;
@@ -127,7 +110,7 @@
             flex: 1;
             border: none;
             outline: none;
-            font-size: 16px;
+            font-size: 15px;
             line-height: 1.5;
             resize: none;
             font-family: inherit;
@@ -145,16 +128,10 @@
     <div id="pinned-sec"></div>
     <div id="recent-sec"></div>
 
-    <div class="bottom-bar">
-        <span style="width:60px;"></span>
-        <span id="notes-count" style="font-size:12px;color:#6b7280;">0 notatek</span>
-        <button class="new-btn" onclick="openEditor()">✎ Nowa notatka</button>
-    </div>
-
     <div id="editor" class="editor-modal">
         <div class="topbar">
             <button class="link-gold" onclick="saveAndClose()">‹ Notatki</button>
-            <div style="display:flex;gap:12px;">
+            <div style="display:flex;gap:10px;">
                 <button id="pin-toggle" class="link-gold" onclick="togglePinCurrent()">📌 Przypnij</button>
                 <button class="link-gold" onclick="saveAndClose()">Gotowe</button>
             </div>
@@ -162,22 +139,28 @@
         <div class="fmt-bar">
             <button class="fmt-btn" onclick="insertTag('**Pogrubienie**')">B</button>
             <button class="fmt-btn" onclick="insertTag('_Kursywa_')">I</button>
-            <button class="fmt-btn" onclick="insertTag('\n☑ Zadanie do wykonania')">☑ Checklista</button>
+            <button class="fmt-btn" onclick="insertTag('\n☑ Zadanie')">☑ Checklista</button>
         </div>
         <input id="ed-title" class="ed-title" type="text" placeholder="Tytuł notatki">
         <textarea id="ed-body" class="ed-body" placeholder="Zacznij pisać..."></textarea>
     </div>
 
     <script>
-        let notes = parent.StorageManager?.get('zen_notes', null) || [
-            { id: 1, title: 'Lista zakupów', body: '☑ Mleko\n☑ Kawa\n☑ Owoce', pinned: true, date: 'Dzisiaj' },
-            { id: 2, title: 'Pomysły ZenOS', body: 'Efekt Liquid Glass i płynne przejścia kart.', pinned: false, date: 'Wczoraj' }
-        ];
+        let notes = [];
+        try {
+            notes = parent.StorageManager?.get('zen_notes', null) || JSON.parse(localStorage.getItem('zenos_zen_notes') || 'null') || [
+                { id: 1, title: 'Lista zakupów', body: '☑ Mleko\n☑ Kawa', pinned: true, date: 'Dzisiaj' }
+            ];
+        } catch {
+            notes = [{ id: 1, title: 'Lista zakupów', body: '☑ Mleko\n☑ Kawa', pinned: true, date: 'Dzisiaj' }];
+        }
+
         let activeId = null;
         let currentPinned = false;
 
         function persist() {
-            parent.StorageManager?.set('zen_notes', notes);
+            try { parent.StorageManager?.set('zen_notes', notes); } catch {}
+            try { localStorage.setItem('zenos_zen_notes', JSON.stringify(notes)); } catch {}
         }
 
         function renderNotes() {
@@ -185,8 +168,6 @@
             const filtered = notes.filter(n => !q || n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q));
             const pinned = filtered.filter(n => n.pinned);
             const others = filtered.filter(n => !n.pinned);
-
-            document.getElementById('notes-count').textContent = `${notes.length} notatek`;
 
             document.getElementById('pinned-sec').innerHTML = pinned.length
                 ? `<div class="sec-title">Przypięte</div>` + pinned.map(cardHtml).join('')
@@ -197,15 +178,22 @@
         function cardHtml(n) {
             return `
                 <div class="note-card" onclick="openEditor(${n.id})">
-                    <div style="display:flex;align-items:center;gap:12px;overflow:hidden;">
+                    <div style="display:flex;align-items:center;gap:10px;overflow:hidden;">
                         ${n.pinned ? '<div class="pin-badge">📌</div>' : ''}
                         <div style="overflow:hidden;">
-                            <div style="font-weight:700;font-size:15px;">${n.title || 'Bez tytułu'}</div>
-                            <div style="font-size:13px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.date} • ${n.body.replace(/\n/g, ' ')}</div>
+                            <div style="font-weight:700;font-size:14.5px;">${n.title || 'Bez tytułu'}</div>
+                            <div style="font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.date} • ${n.body.replace(/\n/g, ' ')}</div>
                         </div>
                     </div>
+                    <button class="del-btn" onclick="event.stopPropagation(); deleteNote(${n.id})">Usuń</button>
                 </div>
             `;
+        }
+
+        function deleteNote(id) {
+            notes = notes.filter(n => n.id !== id);
+            persist();
+            renderNotes();
         }
 
         function openEditor(id = null) {
@@ -216,6 +204,7 @@
             currentPinned = found ? found.pinned : false;
             document.getElementById('pin-toggle').textContent = currentPinned ? '📌 Przypięta' : '📌 Przypnij';
             document.getElementById('editor').classList.add('open');
+            document.getElementById('ed-title').focus();
         }
 
         function togglePinCurrent() {
