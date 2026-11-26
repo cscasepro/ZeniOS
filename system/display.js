@@ -1,57 +1,76 @@
 const Display = {
+    dockAppIds: ['telefon', 'wiadomosci', 'aparat', 'ustawienia'],
+
     init() {
         this.renderDesktop();
     },
 
+    createAppIconElement(app) {
+        const iconEl = document.createElement('div');
+        iconEl.className = 'app-icon priority-top';
+        iconEl.dataset.appId = app.id;
+        iconEl.onclick = () => {
+            if (typeof Kernel !== 'undefined') Kernel.openApp(app.id);
+        };
+
+        const box = document.createElement('div');
+        box.className = 'app-icon-box';
+
+        const fallbackSpan = document.createElement('span');
+        fallbackSpan.className = 'app-icon-fallback';
+        fallbackSpan.textContent = app.fallback || app.name.slice(0, 1).toUpperCase();
+
+        if (app.icon) {
+            const img = document.createElement('img');
+            img.src = app.icon;
+            img.alt = app.name;
+            img.loading = 'eager';
+            img.onerror = () => {
+                img.remove();
+                box.appendChild(fallbackSpan);
+            };
+            box.appendChild(img);
+        } else {
+            box.appendChild(fallbackSpan);
+        }
+
+        const label = document.createElement('span');
+        label.className = 'app-label';
+        label.textContent = app.name;
+
+        iconEl.appendChild(box);
+        iconEl.appendChild(label);
+        return iconEl;
+    },
+
     renderDesktop() {
         const grid = document.getElementById('app-grid');
+        const dock = document.getElementById('iphone-dock');
         if (!grid) return;
 
         const isSafeMode = typeof Bootloader !== 'undefined' && Bootloader.isSafeMode;
-        const apps = typeof Manifest !== 'undefined' ? Manifest.getApps() : [];
+        const apps = typeof Manifest !== 'undefined' ? Manifest.getApps().filter(a => a.enabled) : [];
 
         grid.innerHTML = '';
+        if (dock) dock.innerHTML = '';
+
+        const dockApps = this.dockAppIds
+            .map(id => apps.find(a => a.id === id))
+            .filter(Boolean);
+
+        const dockSet = new Set(dockApps.map(a => a.id));
 
         apps.forEach(app => {
-            if (!app.enabled) return;
             if (isSafeMode && app.id !== 'ustawienia' && app.id !== 'aktualizacje') return;
-
-            const iconEl = document.createElement('div');
-            iconEl.className = 'app-icon priority-top';
-            iconEl.dataset.appId = app.id;
-            iconEl.onclick = () => {
-                if (typeof Kernel !== 'undefined') Kernel.openApp(app.id);
-            };
-
-            const box = document.createElement('div');
-            box.className = 'app-icon-box';
-
-            const fallbackSpan = document.createElement('span');
-            fallbackSpan.className = 'app-icon-fallback';
-            fallbackSpan.textContent = app.fallback || app.name.slice(0, 1).toUpperCase();
-
-            if (app.icon) {
-                const img = document.createElement('img');
-                img.src = app.icon;
-                img.alt = app.name;
-                img.loading = 'eager';
-                img.onerror = () => {
-                    img.remove();
-                    box.appendChild(fallbackSpan);
-                };
-                box.appendChild(img);
-            } else {
-                box.appendChild(fallbackSpan);
-            }
-
-            const label = document.createElement('span');
-            label.className = 'app-label';
-            label.textContent = app.name;
-
-            iconEl.appendChild(box);
-            iconEl.appendChild(label);
-            grid.appendChild(iconEl);
+            if (dock && dockSet.has(app.id)) return;
+            grid.appendChild(this.createAppIconElement(app));
         });
+
+        if (dock && !isSafeMode) {
+            dockApps.forEach(app => {
+                dock.appendChild(this.createAppIconElement(app));
+            });
+        }
     },
 
     showHome() {
@@ -101,7 +120,7 @@ const Display = {
         const apps = typeof Manifest !== 'undefined' ? Manifest.getApps() : [];
 
         if (!history.length) {
-            list.innerHTML = '<p style="color:#94a3b8;font-size:12px;">Brak otwartych zakładek w pamięci.</p>';
+            list.innerHTML = '<p style="color:#98989f;font-size:12px;">Brak otwartych zakładek w pamięci.</p>';
             return;
         }
 
@@ -120,7 +139,7 @@ const Display = {
 
             const closeBtn = document.createElement('button');
             closeBtn.textContent = '✕';
-            closeBtn.style.cssText = 'background:none;border:none;color:#f87171;font-size:15px;cursor:pointer;padding:4px 8px;';
+            closeBtn.style.cssText = 'background:none;border:none;color:#ff453a;font-size:15px;cursor:pointer;padding:4px 8px;';
             closeBtn.onclick = () => {
                 if (typeof Kernel !== 'undefined') Kernel.killApp(app.id, true);
             };
