@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprzątacz</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            background: #090d16;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        h1 { font-size: 20px; }
+        .card {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .metric {
+            font-size: 24px;
+            font-weight: 700;
+            color: #38bdf8;
+        }
+        .sub {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        button {
+            padding: 12px;
+            border-radius: 14px;
+            border: none;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .clean-bg { background: #38bdf8; color: #090d16; }
+        .clean-data { background: rgba(239, 68, 68, 0.25); color: #fca5a5; }
+        .msg {
+            font-size: 12px;
+            color: #86efac;
+            min-height: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sprzątacz systemu</h1>
+
+    <div class="card">
+        <div class="sub">Zajęta pamięć systemowa (localStorage)</div>
+        <div id="mem-val" class="metric">0 KB</div>
+        <div id="tabs-val" class="sub">Aktywne zakładki w pamięci: 0</div>
+    </div>
+
+    <button class="clean-bg" onclick="purgeTabs()">Wyczyść uśpione zakładki w tle</button>
+    <button class="clean-data" onclick="cleanCache()">Wyczyść pamięć podręczną (zachowaj ustawienia)</button>
+
+    <div id="msg" class="msg"></div>
+
+    <script>
+        function refreshStats() {
+            const p = window.parent;
+            const bytes = (p && p.StorageManager && p.StorageManager.getUsedBytes()) || 0;
+            const kb = (bytes / 1024).toFixed(1);
+            const tabs = (p && p.PerformanceManager && p.PerformanceManager.tabHistory && p.PerformanceManager.tabHistory.length) || 0;
+
+            document.getElementById('mem-val').textContent = `${kb} KB`;
+            document.getElementById('tabs-val').textContent = `Aktywne zakładki w pamięci: ${tabs}`;
+        }
+
+        function purgeTabs() {
+            const p = window.parent;
+            if (p && p.PerformanceManager) {
+                p.PerformanceManager.purgeBackground();
+            }
+            document.getElementById('msg').textContent = 'Oczyszczono zakładki w tle.';
+            refreshStats();
+        }
+
+        function cleanCache() {
+            const p = window.parent;
+            if (p && p.StorageManager) {
+                p.StorageManager.clearSystemData(true);
+            }
+            document.getElementById('msg').textContent = 'Wyczyszczono dane tymczasowe.';
+            refreshStats();
+        }
+
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'OS_PRIORITY' && e.data.level === 'TOP_1') {
+                refreshStats();
+            }
+        });
+
+        refreshStats();
+    </script>
+</body>
+</html>
