@@ -7,7 +7,8 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             background: #000000;
             color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
@@ -17,7 +18,7 @@
             overflow: hidden;
         }
         .top-controls {
-            padding: 50px 18px 12px;
+            padding: 46px 14px 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -25,12 +26,12 @@
         }
         .pill {
             background: rgba(24, 24, 28, 0.72);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            backdrop-filter: blur(16px);
             color: #ffffff;
-            padding: 7px 14px;
+            padding: 6px 12px;
             border-radius: 999px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
         }
@@ -38,9 +39,9 @@
             position: relative;
             flex: 1;
             margin: 4px 10px;
-            border-radius: 28px;
+            border-radius: 26px;
             overflow: hidden;
-            background: radial-gradient(circle at 50% 45%, #232734 0%, #0d1017 100%);
+            background: radial-gradient(circle at 60% 35%, #2563eb 0%, #172554 55%, #090d16 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -49,22 +50,21 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform-origin: center;
-            transition: transform 0.25s ease;
+            transition: transform 0.22s ease;
         }
         .grid-lines {
             position: absolute;
             inset: 0;
             pointer-events: none;
             background-image:
-                linear-gradient(to right, rgba(255, 255, 255, 0.18) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+                linear-gradient(to right, rgba(255, 255, 255, 0.16) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.16) 1px, transparent 1px);
             background-size: 33.33% 33.33%;
         }
         .crosshair {
             position: absolute;
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             pointer-events: none;
         }
         .crosshair::before, .crosshair::after {
@@ -72,28 +72,28 @@
             position: absolute;
             background: #ffd60a;
         }
-        .crosshair::before { left: 11px; top: 0; width: 1.5px; height: 24px; }
-        .crosshair::after { top: 11px; left: 0; height: 1.5px; width: 24px; }
+        .crosshair::before { left: 10px; top: 0; width: 1.5px; height: 22px; }
+        .crosshair::after { top: 10px; left: 0; height: 1.5px; width: 22px; }
         .zoom-bar {
             position: absolute;
-            bottom: 14px;
+            bottom: 12px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 8px;
-            padding: 5px 8px;
+            gap: 6px;
+            padding: 4px 8px;
             border-radius: 999px;
-            background: rgba(15, 16, 20, 0.65);
-            backdrop-filter: blur(16px);
+            background: rgba(15, 16, 20, 0.68);
+            backdrop-filter: blur(14px);
         }
         .zoom-btn {
-            min-width: 34px;
-            height: 34px;
+            min-width: 32px;
+            height: 32px;
             border-radius: 50%;
             border: none;
             background: transparent;
             color: #ffffff;
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 700;
             cursor: pointer;
         }
@@ -101,22 +101,37 @@
             background: rgba(255, 255, 255, 0.16);
             color: #ffd60a;
         }
+        .snap-toast {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(16, 185, 129, 0.9);
+            color: #ffffff;
+            font-size: 11.5px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 999px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .snap-toast.show { opacity: 1; }
         .bottom-deck {
-            padding: 12px 22px 58px;
+            padding: 10px 18px 46px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
         }
         .modes {
             display: flex;
-            gap: 18px;
-            font-size: 12px;
+            gap: 12px;
+            font-size: 11.5px;
             font-weight: 700;
-            letter-spacing: 0.6px;
         }
         .mode-item {
-            padding: 5px 12px;
+            padding: 4px 10px;
             border-radius: 999px;
             color: rgba(255, 255, 255, 0.72);
             cursor: pointer;
@@ -127,22 +142,23 @@
         }
         .shutter-row {
             width: 100%;
+            max-width: 320px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .thumb-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.32);
             background: #1c1c1e;
             overflow: hidden;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 16px;
         }
         .thumb-btn img {
             width: 100%;
@@ -150,8 +166,8 @@
             object-fit: cover;
         }
         .shutter-ring {
-            width: 76px;
-            height: 76px;
+            width: 68px;
+            height: 68px;
             border-radius: 50%;
             border: 4px solid #ffffff;
             padding: 4px;
@@ -165,23 +181,18 @@
             height: 100%;
             border-radius: 50%;
             background: #ffffff;
-            transition: transform 0.15s ease, background 0.2s ease, border-radius 0.2s ease;
+            transition: transform 0.14s ease, background 0.2s ease, border-radius 0.2s ease;
         }
-        .shutter-ring.video .shutter-core {
-            background: #ff3b30;
-        }
-        .shutter-ring.recording .shutter-core {
-            transform: scale(0.54);
-            border-radius: 10px;
-        }
+        .shutter-ring.video .shutter-core { background: #ff3b30; }
+        .shutter-ring.recording .shutter-core { transform: scale(0.54); border-radius: 8px; }
         .flip-btn {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             border: none;
             background: rgba(255, 255, 255, 0.16);
             color: #ffffff;
-            font-size: 20px;
+            font-size: 18px;
             cursor: pointer;
         }
     </style>
@@ -190,13 +201,14 @@
     <div class="top-controls">
         <button class="pill" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
         <button id="flash-pill" class="pill" onclick="toggleFlash()">⚡ Auto</button>
-        <span id="rec-timer" style="font-size:12px;font-weight:700;color:#ff453a;min-width:44px;text-align:right;"></span>
+        <span id="rec-timer" style="font-size:12px;font-weight:700;color:#ff453a;min-width:42px;text-align:right;"></span>
     </div>
 
     <div class="viewfinder">
         <video id="cam-video" autoplay playsinline muted></video>
         <div class="grid-lines"></div>
         <div class="crosshair"></div>
+        <div id="snap-toast" class="snap-toast">Zapisano w Galerii</div>
         <div id="zoom-bar" class="zoom-bar"></div>
     </div>
 
@@ -231,12 +243,16 @@
         async function initCamera() {
             if (stream) stream.getTracks().forEach(t => t.stop());
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false });
-                const video = document.getElementById('cam-video');
-                video.srcObject = stream;
-                const track = stream.getVideoTracks()[0];
-                const caps = track?.getCapabilities ? track.getCapabilities() : {};
-                hasUltraWide = Boolean(caps.zoom && typeof caps.zoom.min === 'number' && caps.zoom.min <= 0.6);
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false });
+                    const video = document.getElementById('cam-video');
+                    video.srcObject = stream;
+                    const track = stream.getVideoTracks()[0];
+                    const caps = track?.getCapabilities ? track.getCapabilities() : {};
+                    hasUltraWide = Boolean(caps.zoom && typeof caps.zoom.min === 'number' && caps.zoom.min <= 0.6);
+                } else {
+                    hasUltraWide = false;
+                }
             } catch {
                 hasUltraWide = false;
             }
@@ -264,8 +280,7 @@
             currentMode = mode;
             document.querySelectorAll('.mode-item').forEach(m => m.classList.remove('active'));
             el.classList.add('active');
-            const ring = document.getElementById('shutter');
-            ring.classList.toggle('video', mode === 'WIDEO');
+            document.getElementById('shutter').classList.toggle('video', mode === 'WIDEO');
         }
 
         function toggleFlash() {
@@ -280,9 +295,15 @@
 
         function loadLastThumb() {
             const list = parent.StorageManager?.get('gallery_photos', []) || [];
-            if (list.length) {
+            if (list.length && list[0].dataUrl) {
                 document.getElementById('last-thumb').innerHTML = `<img src="${list[0].dataUrl}" alt="Ostatnie">`;
             }
+        }
+
+        function showSavedToast() {
+            const t = document.getElementById('snap-toast');
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 1400);
         }
 
         function triggerShutter() {
@@ -309,23 +330,38 @@
 
             const video = document.getElementById('cam-video');
             const canvas = document.getElementById('snap-canvas');
-            canvas.width = video.videoWidth || 640;
-            canvas.height = video.videoHeight || 800;
+            canvas.width = video.videoWidth || 480;
+            canvas.height = video.videoHeight || 640;
             const ctx = canvas.getContext('2d');
-            if (video.videoWidth) {
+
+            if (video.videoWidth > 0 && video.videoHeight > 0) {
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             } else {
                 const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-                grad.addColorStop(0, '#2563eb');
+                grad.addColorStop(0, '#38bdf8');
+                grad.addColorStop(0.5, '#2563eb');
                 grad.addColorStop(1, '#0f172a');
                 ctx.fillStyle = grad;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = 'rgba(255,255,255,0.22)';
+                ctx.beginPath();
+                ctx.arc(canvas.width * 0.68, canvas.height * 0.28, canvas.width * 0.22, 0, Math.PI * 2);
+                ctx.fill();
             }
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
             const existing = parent.StorageManager?.get('gallery_photos', []) || [];
-            existing.unshift({ id: Date.now(), title: `Zdjęcie ${new Date().toLocaleTimeString('pl-PL')}`, album: 'Ostatnie', dataUrl });
-            parent.StorageManager?.set('gallery_photos', existing.slice(0, 30));
+            const stamp = new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            existing.unshift({
+                id: Date.now(),
+                title: `Zdjęcie ${stamp}`,
+                album: 'Ostatnie',
+                dataUrl
+            });
+            parent.StorageManager?.set('gallery_photos', existing.slice(0, 24));
             loadLastThumb();
+            showSavedToast();
         }
 
         initCamera();
