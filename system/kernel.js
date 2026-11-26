@@ -4,7 +4,6 @@ const Kernel = {
     viewport360: false,
 
     async boot() {
-        Supervisor.init();
         StorageManager.get('init_check', true);
 
         const bootInfo = await Bootloader.start();
@@ -13,7 +12,9 @@ const Kernel = {
         BatterySaver.init();
         FocusMode.init();
         IconTheme.init();
-        WallpaperManager.init();
+        if (typeof WallpaperManager !== 'undefined' && typeof WallpaperManager.init === 'function') {
+            WallpaperManager.init();
+        }
         Notifications.init();
         PerformanceManager.init();
         Display.init();
@@ -22,7 +23,7 @@ const Kernel = {
         this.viewport360 = Boolean(StorageManager.get('viewport_360', false));
         this.setViewport360(this.viewport360, false);
 
-        if (!bootInfo.safeMode) {
+        if (!bootInfo.safeMode && typeof Watchdog !== 'undefined' && typeof Watchdog.start === 'function') {
             Watchdog.start();
         }
 
@@ -99,7 +100,9 @@ const Kernel = {
         this.locked = Boolean(show);
         const ls = document.getElementById('lockscreen-frame');
         if (ls) ls.classList.toggle('hidden', !this.locked);
-        WallpaperManager.setBlur(this.locked);
+        if (typeof WallpaperManager !== 'undefined' && typeof WallpaperManager.setBlur === 'function') {
+            WallpaperManager.setBlur(this.locked);
+        }
         if (this.locked) this.syncAllFrames();
     },
 
@@ -138,7 +141,7 @@ const Kernel = {
             PerformanceManager.setForegroundApp(appId);
         }
 
-        Watchdog.ping(appId);
+        Watchdog.ping?.(appId);
     },
 
     goHome() {
