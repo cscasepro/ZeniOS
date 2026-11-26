@@ -2,113 +2,260 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galeria</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Galeria — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
             min-height: 100vh;
-            background: #090d16;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            background: #090b10;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+            padding-bottom: 92px;
         }
-        .top {
+        .header {
+            padding: 50px 16px 12px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-end;
         }
-        h1 { font-size: 20px; }
-        button {
-            padding: 7px 11px;
-            border-radius: 10px;
-            border: none;
-            background: rgba(239, 68, 68, 0.22);
-            color: #fca5a5;
-            font-size: 12px;
+        .glass-pill {
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            backdrop-filter: blur(18px);
+            color: #ffffff;
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
         }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+        .search-wrap {
+            padding: 0 16px 10px;
+            display: none;
         }
-        .card {
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 14px;
-            overflow: hidden;
-        }
-        .card img {
+        .search-wrap.open { display: block; }
+        .search-wrap input {
             width: 100%;
-            height: 110px;
+            padding: 10px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            outline: none;
+        }
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+        }
+        .tile {
+            aspect-ratio: 1;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            background: #1c1f2b;
+        }
+        .tile img, .tile-fill {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
             display: block;
         }
-        .meta {
-            padding: 8px;
-            font-size: 11px;
-            color: #cbd5e1;
+        .albums-list {
+            display: none;
+            padding: 10px 16px;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .albums-list.active { display: grid; }
+        .album-card {
+            border-radius: 18px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            cursor: pointer;
+        }
+        .bottom-dock {
+            position: fixed;
+            bottom: 54px;
+            left: 16px;
+            right: 16px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            gap: 10px;
         }
-        .empty {
-            color: #94a3b8;
-            font-size: 13px;
-            margin-top: 30px;
-            text-align: center;
+        .seg-pill {
+            flex: 1;
+            display: flex;
+            padding: 4px;
+            border-radius: 999px;
+            background: rgba(30, 32, 40, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            backdrop-filter: blur(22px);
+        }
+        .seg-btn {
+            flex: 1;
+            padding: 8px 10px;
+            border-radius: 999px;
+            border: none;
+            background: transparent;
+            color: #ffffff;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .seg-btn.active {
+            background: rgba(255, 255, 255, 0.9);
+            color: #090d16;
+        }
+        .search-circle {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            background: rgba(30, 32, 40, 0.85);
+            color: #ffffff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .viewer {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.96);
+            z-index: 40;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 52px 18px 66px;
+        }
+        .viewer.open { display: flex; }
+        .viewer-body {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .viewer-body img, .viewer-body .full-art {
+            max-width: 100%;
+            max-height: 72vh;
+            border-radius: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="top">
-        <h1>Galeria</h1>
-        <button onclick="clearPhotos()">Wyczyść</button>
+    <div class="header">
+        <div>
+            <h1 style="font-size:30px;font-weight:800;">Biblioteka</h1>
+            <div id="count-lbl" style="font-size:12.5px;color:rgba(255,255,255,0.72);">Wszystkie zdjęcia</div>
+        </div>
+        <button class="glass-pill" onclick="parent.Kernel?.goHome()">Pulpit</button>
     </div>
-    <div id="grid" class="grid"></div>
+
+    <div id="search-box" class="search-wrap">
+        <input id="q" type="text" placeholder="Szukaj zdjęć lub albumów..." oninput="renderGrid()">
+    </div>
+
+    <div id="grid" class="photo-grid"></div>
+    <div id="albums" class="albums-list">
+        <div class="album-card" onclick="filterAlbum('Wszystkie')"><strong>Ostatnio zapisane</strong><div style="font-size:12px;opacity:0.7;margin-top:4px;">Wszystkie ujęcia</div></div>
+        <div class="album-card" onclick="filterAlbum('Tapety')"><strong>Tapety ZenOS</strong><div style="font-size:12px;opacity:0.7;margin-top:4px;">Kolekcja systemowa</div></div>
+    </div>
+
+    <div class="bottom-dock">
+        <div class="seg-pill">
+            <button id="tab-lib" class="seg-btn active" onclick="switchView('lib')">Biblioteka</button>
+            <button id="tab-alb" class="seg-btn" onclick="switchView('alb')">Albumy</button>
+        </div>
+        <button class="search-circle" onclick="toggleSearch()">🔍</button>
+    </div>
+
+    <div id="viewer" class="viewer">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <button class="glass-pill" onclick="closeViewer()">‹ Wróć</button>
+            <span id="v-title" style="font-size:14px;font-weight:600;">Podgląd</span>
+            <span style="width:64px;"></span>
+        </div>
+        <div id="v-body" class="viewer-body"></div>
+        <div style="text-align:center;font-size:12px;opacity:0.7;">ZenOS Galeria</div>
+    </div>
 
     <script>
-        function render() {
-            const p = window.parent;
-            const photos = (p && p.StorageManager && p.StorageManager.get('gallery_photos', [])) || [];
+        const builtIn = [
+            { id: 1, title: 'Błękitny horyzont', album: 'Tapety', bg: 'linear-gradient(135deg, #2563eb, #0f172a)' },
+            { id: 2, title: 'Szkło i światło', album: 'Tapety', bg: 'linear-gradient(135deg, #38bdf8, #818cf8)' },
+            { id: 3, title: 'Ciepły zmierzch', album: 'Tapety', bg: 'linear-gradient(135deg, #f59e0b, #7c2d12)' },
+            { id: 4, title: 'Górskie jezioro', album: 'Ostatnie', bg: 'linear-gradient(135deg, #10b981, #064e3b)' },
+            { id: 5, title: 'Nocne niebo', album: 'Ostatnie', bg: 'linear-gradient(135deg, #6366f1, #1e1b4b)' },
+            { id: 6, title: 'Złote wydmy', album: 'Ostatnie', bg: 'linear-gradient(135deg, #fbbf24, #92400e)' }
+        ];
+        let albumFilter = 'Wszystkie';
+
+        function getAllPhotos() {
+            const saved = parent.StorageManager?.get('gallery_photos', []) || [];
+            return [...saved, ...builtIn];
+        }
+
+        function renderGrid() {
+            const q = document.getElementById('q').value.trim().toLowerCase();
+            const list = getAllPhotos().filter(p => {
+                const matchA = albumFilter === 'Wszystkie' || p.album === albumFilter;
+                const matchQ = !q || p.title.toLowerCase().includes(q);
+                return matchA && matchQ;
+            });
+            document.getElementById('count-lbl').textContent = `${list.length} elementów • ${albumFilter}`;
             const grid = document.getElementById('grid');
             grid.innerHTML = '';
-
-            if (!photos.length) {
-                grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">Brak zapisanych zdjęć. Zrób ujęcie w Aparacie.</div>';
-                return;
-            }
-
-            photos.forEach(ph => {
-                const div = document.createElement('div');
-                div.className = 'card';
-                div.innerHTML = `<img src="${ph.dataUrl}" alt="Zdjęcie"><div class="meta"><span>${ph.mode || 'HDR'}</span><span>${ph.date || ''}</span></div>`;
-                grid.appendChild(div);
+            list.forEach(item => {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.onclick = () => openViewer(item);
+                if (item.dataUrl) {
+                    tile.innerHTML = `<img src="${item.dataUrl}" alt="${item.title}">`;
+                } else {
+                    tile.innerHTML = `<div class="tile-fill" style="background:${item.bg};"></div>`;
+                }
+                grid.appendChild(tile);
             });
         }
 
-        function clearPhotos() {
-            const p = window.parent;
-            if (p && p.StorageManager) {
-                p.StorageManager.set('gallery_photos', []);
-            }
-            if (p && p.Widgets) {
-                p.Widgets.syncData();
-            }
-            render();
+        function switchView(mode) {
+            document.getElementById('tab-lib').classList.toggle('active', mode === 'lib');
+            document.getElementById('tab-alb').classList.toggle('active', mode === 'alb');
+            document.getElementById('grid').style.display = mode === 'lib' ? 'grid' : 'none';
+            document.getElementById('albums').classList.toggle('active', mode === 'alb');
         }
 
-        window.addEventListener('message', (e) => {
-            if (e.data && e.data.type === 'OS_PRIORITY' && e.data.level === 'TOP_1') {
-                render();
-            }
-        });
+        function filterAlbum(alb) {
+            albumFilter = alb;
+            switchView('lib');
+            renderGrid();
+        }
 
-        render();
+        function toggleSearch() {
+            const box = document.getElementById('search-box');
+            box.classList.toggle('open');
+            if (box.classList.contains('open')) document.getElementById('q').focus();
+        }
+
+        function openViewer(item) {
+            document.getElementById('v-title').textContent = item.title;
+            const body = document.getElementById('v-body');
+            if (item.dataUrl) {
+                body.innerHTML = `<img src="${item.dataUrl}" alt="${item.title}">`;
+            } else {
+                body.innerHTML = `<div class="full-art" style="width:88vw;height:56vh;background:${item.bg};"></div>`;
+            }
+            document.getElementById('viewer').classList.add('open');
+        }
+
+        function closeViewer() {
+            document.getElementById('viewer').classList.remove('open');
+        }
+
+        renderGrid();
     </script>
 </body>
 </html>
