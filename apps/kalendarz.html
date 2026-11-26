@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalendarz</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            background: #090d16;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        h1 { font-size: 20px; }
+        .row {
+            display: flex;
+            gap: 8px;
+        }
+        input {
+            flex: 1;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(15, 23, 42, 0.9);
+            color: #f8fafc;
+            padding: 10px 12px;
+            font-family: inherit;
+            font-size: 13px;
+        }
+        button {
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: none;
+            background: #38bdf8;
+            color: #090d16;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .ev {
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ev-title { font-size: 13px; font-weight: 700; }
+        .ev-date { font-size: 11px; color: #94a3b8; }
+        .del {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            padding: 5px 8px;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Kalendarz</h1>
+    <div class="row">
+        <input id="ev-date" type="date">
+        <input id="ev-title" type="text" placeholder="Wydarzenie...">
+    </div>
+    <button onclick="addEvent()">Dodaj wydarzenie</button>
+    <div id="list" class="list"></div>
+
+    <script>
+        document.getElementById('ev-date').value = new Date().toISOString().slice(0, 10);
+
+        function getEvents() {
+            const p = window.parent;
+            return (p && p.StorageManager && p.StorageManager.get('calendar_events', [])) || [];
+        }
+
+        function saveEvents(list) {
+            const p = window.parent;
+            if (p && p.StorageManager) {
+                p.StorageManager.set('calendar_events', list);
+            }
+        }
+
+        function addEvent() {
+            const date = document.getElementById('ev-date').value;
+            const title = document.getElementById('ev-title').value.trim();
+            if (!title) return;
+
+            const events = getEvents();
+            events.unshift({ id: Date.now(), date, title });
+            saveEvents(events.slice(0, 50));
+
+            document.getElementById('ev-title').value = '';
+            render();
+        }
+
+        function removeEvent(id) {
+            const events = getEvents().filter(e => e.id !== id);
+            saveEvents(events);
+            render();
+        }
+
+        function render() {
+            const events = getEvents();
+            const box = document.getElementById('list');
+            box.innerHTML = '';
+            events.forEach(ev => {
+                const el = document.createElement('div');
+                el.className = 'ev';
+                el.innerHTML = `<div><div class="ev-title">${esc(ev.title)}</div><div class="ev-date">${esc(ev.date || '')}</div></div><button class="del" onclick="removeEvent(${ev.id})">✕</button>`;
+                box.appendChild(el);
+            });
+        }
+
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+
+        render();
+    </script>
+</body>
+</html>
