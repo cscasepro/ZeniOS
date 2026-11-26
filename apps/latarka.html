@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Latarka</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body {
+            height: 100vh;
+            background: #090d16;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        body.on {
+            background: #ffffff;
+            color: #090d16;
+        }
+        .bulb {
+            width: 120px;
+            height: 120px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 52px;
+            box-shadow: 0 0 0 rgba(255, 250, 200, 0);
+            transition: all 0.25s ease;
+        }
+        body.on .bulb {
+            background: #fef08a;
+            border-color: #eab308;
+            box-shadow: 0 0 60px rgba(250, 204, 21, 0.9);
+        }
+        button {
+            padding: 13px 28px;
+            border-radius: 999px;
+            border: none;
+            background: #38bdf8;
+            color: #090d16;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        body.on button {
+            background: #090d16;
+            color: #ffffff;
+        }
+        .hint {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div id="bulb" class="bulb">🔦</div>
+    <button id="btn" onclick="toggleTorch()">Włącz latarkę</button>
+    <div id="status" class="hint">Stan: wyłączona</div>
+
+    <script>
+        let state = false;
+
+        function applyState(next) {
+            state = Boolean(next);
+            document.body.classList.toggle('on', state);
+            document.getElementById('btn').textContent = state ? 'Wyłącz latarkę' : 'Włącz latarkę';
+            document.getElementById('status').textContent = state ? 'Stan: świeci (TOP 1)' : 'Stan: wyłączona';
+            window.parent.postMessage({ type: 'TOGGLE_FLASHLIGHT', state }, '*');
+        }
+
+        function toggleTorch() {
+            applyState(!state);
+        }
+
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'OS_PRIORITY' && e.data.level === 'BACKGROUND') {
+                // Oszczędność energii gdy aplikacja schodzi do tła
+                if (state) applyState(false);
+            }
+        });
+    </script>
+</body>
+</html>
