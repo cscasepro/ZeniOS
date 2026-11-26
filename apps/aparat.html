@@ -106,7 +106,7 @@
             top: 12px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(16, 185, 129, 0.9);
+            background: rgba(16, 185, 129, 0.92);
             color: #ffffff;
             font-size: 11.5px;
             font-weight: 700;
@@ -118,11 +118,11 @@
         }
         .snap-toast.show { opacity: 1; }
         .bottom-deck {
-            padding: 10px 18px 46px;
+            padding: 10px 18px 34px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
         .modes {
             display: flex;
@@ -166,8 +166,8 @@
             object-fit: cover;
         }
         .shutter-ring {
-            width: 68px;
-            height: 68px;
+            width: 66px;
+            height: 66px;
             border-radius: 50%;
             border: 4px solid #ffffff;
             padding: 4px;
@@ -293,8 +293,25 @@
             initCamera();
         }
 
+        function readPhotos() {
+            try {
+                const fromParent = parent.StorageManager?.get('gallery_photos', null);
+                if (Array.isArray(fromParent)) return fromParent;
+            } catch {}
+            try {
+                return JSON.parse(localStorage.getItem('zenos_gallery_photos') || '[]');
+            } catch {
+                return [];
+            }
+        }
+
+        function savePhotos(list) {
+            try { parent.StorageManager?.set('gallery_photos', list); } catch {}
+            try { localStorage.setItem('zenos_gallery_photos', JSON.stringify(list)); } catch {}
+        }
+
         function loadLastThumb() {
-            const list = parent.StorageManager?.get('gallery_photos', []) || [];
+            const list = readPhotos();
             if (list.length && list[0].dataUrl) {
                 document.getElementById('last-thumb').innerHTML = `<img src="${list[0].dataUrl}" alt="Ostatnie">`;
             }
@@ -330,8 +347,8 @@
 
             const video = document.getElementById('cam-video');
             const canvas = document.getElementById('snap-canvas');
-            canvas.width = video.videoWidth || 480;
-            canvas.height = video.videoHeight || 640;
+            canvas.width = video.videoWidth || 420;
+            canvas.height = video.videoHeight || 560;
             const ctx = canvas.getContext('2d');
 
             if (video.videoWidth > 0 && video.videoHeight > 0) {
@@ -339,19 +356,19 @@
             } else {
                 const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
                 grad.addColorStop(0, '#38bdf8');
-                grad.addColorStop(0.5, '#2563eb');
+                grad.addColorStop(0.55, '#2563eb');
                 grad.addColorStop(1, '#0f172a');
                 ctx.fillStyle = grad;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = 'rgba(255,255,255,0.22)';
                 ctx.beginPath();
-                ctx.arc(canvas.width * 0.68, canvas.height * 0.28, canvas.width * 0.22, 0, Math.PI * 2);
+                ctx.arc(canvas.width * 0.68, canvas.height * 0.3, canvas.width * 0.2, 0, Math.PI * 2);
                 ctx.fill();
             }
 
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
-            const existing = parent.StorageManager?.get('gallery_photos', []) || [];
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+            const existing = readPhotos();
             const stamp = new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             existing.unshift({
                 id: Date.now(),
@@ -359,7 +376,7 @@
                 album: 'Ostatnie',
                 dataUrl
             });
-            parent.StorageManager?.set('gallery_photos', existing.slice(0, 24));
+            savePhotos(existing.slice(0, 12));
             loadLastThumb();
             showSavedToast();
         }
