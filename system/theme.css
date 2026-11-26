@@ -1,29 +1,18 @@
 :root {
     --bg-wallpaper: radial-gradient(circle at 70% 25%, #2563eb 0%, #1d4ed8 34%, #0f172a 75%, #060913 100%);
     --wallpaper-image: none;
-    --accent-color: #0a84ff;
     --text-primary: #ffffff;
-    --text-muted: rgba(255, 255, 255, 0.72);
-    --glass-border: rgba(255, 255, 255, 0.36);
-    --glass-shadow: 0 14px 34px rgba(0, 0, 0, 0.28), inset 0 1px 1px rgba(255, 255, 255, 0.58), inset 0 -1px 2px rgba(255, 255, 255, 0.14);
-    --blur-strength: 26px;
+    --glass-border: rgba(255, 255, 255, 0.38);
+    --glass-shadow: 0 14px 34px rgba(0, 0, 0, 0.28), inset 0 1px 1px rgba(255, 255, 255, 0.58);
+    --blur-strength: 24px;
     --app-icon-radius: 22%;
     --ease-spring: cubic-bezier(0.22, 1.18, 0.36, 1);
     --ease-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
     --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
 }
 
-body.light-ui {
-    --text-primary: #0f172a;
-    --text-muted: rgba(15, 23, 42, 0.72);
-    --glass-border: rgba(255, 255, 255, 0.65);
-}
-
 body.battery-saver-mode {
-    --blur-strength: 3px;
-}
-body.battery-saver-mode * {
-    transition-duration: 0.06s !important;
+    --blur-strength: 4px;
 }
 
 * {
@@ -43,7 +32,6 @@ html, body {
     background: #05070c;
 }
 
-/* Pełnoekranowa tapeta (bez ramki telefonu) */
 #wallpaper-layer {
     position: fixed;
     inset: 0;
@@ -51,19 +39,44 @@ html, body {
     background-image: var(--wallpaper-image), var(--bg-wallpaper);
     background-size: cover;
     background-position: center;
-    background-repeat: no-repeat;
-    transition: background-image 0.45s var(--ease-smooth), filter 0.4s var(--ease-smooth), transform 0.4s var(--ease-smooth);
+    transition: filter 0.35s var(--ease-smooth), transform 0.35s var(--ease-smooth);
 }
 
 #wallpaper-layer.blurred {
-    filter: blur(16px) brightness(0.84);
-    transform: scale(1.04);
+    filter: blur(14px) brightness(0.84);
+    transform: scale(1.03);
 }
 
-/* Powierzchnia Liquid Glass */
+/* Powłoka systemu — domyślnie pełny ekran, a w trybie 360x720 wyśrodkowane okno 360x720 */
+#os-shell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    overflow: hidden;
+}
+
+body.viewport-360x720 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.viewport-360x720 #os-shell {
+    width: 360px;
+    height: 720px;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.65);
+    background: rgba(9, 13, 22, 0.28);
+    backdrop-filter: blur(12px);
+}
+
 .liquid-glass {
     position: relative;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 52%, rgba(255, 255, 255, 0.16) 100%);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 55%, rgba(255, 255, 255, 0.16) 100%);
     backdrop-filter: blur(var(--blur-strength)) saturate(185%);
     -webkit-backdrop-filter: blur(var(--blur-strength)) saturate(185%);
     border: 1px solid var(--glass-border);
@@ -71,17 +84,8 @@ html, body {
     overflow: hidden;
 }
 
-.liquid-glass::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(120deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.06) 38%, transparent 66%);
-    pointer-events: none;
-}
-
 .priority-top {
     transform: translateZ(0);
-    will-change: transform, opacity;
 }
 
 .boot-overlay {
@@ -93,22 +97,21 @@ html, body {
     z-index: 900;
 }
 
-/* Zwykły pasek statusu (bez wyspy / Dynamic Island) */
 #status-bar {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 44px;
-    padding: 0 20px;
+    height: 40px;
+    padding: 0 18px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 14px;
+    font-size: 13.5px;
     font-weight: 600;
     z-index: 600;
     pointer-events: none;
-    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
 }
 
 .status-left, .status-right {
@@ -119,23 +122,22 @@ html, body {
 
 #perf-badge, #battery-badge {
     font-size: 11px;
-    background: rgba(0, 0, 0, 0.34);
-    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.36);
+    backdrop-filter: blur(8px);
     color: #ffffff;
     padding: 2px 7px;
     border-radius: 999px;
 }
 
-/* Pulpit z obsługą stron */
 #desktop {
-    position: fixed;
+    position: absolute;
     inset: 0;
-    padding: 50px 18px 58px;
+    padding: 46px 16px 64px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     z-index: 100;
-    transition: transform 0.4s var(--ease-smooth), opacity 0.35s var(--ease-smooth);
+    transition: transform 0.35s var(--ease-smooth), opacity 0.3s var(--ease-smooth);
 }
 
 #desktop.scaled-back {
@@ -154,7 +156,7 @@ html, body {
     display: flex;
     width: 200%;
     height: 100%;
-    transition: transform 0.46s var(--ease-spring);
+    transition: transform 0.44s var(--ease-spring);
 }
 
 .pages-track.page-2 {
@@ -168,7 +170,7 @@ html, body {
     scrollbar-width: none;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
     padding: 2px;
 }
 
@@ -178,7 +180,7 @@ html, body {
 
 .widgets-box {
     width: 100%;
-    height: 120px;
+    height: 104px;
     border: none;
     background: transparent;
     flex-shrink: 0;
@@ -187,7 +189,7 @@ html, body {
 .app-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 16px 12px;
+    gap: 14px 10px;
     justify-items: center;
 }
 
@@ -200,18 +202,18 @@ html, body {
 }
 
 .app-icon-box {
-    width: 64px;
-    height: 64px;
+    width: 60px;
+    height: 60px;
     border-radius: var(--app-icon-radius);
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 5px;
-    transition: transform 0.25s var(--ease-spring), filter 0.2s ease, background 0.2s ease;
+    margin-bottom: 4px;
+    transition: transform 0.22s var(--ease-spring);
 }
 
 .app-icon:active .app-icon-box {
-    transform: scale(0.87);
+    transform: scale(0.88);
 }
 
 .app-icon-box img {
@@ -223,27 +225,26 @@ html, body {
 }
 
 .app-icon-fallback {
-    font-size: 26px;
+    font-size: 25px;
 }
 
 .app-label {
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 500;
     text-align: center;
     color: var(--text-primary);
-    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.65);
-    max-width: 78px;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+    max-width: 74px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* Kropki stron + Szukaj + nieruchomy kapsułowy Dock */
 .dock-zone {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
     flex-shrink: 0;
 }
 
@@ -259,47 +260,41 @@ html, body {
     border: none;
     background: rgba(255, 255, 255, 0.38);
     cursor: pointer;
-    transition: transform 0.25s var(--ease-spring), background 0.2s ease;
 }
 
 .dot-btn.active {
     background: #ffffff;
-    transform: scale(1.25);
+    transform: scale(1.2);
 }
 
 .search-capsule {
     border: none;
     color: #ffffff;
-    padding: 6px 14px;
+    padding: 5px 13px;
     border-radius: 999px;
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     cursor: pointer;
-    transition: transform 0.2s var(--ease-spring);
-}
-
-.search-capsule:active {
-    transform: scale(0.95);
 }
 
 .dock-capsule {
     width: 100%;
-    max-width: 480px;
-    border-radius: 34px;
-    padding: 11px 16px;
+    max-width: 440px;
+    border-radius: 30px;
+    padding: 9px 14px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    gap: 8px;
     align-items: center;
     justify-items: center;
 }
 
 .dock-capsule .app-icon-box {
-    width: 58px;
-    height: 58px;
+    width: 52px;
+    height: 52px;
     margin-bottom: 0;
 }
 
@@ -307,9 +302,8 @@ html, body {
     display: none;
 }
 
-/* Kontener aplikacji */
 #app-container {
-    position: fixed;
+    position: absolute;
     inset: 0;
     z-index: 300;
     pointer-events: none;
@@ -320,24 +314,23 @@ html, body {
     height: 100%;
     border: none;
     background: #090d16;
-    position: fixed;
+    position: absolute;
     inset: 0;
     display: none;
     pointer-events: auto;
     opacity: 0;
-    transform: scale(0.92) translateY(18px);
-    transition: transform 0.4s var(--ease-spring), opacity 0.25s var(--ease-smooth);
+    transform: scale(0.95);
+    transition: transform 0.32s var(--ease-smooth), opacity 0.22s var(--ease-smooth);
 }
 
 .app-frame.active {
     display: block;
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: scale(1);
 }
 
-/* Moduły systemowe */
 .system-overlay {
-    position: fixed;
+    position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
@@ -353,36 +346,65 @@ html, body {
     display: none !important;
 }
 
-/* Dolny pasek systemowy */
-#nav-bar {
-    position: fixed;
+/* Home Indicator na samym dole */
+#home-indicator-zone {
+    position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 48px;
-    background: rgba(8, 10, 16, 0.58);
-    backdrop-filter: blur(var(--blur-strength));
-    border-top: 1px solid rgba(255, 255, 255, 0.14);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
     z-index: 820;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding-bottom: 8px;
+    pointer-events: none;
 }
 
-#nav-bar button {
-    background: none;
-    border: none;
+.quick-sys-pills {
+    pointer-events: auto;
+    display: flex;
+    gap: 5px;
+    opacity: 0.78;
+    transition: opacity 0.2s ease;
+}
+
+.quick-sys-pills:hover {
+    opacity: 1;
+}
+
+.quick-sys-pills button {
+    background: rgba(15, 23, 42, 0.52);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.22);
     color: #ffffff;
-    font-size: 16px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 999px;
     cursor: pointer;
-    padding: 6px 12px;
-    border-radius: 10px;
+}
+
+#home-indicator {
+    pointer-events: auto;
+    width: 126px;
+    height: 5px;
+    border-radius: 999px;
+    border: none;
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    transition: transform 0.2s var(--ease-spring), width 0.2s ease;
+}
+
+#home-indicator:active {
+    transform: scaleX(0.88);
 }
 
 #recents-view {
-    position: fixed;
+    position: absolute;
     top: 44px;
-    bottom: 48px;
+    bottom: 44px;
     left: 14px;
     right: 14px;
     border-radius: 26px;
@@ -432,7 +454,7 @@ html, body {
     background: #ffffff;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.2s ease;
 }
 
 #torch-veil.active {
