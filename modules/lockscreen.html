@@ -8,22 +8,23 @@
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
             height: 100vh;
-            background: linear-gradient(160deg, #090d16 0%, #172554 55%, #1e1b4b 100%);
+            background-color: #050811;
+            background-image: linear-gradient(160deg, #0b132b 0%, #1c2541 55%, #111827 100%);
             background-size: cover;
             background-position: center;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 52px 20px 28px;
+            padding: 64px 22px 30px;
             position: relative;
             overflow: hidden;
         }
         .scrim {
             position: absolute;
             inset: 0;
-            background: rgba(2, 6, 23, 0.42);
+            background: rgba(4, 7, 16, 0.92);
             z-index: 0;
         }
         .content {
@@ -37,41 +38,45 @@
         .top-clock {
             text-align: center;
         }
+        .lock-glyph {
+            font-size: 16px;
+            margin-bottom: 6px;
+            opacity: 0.9;
+        }
         .time {
-            font-size: 56px;
+            font-size: 64px;
             font-weight: 700;
-            letter-spacing: -1px;
-            text-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+            letter-spacing: -1.5px;
+            line-height: 1.05;
         }
         .sub {
             font-size: 13px;
-            color: rgba(248, 250, 252, 0.85);
-            margin-top: 4px;
+            color: rgba(255, 255, 255, 0.72);
+            margin-top: 6px;
         }
         .notif-list {
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-height: 260px;
+            max-height: 280px;
             overflow-y: auto;
             margin: 16px 0;
         }
         .notif-card {
-            background: rgba(15, 23, 42, 0.72);
-            backdrop-filter: blur(12px);
+            background: rgba(44, 44, 46, 0.88);
             border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 14px;
-            padding: 10px 12px;
+            border-radius: 18px;
+            padding: 12px 14px;
             font-size: 12px;
         }
         .notif-head {
             display: flex;
             justify-content: space-between;
             font-weight: 700;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
         .notif-body {
-            color: #cbd5e1;
+            color: #d1d1d6;
         }
         .unlock-wrap {
             display: flex;
@@ -81,23 +86,22 @@
         }
         .unlock-btn {
             width: 100%;
-            max-width: 260px;
-            padding: 13px 18px;
+            max-width: 270px;
+            padding: 14px 18px;
             border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.24);
             background: rgba(255, 255, 255, 0.16);
-            backdrop-filter: blur(12px);
             color: #ffffff;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
         }
-        .unlock-btn:active {
-            transform: scale(0.97);
-        }
-        .hint {
-            font-size: 11px;
-            color: rgba(226, 232, 240, 0.75);
+        .home-bar {
+            width: 120px;
+            height: 4px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.75);
+            margin-top: 4px;
         }
     </style>
 </head>
@@ -105,7 +109,8 @@
     <div class="scrim"></div>
     <div class="content">
         <div class="top-clock">
-            <div id="ls-time" class="time">12:00</div>
+            <div class="lock-glyph">🔒</div>
+            <div id="ls-time" class="time">09:41</div>
             <div class="sub">ZeniOS v1.0.2 • Ekran blokady</div>
         </div>
 
@@ -113,7 +118,7 @@
 
         <div class="unlock-wrap">
             <button class="unlock-btn" onclick="unlock()">Odblokuj ZeniOS</button>
-            <div class="hint">Kliknij przycisk, aby przejść do pulpitu</div>
+            <div class="home-bar"></div>
         </div>
     </div>
 
@@ -122,23 +127,23 @@
             window.parent.postMessage({ type: 'UNLOCK_SCREEN' }, '*');
         }
 
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+
         function renderNotifs(items = [], focusMode = false) {
             const box = document.getElementById('ls-notifs');
             box.innerHTML = '';
             if (focusMode) {
-                box.innerHTML = '<div class="notif-card"><div class="notif-head"><span>🌙 Tryb skupienia</span></div><div class="notif-body">Powiadomienia są wyciszone.</div></div>';
+                box.innerHTML = '<div class="notif-card"><div class="notif-head"><span>🌙 Tryb skupienia</span></div><div class="notif-body">Powiadomienia wyciszone.</div></div>';
                 return;
             }
             items.slice(0, 4).forEach(n => {
                 const div = document.createElement('div');
                 div.className = 'notif-card';
-                div.innerHTML = `<div class="notif-head"><span>${escapeHtml(n.title)}</span><span>${escapeHtml(n.time || '')}</span></div><div class="notif-body">${escapeHtml(n.body || '')}</div>`;
+                div.innerHTML = `<div class="notif-head"><span>${esc(n.title)}</span><span>${esc(n.time || '')}</span></div><div class="notif-body">${esc(n.body || '')}</div>`;
                 box.appendChild(div);
             });
-        }
-
-        function escapeHtml(str) {
-            return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
         }
 
         window.addEventListener('message', (e) => {
