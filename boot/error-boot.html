@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZeniOS Error Boot</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #060405;
+            color: #f87171;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .panel {
+            width: 100%;
+            max-width: 360px;
+            background: #140709;
+            border: 1px solid #ef4444;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 20px 45px rgba(239, 68, 68, 0.18);
+        }
+        .badge {
+            display: inline-block;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            margin-bottom: 10px;
+        }
+        h1 { font-size: 18px; color: #ef4444; margin-bottom: 8px; }
+        .desc { font-size: 12px; color: #e2e8f0; line-height: 1.5; margin-bottom: 12px; }
+        .code-box {
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(248, 113, 113, 0.25);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 11px;
+            color: #fecaca;
+            word-break: break-word;
+            margin-bottom: 14px;
+        }
+        .countdown {
+            font-size: 13px;
+            color: #ffffff;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+        .actions { display: flex; gap: 8px; }
+        button {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: none;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-restart { background: #ef4444; color: #ffffff; }
+        .btn-safe { background: #2563eb; color: #ffffff; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <span class="badge">ZENIOS RECOVERY</span>
+        <h1>ERROR BOOT</h1>
+        <p class="desc">Wykryto przeciążenie lub błąd krytyczny. System zatrzymano, aby chronić dane i uniknąć dalszego zawieszania.</p>
+        <div class="code-box" id="err-details">KOD: ERR_SYSTEM_OVERLOAD</div>
+        <div class="countdown">Automatyczny restart za <span id="sec">4</span>s</div>
+        <div class="actions">
+            <button class="btn-restart" onclick="reboot(false)">Restart</button>
+            <button class="btn-safe" onclick="reboot(true)">Safe Mode</button>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code') || 'ERR_SYSTEM_OVERLOAD';
+        const details = params.get('details') || 'Brak dodatkowych szczegółów';
+        const ver = params.get('ver') || 'v1.0.2';
+
+        document.getElementById('err-details').textContent = `WER: ${code} | KOD: ${code} | INFO: ${details} (${ver})`;
+
+        let left = 4;
+        const secEl = document.getElementById('sec');
+        const timer = setInterval(() => {
+            left -= 1;
+            secEl.textContent = String(Math.max(0, left));
+            if (left <= 0) {
+                clearInterval(timer);
+                reboot(false);
+            }
+        }, 1000);
+
+        function reboot(safeMode) {
+            clearInterval(timer);
+            window.location.href = safeMode ? '../index.html?safemode=1' : '../index.html';
+        }
+    </script>
+</body>
+</html>
