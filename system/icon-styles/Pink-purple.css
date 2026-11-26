@@ -1,0 +1,10 @@
+/* Styl ikon: RÓŻOWO-FIOLETOWY */
+.app-icon-box {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.38), rgba(139, 92, 246, 0.42));
+    border: 1px solid rgba(244, 114, 182, 0.48);
+    box-shadow: 0 8px 22px rgba(168, 85, 247, 0.32);
+}
+
+.app-icon-box img {
+    filter: hue-rotate(285deg) saturate(1.45) contrast(1.08);
+}
