@@ -1,88 +1,1596 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZeniOS v1.0.2</title>
-    <link rel="stylesheet" href="system/theme.css">
-    <link id="icon-style-sheet" rel="stylesheet" href="system/icon-styles/color.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>ZenOS — iOS 26 Liquid Glass</title>
+<style>
+  :root {
+    --wp-1: radial-gradient(circle at 72% 28%, #2563eb 0%, #1d4ed8 32%, #0f172a 75%, #060a14 100%);
+    --wp-2: linear-gradient(135deg, #d8eceb 0%, #98c7c8 28%, #2d58b8 55%, #162a68 100%);
+    --wp-3: radial-gradient(circle at 50% 45%, #3b2612 0%, #17120c 58%, #070709 100%);
+    --wp-4: linear-gradient(160deg, #1b3b6f 0%, #2c6aa0 45%, #8fd3e8 100%);
+
+    --glass-bg: rgba(255, 255, 255, 0.14);
+    --glass-bg-strong: rgba(255, 255, 255, 0.22);
+    --glass-dark: rgba(20, 22, 28, 0.42);
+    --glass-border: rgba(255, 255, 255, 0.36);
+    --glass-highlight: rgba(255, 255, 255, 0.65);
+    --glass-shadow: 0 12px 32px rgba(0, 0, 0, 0.28), inset 0 1px 1px rgba(255, 255, 255, 0.55), inset 0 -1px 2px rgba(255, 255, 255, 0.14);
+    --blur: 28px;
+    --icon-radius: 22%;
+    --ease-spring: cubic-bezier(0.22, 1.18, 0.36, 1);
+    --ease-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
+    --text-main: #ffffff;
+    --text-sub: rgba(255, 255, 255, 0.78);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    color: var(--text-main);
+    background: #05070c;
+  }
+
+  /* Pełnoekranowa tapeta + delikatna głębia */
+  #wallpaper-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: var(--wp-1);
+    background-size: cover;
+    background-position: center;
+    transition: background-image 0.45s var(--ease-smooth), filter 0.4s var(--ease-smooth);
+  }
+
+  #wallpaper-layer.blurred {
+    filter: blur(18px) brightness(0.82);
+    transform: scale(1.05);
+  }
+
+  /* Klasa bazowa Liquid Glass */
+  .liquid-glass {
+    position: relative;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.16) 100%);
+    backdrop-filter: blur(var(--blur)) saturate(185%);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(185%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    overflow: hidden;
+  }
+
+  .liquid-glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.06) 36%, transparent 65%);
+    pointer-events: none;
+  }
+
+  /* Ekran ładowania przy starcie */
+  #boot-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    background: #04060b;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    transition: opacity 0.45s var(--ease-smooth), transform 0.45s var(--ease-smooth);
+  }
+
+  #boot-screen.done {
+    opacity: 0;
+    transform: scale(1.04);
+    pointer-events: none;
+  }
+
+  .boot-logo-box {
+    width: 92px;
+    height: 92px;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .boot-logo-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .boot-fallback {
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -1px;
+  }
+
+  .boot-bar-wrap {
+    width: 160px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    overflow: hidden;
+  }
+
+  .boot-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #7dd3fc, #ffffff);
+    transition: width 0.3s ease;
+  }
+
+  /* Zwykły pasek statusu (bez Dynamic Island / wysp) */
+  #status-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 46px;
+    padding: 0 22px;
+    z-index: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+    pointer-events: none;
+  }
+
+  .status-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .status-right {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .status-svg {
+    width: 17px;
+    height: 17px;
+    fill: currentColor;
+  }
+
+  .battery-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .battery-body {
+    width: 24px;
+    height: 12px;
+    border-radius: 3.5px;
+    border: 1.4px solid currentColor;
+    padding: 1.5px;
+    display: flex;
+    align-items: center;
+  }
+
+  .battery-level {
+    height: 100%;
+    width: 86%;
+    border-radius: 1.5px;
+    background: currentColor;
+    transition: width 0.3s ease;
+  }
+
+  .battery-cap {
+    width: 2px;
+    height: 5px;
+    border-radius: 0 2px 2px 0;
+    background: currentColor;
+    opacity: 0.7;
+  }
+
+  /* LOCK SCREEN w stylu iOS 26 (duże szklane cyfry + data + widżety + szklane powiadomienia + 2 skróty na dole) */
+  #lock-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    padding: 64px 20px 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.55s var(--ease-spring), opacity 0.4s var(--ease-smooth);
+  }
+
+  #lock-screen.unlocked {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .ls-header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .ls-date {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-sub);
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  }
+
+  .ls-clock {
+    font-size: clamp(86px, 23vw, 128px);
+    font-weight: 700;
+    line-height: 0.96;
+    letter-spacing: -3px;
+    color: rgba(255, 255, 255, 0.36);
+    -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.72);
+    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), inset 0 2px 6px rgba(255, 255, 255, 0.6);
+    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.22));
+  }
+
+  .ls-widgets {
+    margin-top: 14px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .ls-mini-widget {
+    padding: 8px 13px;
+    border-radius: 18px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ls-notifications {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 2px;
+  }
+
+  .ls-notif-card {
+    border-radius: 22px;
+    padding: 13px 15px;
+    cursor: pointer;
+    transition: transform 0.22s var(--ease-spring);
+  }
+
+  .ls-notif-card:active {
+    transform: scale(0.97);
+  }
+
+  .ls-notif-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 700;
+    opacity: 0.85;
+    margin-bottom: 3px;
+  }
+
+  .ls-notif-msg {
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .ls-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .ls-shortcuts {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 8px;
+  }
+
+  .ls-circle-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.25s var(--ease-spring), background 0.2s ease;
+  }
+
+  .ls-circle-btn:active {
+    transform: scale(0.88);
+  }
+
+  .ls-circle-btn.active {
+    background: rgba(255, 255, 255, 0.88);
+    color: #090d16;
+  }
+
+  .unlock-hint {
+    padding: 10px 22px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    color: #fff;
+    transition: transform 0.25s var(--ease-spring);
+  }
+
+  .unlock-hint:active {
+    transform: scale(0.94);
+  }
+
+  .home-indicator {
+    width: 136px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+  }
+
+  /* EKRAN GŁÓWNY (HOME SCREEN) */
+  #home-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    padding: 54px 18px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.45s var(--ease-smooth), opacity 0.35s var(--ease-smooth);
+  }
+
+  #home-screen.scaled-back {
+    transform: scale(0.94);
+    opacity: 0.72;
+  }
+
+  .pages-viewport {
+    flex: 1;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .pages-track {
+    display: flex;
+    width: 200%;
+    height: 100%;
+    transition: transform 0.48s var(--ease-spring);
+  }
+
+  .pages-track.page-2 {
+    transform: translateX(-50%);
+  }
+
+  .home-page {
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 2px;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .home-page::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Widżety o różnych rozmiarach w stylu Liquid Glass */
+  .widgets-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .widget-card {
+    border-radius: 26px;
+    padding: 14px 16px;
+    min-height: 126px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: transform 0.25s var(--ease-spring);
+  }
+
+  .widget-card:active {
+    transform: scale(0.96);
+  }
+
+  .widget-wide {
+    grid-column: span 2;
+    min-height: 104px;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .w-kicker {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+
+  .w-big {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.05;
+  }
+
+  .w-desc {
+    font-size: 12px;
+    opacity: 0.85;
+  }
+
+  /* Równa siatka ikon */
+  .app-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px 12px;
+    justify-items: center;
+  }
+
+  .app-tile {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+
+  .app-icon-shell {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--icon-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: transform 0.26s var(--ease-spring), filter 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .app-tile:active .app-icon-shell {
+    transform: scale(0.86);
+  }
+
+  .app-icon-shell img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+    display: block;
+  }
+
+  .app-icon-glyph {
+    font-size: 28px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+  }
+
+  .app-name {
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: -0.1px;
+    text-align: center;
+    max-width: 76px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+  }
+
+  /* Style ikon (Liquid Glass / Kolor / Ciemny / B&W / Różowo-fioletowy) */
+  body[data-icon-style="liquid"] .app-icon-shell {
+    background: linear-gradient(150deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.12) 55%, rgba(255, 255, 255, 0.24) 100%);
+    backdrop-filter: blur(20px) saturate(190%);
+    -webkit-backdrop-filter: blur(20px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25), inset 0 1.5px 2px rgba(255, 255, 255, 0.7);
+  }
+
+  body[data-icon-style="liquid"] .app-icon-shell img {
+    opacity: 0.88;
+    filter: saturate(1.25) contrast(1.06);
+  }
+
+  body[data-icon-style="color"] .app-icon-shell {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+  }
+
+  body[data-icon-style="dark"] .app-icon-shell {
+    background: rgba(18, 20, 26, 0.84);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.18);
+  }
+
+  body[data-icon-style="bw"] .app-icon-shell {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.28), rgba(148, 163, 184, 0.22));
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+
+  body[data-icon-style="bw"] .app-icon-shell img,
+  body[data-icon-style="bw"] .app-icon-glyph {
+    filter: grayscale(100%) contrast(1.2);
+  }
+
+  body[data-icon-style="pink-purple"] .app-icon-shell {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.42), rgba(139, 92, 246, 0.45));
+    border: 1px solid rgba(244, 114, 182, 0.55);
+  }
+
+  body[data-icon-style="pink-purple"] .app-icon-shell img {
+    filter: hue-rotate(280deg) saturate(1.4);
+  }
+
+  /* Kropki stron + kapsuła Szukaj + nieruchomy kapsułowy Dock */
+  .dock-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .page-dots {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .dot-btn {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.38);
+    cursor: pointer;
+    transition: transform 0.25s var(--ease-spring), background 0.2s ease;
+  }
+
+  .dot-btn.active {
+    background: #ffffff;
+    transform: scale(1.25);
+  }
+
+  .search-capsule {
+    border: none;
+    color: #ffffff;
+    padding: 7px 15px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: transform 0.22s var(--ease-spring);
+  }
+
+  .search-capsule:active {
+    transform: scale(0.95);
+  }
+
+  .dock-capsule {
+    width: 100%;
+    max-width: 460px;
+    border-radius: 34px;
+    padding: 11px 16px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    align-items: center;
+    justify-items: center;
+  }
+
+  .dock-capsule .app-name {
+    display: none;
+  }
+
+  .dock-capsule .app-icon-shell {
+    width: 60px;
+    height: 60px;
+  }
+
+  /* Okno otwartej aplikacji z animacją sprężystą */
+  #app-window {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    background: #0b0e14;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: scale(0.86) translateY(24px);
+    pointer-events: none;
+    transition: transform 0.44s var(--ease-spring), opacity 0.28s var(--ease-smooth);
+  }
+
+  #app-window.open {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+  }
+
+  .app-topbar {
+    height: 92px;
+    padding: 46px 18px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(20, 22, 28, 0.72);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .app-back-btn {
+    padding: 6px 13px;
+    border-radius: 999px;
+    border: none;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .app-win-title {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .app-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 18px 34px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* CONTROL CENTER w stylu iOS 26 Liquid Glass */
+  #control-center {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    background: rgba(5, 8, 15, 0.45);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    padding: 56px 18px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    opacity: 0;
+    transform: translateY(-28px) scale(0.97);
+    pointer-events: none;
+    transition: transform 0.42s var(--ease-spring), opacity 0.28s var(--ease-smooth);
+    overflow-y: auto;
+  }
+
+  #control-center.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .cc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .cc-btn-pill {
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: none;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .cc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .cc-card {
+    border-radius: 26px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cc-toggles-2x2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .cc-round {
+    height: 54px;
+    border-radius: 999px;
+    border: none;
+    color: #fff;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s var(--ease-spring), background 0.2s ease;
+  }
+
+  .cc-round:active {
+    transform: scale(0.9);
+  }
+
+  .cc-round.on {
+    background: rgba(255, 255, 255, 0.92);
+    color: #090d16;
+  }
+
+  .cc-round.on-blue {
+    background: #0a84ff;
+    color: #ffffff;
+  }
+
+  .cc-sliders {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .slider-box {
+    border-radius: 26px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .slider-track {
+    width: 44px;
+    height: 128px;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.35);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .slider-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 75%;
+    background: #ffffff;
+    transition: height 0.12s ease;
+  }
+
+  .cc-focus-btn {
+    border-radius: 999px;
+    padding: 13px 18px;
+    border: none;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .cc-focus-btn.on {
+    background: rgba(94, 92, 230, 0.85);
+  }
+
+  .cc-customize-note {
+    font-size: 11.5px;
+    color: var(--text-sub);
+    text-align: center;
+  }
+
+  /* Wyszukiwarka Spotlight */
+  #search-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 550;
+    background: rgba(5, 8, 15, 0.65);
+    backdrop-filter: blur(24px);
+    padding: 58px 18px 24px;
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  #search-modal.open {
+    display: flex;
+  }
+
+  .search-input-wrap {
+    display: flex;
+    gap: 8px;
+  }
+
+  #search-input {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+  }
+
+  #search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+  }
+
+  .search-row {
+    padding: 12px 14px;
+    border-radius: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  /* Karty ustawień w stylu iOS */
+  .ios-group-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-sub);
+    margin: 4px 0 6px 8px;
+  }
+
+  .ios-group {
+    background: rgba(28, 28, 32, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .ios-row {
+    padding: 13px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 14px;
+  }
+
+  .ios-row:last-child {
+    border-bottom: none;
+  }
+
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .chip-btn {
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .chip-btn.active {
+    background: #0a84ff;
+    border-color: #0a84ff;
+  }
+
+  .ios-switch {
+    width: 44px;
+    height: 25px;
+    accent-color: #30d158;
+    cursor: pointer;
+  }
+
+  /* Nakładka jasności ekranu */
+  #brightness-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 800;
+    background: #000000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+  }
+
+  /* Nakładka latarki */
+  #torch-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 850;
+    background: #ffffff;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  #torch-veil.active {
+    opacity: 0.94;
+  }
+</style>
 </head>
-<body>
-    <div id="device-frame">
-        <!-- Ekran ładowania przy starcie -->
-        <iframe id="boot-screen-frame" src="boot/boot-screen.html" class="boot-overlay"></iframe>
+<body data-icon-style="liquid">
+  <div id="brightness-veil"></div>
+  <div id="torch-veil"></div>
+  <div id="wallpaper-layer"></div>
 
-        <!-- Pasek statusu z wyspą w stylu iPhone (TOP 1) -->
-        <header id="status-bar" class="priority-top">
-            <span id="clock">09:41</span>
-            <div id="dynamic-island" onclick="Kernel.toggleControlCenter()" title="Centrum sterowania">
-                <span id="island-dot">●</span>
-                <span id="island-label">ZeniOS</span>
-            </div>
-            <div class="status-icons">
-                <span id="battery-badge" style="display:none;">🔋</span>
-                <span id="focus-badge" style="display:none;">🌙</span>
-                <span id="flashlight-indicator" style="display:none;">🔦</span>
-                <span id="perf-badge">⚡ TOP-1</span>
-                <span>100%</span>
-            </div>
-        </header>
+  <!-- Ekran startowy -->
+  <div id="boot-screen">
+    <div class="boot-logo-box liquid-glass">
+      <img id="boot-img" src="Boot_Loading/Zenios_loading.png" alt="ZenOS" onerror="this.style.display='none'; document.getElementById('boot-fb').style.display='block';" />
+      <span id="boot-fb" class="boot-fallback" style="display:none;">Z</span>
+    </div>
+    <div style="font-size:20px;font-weight:700;letter-spacing:-0.3px;">ZenOS</div>
+    <div class="boot-bar-wrap"><div id="boot-bar" class="boot-bar-fill"></div></div>
+  </div>
 
-        <!-- Pulpit: widżety + ikony + przycisk Szukaj + Dock (TOP 1) -->
-        <main id="desktop" class="priority-top">
-            <div class="desktop-scroll">
-                <iframe id="widgets-frame" src="modules/widgets.html" class="widgets-box"></iframe>
-                <div id="app-grid"></div>
-            </div>
+  <!-- Zwykły pasek statusu (bez Dynamic Island / wyspy) -->
+  <header id="status-bar">
+    <div class="status-left">
+      <span id="status-clock">09:41</span>
+      <span id="focus-icon" style="display:none;font-size:12px;">🌙</span>
+      <span id="saver-icon" style="display:none;font-size:12px;">🔋</span>
+    </div>
+    <div class="status-right">
+      <svg class="status-svg" viewBox="0 0 20 14"><rect x="1" y="9" width="2.5" height="4" rx="1"/><rect x="5.5" y="6.5" width="2.5" height="6.5" rx="1"/><rect x="10" y="4" width="2.5" height="9" rx="1"/><rect x="14.5" y="1.5" width="2.5" height="11.5" rx="1"/></svg>
+      <svg class="status-svg" viewBox="0 0 20 14"><path d="M10 12.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-4.2-2.2a6 6 0 0 1 8.4 0l1.4-1.4a8 8 0 0 0-11.2 0l1.4 1.4zm-2.8-2.8a10 10 0 0 1 14 0l1.4-1.4a12 12 0 0 0-16.8 0L3 7.5z"/></svg>
+      <div class="battery-pill">
+        <div class="battery-body"><div id="battery-fill" class="battery-level"></div></div>
+        <div class="battery-cap"></div>
+      </div>
+    </div>
+  </header>
 
-            <div class="bottom-cluster">
-                <button class="iphone-search-pill" onclick="Kernel.toggleSearch()">
-                    <span>🔍 Szukaj</span>
-                </button>
-                <div id="iphone-dock" class="iphone-dock"></div>
-            </div>
-        </main>
-
-        <!-- Kontener odizolowanych aplikacji -->
-        <div id="app-container"></div>
-
-        <!-- Warstwa modułów systemowych -->
-        <iframe id="search-frame" src="modules/search.html" class="system-overlay hidden"></iframe>
-        <iframe id="notifications-frame" src="modules/notifications.html" class="system-overlay hidden"></iframe>
-        <iframe id="control-center-frame" src="modules/control-center.html" class="system-overlay hidden"></iframe>
-        <iframe id="lockscreen-frame" src="modules/lockscreen.html" class="system-overlay"></iframe>
-
-        <!-- Dolny pasek nawigacji (TOP 1) -->
-        <footer id="nav-bar" class="priority-top">
-            <button onclick="Kernel.showRecents()" title="Ostatnie zakładki">▢</button>
-            <button onclick="Kernel.goHome()" title="Ekran główny">●</button>
-            <button onclick="Kernel.toggleNotifications()" title="Powiadomienia">🔔</button>
-            <button onclick="Kernel.toggleControlCenter()" title="Centrum sterowania">☰</button>
-            <button onclick="Kernel.lockDevice()" title="Zablokuj ekran">🔒</button>
-        </footer>
-
-        <!-- Widok ostatnich zakładek -->
-        <div id="recents-view" class="hidden">
-            <h3>Aktywne zakładki w pamięci</h3>
-            <div id="recents-list"></div>
-            <button class="btn-close-all" onclick="PerformanceManager.purgeBackground()">Wyczyść pamięć tła</button>
-        </div>
+  <!-- LOCK SCREEN w stylu iOS 26 -->
+  <section id="lock-screen">
+    <div class="ls-header">
+      <div id="ls-date" class="ls-date">Czwartek, 26 listopada</div>
+      <div id="ls-clock" class="ls-clock">09:41</div>
+      <div class="ls-widgets">
+        <div class="ls-mini-widget liquid-glass">🌤️ 14° • ZenOS</div>
+        <div class="ls-mini-widget liquid-glass" id="ls-saver-pill">⚡ TOP-1</div>
+      </div>
     </div>
 
-    <script src="boot/bootloader.js"></script>
-    <script src="system/manifest.js"></script>
-    <script src="system/storage.js"></script>
-    <script src="system/battery-saver.js"></script>
-    <script src="system/performance.js"></script>
-    <script src="system/watchdog.js"></script>
-    <script src="system/supervisor.js"></script>
-    <script src="system/notifications.js"></script>
-    <script src="system/focus-mode.js"></script>
-    <script src="system/icon-theme.js"></script>
-    <script src="system/wallpapers.js"></script>
-    <script src="system/display.js"></script>
-    <script src="system/widgets.js"></script>
-    <script src="system/search.js"></script>
-    <script src="system/kernel.js"></script>
+    <div id="ls-notifications" class="ls-notifications"></div>
+
+    <div class="ls-bottom">
+      <div class="ls-shortcuts">
+        <button id="ls-torch-btn" class="ls-circle-btn liquid-glass" onclick="toggleTorch()" title="Latarka">🔦</button>
+        <button class="ls-circle-btn liquid-glass" onclick="unlockAndOpen('aparat')" title="Aparat">📷</button>
+      </div>
+      <button class="unlock-hint liquid-glass" onclick="unlockDevice()">Przesuń w górę lub kliknij, aby odblokować</button>
+      <div class="home-indicator" onclick="unlockDevice()"></div>
+    </div>
+  </section>
+
+  <!-- EKRAN GŁÓWNY -->
+  <main id="home-screen">
+    <div class="pages-viewport" id="pages-viewport">
+      <div id="pages-track" class="pages-track">
+        <!-- Strona 1: widżety + aplikacje -->
+        <div class="home-page">
+          <div class="widgets-row">
+            <div class="widget-card liquid-glass" onclick="openApp('kalendarz')">
+              <span class="w-kicker">Kalendarz</span>
+              <div>
+                <div id="w-day-num" class="w-big">26</div>
+                <div id="w-month-name" class="w-desc">Listopad</div>
+              </div>
+            </div>
+            <div class="widget-card liquid-glass" onclick="openApp('notatki')">
+              <span class="w-kicker">Notatki</span>
+              <div>
+                <div id="w-note-title" style="font-size:15px;font-weight:700;">Liquid Glass</div>
+                <div id="w-note-sub" class="w-desc">Dotknij, aby otworzyć</div>
+              </div>
+            </div>
+            <div class="widget-card widget-wide liquid-glass" onclick="openApp('ustawienia')">
+              <div>
+                <div class="w-kicker">Wydajność & Bateria</div>
+                <div id="w-perf-status" style="font-size:15px;font-weight:700;margin-top:4px;">Priorytet TOP-1 aktywny</div>
+                <div id="w-saver-status" class="w-desc">Ochrona baterii: wyłączona</div>
+              </div>
+              <div style="font-size:28px;">✦</div>
+            </div>
+          </div>
+
+          <div id="grid-page-1" class="app-grid"></div>
+        </div>
+
+        <!-- Strona 2: kolejne aplikacje -->
+        <div class="home-page">
+          <div id="grid-page-2" class="app-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dock-zone">
+      <div class="page-dots">
+        <button id="dot-1" class="dot-btn active" onclick="goPage(0)"></button>
+        <button id="dot-2" class="dot-btn" onclick="goPage(1)"></button>
+      </div>
+
+      <button class="search-capsule liquid-glass" onclick="toggleSearch(true)">
+        <span>🔍</span><span>Szukaj</span>
+      </button>
+
+      <!-- Nieruchomy szklany Dock na dole z 4 ikonami bez podpisów -->
+      <nav id="iphone-dock" class="dock-capsule liquid-glass"></nav>
+      <div class="home-indicator" onclick="lockDevice()" title="Zablokuj ekran"></div>
+    </div>
+  </main>
+
+  <!-- Okno aplikacji -->
+  <section id="app-window">
+    <div class="app-topbar">
+      <button class="app-back-btn liquid-glass" onclick="closeApp()">‹ Ekran główny</button>
+      <span id="app-win-title" class="app-win-title">Aplikacja</span>
+      <button class="app-back-btn liquid-glass" onclick="toggleControlCenter(true)">☰</button>
+    </div>
+    <div id="app-body" class="app-body"></div>
+  </section>
+
+  <!-- CONTROL CENTER w stylu iOS 26 -->
+  <aside id="control-center">
+    <div class="cc-header">
+      <span style="font-size:18px;font-weight:700;">Centrum sterowania</span>
+      <div style="display:flex;gap:8px;">
+        <button id="cc-edit-btn" class="cc-btn-pill liquid-glass" onclick="toggleCcCustomize()">Dostosuj</button>
+        <button class="cc-btn-pill liquid-glass" onclick="toggleControlCenter(false)">Gotowe</button>
+      </div>
+    </div>
+
+    <div class="cc-grid">
+      <div class="cc-card liquid-glass">
+        <div class="cc-toggles-2x2">
+          <button id="cc-air" class="cc-round liquid-glass" onclick="toggleCcFlag('airplane', 'cc-air')" title="Tryb samolotowy">✈️</button>
+          <button id="cc-wifi" class="cc-round liquid-glass on-blue" onclick="toggleCcFlag('wifi', 'cc-wifi')" title="Wi-Fi">📶</button>
+          <button id="cc-bt" class="cc-round liquid-glass on-blue" onclick="toggleCcFlag('bt', 'cc-bt')" title="Bluetooth">🔷</button>
+          <button id="cc-saver" class="cc-round liquid-glass" onclick="toggleBatterySaver()" title="Ochrona baterii">🔋</button>
+        </div>
+        <div id="cc-saver-label" style="font-size:11.5px;opacity:0.85;">Ochrona baterii: OFF</div>
+      </div>
+
+      <div class="cc-card liquid-glass" style="justify-content:space-between;">
+        <div>
+          <div style="font-size:13px;font-weight:700;">Odtwarzacz</div>
+          <div style="font-size:11.5px;opacity:0.75;">Nie odtwarza</div>
+        </div>
+        <div style="display:flex;justify-content:space-around;font-size:20px;">
+          <span style="cursor:pointer;" onclick="pushNotification('Muzyka', 'Poprzedni utwór')">⏮</span>
+          <span style="cursor:pointer;" onclick="pushNotification('Muzyka', 'Odtwarzanie wstrzymane')">⏯</span>
+          <span style="cursor:pointer;" onclick="pushNotification('Muzyka', 'Następny utwór')">⏭</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cc-sliders">
+      <div class="slider-box liquid-glass">
+        <span style="font-size:12px;font-weight:600;">☀️ Jasność</span>
+        <div class="slider-track" onclick="adjustSlider(event, 'brightness')">
+          <div id="bright-fill" class="slider-fill"></div>
+        </div>
+        <span id="bright-val" style="font-size:11px;opacity:0.8;">85%</span>
+      </div>
+      <div class="slider-box liquid-glass">
+        <span style="font-size:12px;font-weight:600;">🔊 Głośność</span>
+        <div class="slider-track" onclick="adjustSlider(event, 'volume')">
+          <div id="vol-fill" class="slider-fill"></div>
+        </div>
+        <span id="vol-val" style="font-size:11px;opacity:0.8;">70%</span>
+      </div>
+    </div>
+
+    <button id="cc-focus-btn" class="cc-focus-btn liquid-glass" onclick="toggleFocusMode()">
+      <span>🌙 Tryb skupienia</span>
+      <span id="cc-focus-state">Wyłączony</span>
+    </button>
+
+    <div id="cc-extra-controls" class="cc-grid">
+      <button id="cc-torch-btn" class="cc-round liquid-glass" style="width:100%;border-radius:20px;gap:8px;font-size:14px;font-weight:600;" onclick="toggleTorch()">
+        <span>🔦</span><span>Latarka</span>
+      </button>
+      <button class="cc-round liquid-glass" style="width:100%;border-radius:20px;gap:8px;font-size:14px;font-weight:600;" onclick="toggleControlCenter(false); openApp('ustawienia');">
+        <span>⚙️</span><span>Ustawienia</span>
+      </button>
+    </div>
+
+    <div id="cc-custom-bar" class="cc-customize-note" style="display:none;">
+      Tryb edycji: kliknij „Zamień kolejność skrótów”, aby zmienić układ kafelków.
+      <button class="chip-btn" style="margin-left:6px;" onclick="swapCcOrder()">Zamień kolejność</button>
+    </div>
+  </aside>
+
+  <!-- Spotlight Search -->
+  <div id="search-modal">
+    <div class="search-input-wrap">
+      <input id="search-input" type="text" placeholder="Szukaj w ZenOS..." oninput="renderSearch()" />
+      <button class="cc-btn-pill liquid-glass" onclick="toggleSearch(false)">Zamknij</button>
+    </div>
+    <div id="search-results"></div>
+  </div>
+
+<script>
+  const state = {
+    unlocked: false,
+    page: 0,
+    iconStyle: 'liquid',
+    wallpaperId: 'wp1',
+    batterySaver: false,
+    focusMode: false,
+    torchOn: false,
+    brightness: 85,
+    volume: 70,
+    ccSwapped: false,
+    flags: { airplane: false, wifi: true, bt: true },
+    notes: [{ title: 'Liquid Glass', body: 'Interfejs inspirowany iOS 26 w ZenOS.' }],
+    notifications: [
+      { app: 'ZenOS', time: 'teraz', text: 'System gotowy w stylu Liquid Glass.' },
+      { app: 'Ustawienia', time: '5m', text: 'Możesz zmienić tapetę, styl ikon oraz ochronę baterii.' }
+    ]
+  };
+
+  const apps = [
+    { id: 'aparat', name: 'Aparat', icon: 'Icons/Camera_Icon.png', glyph: '📷', page: 0, dock: false },
+    { id: 'wiadomosci', name: 'Wiadomości', icon: 'Icons/Messages_icon.png', glyph: '💬', page: 0, dock: true },
+    { id: 'telefon', name: 'Telefon', icon: 'Icons/Phone_Icon.png', glyph: '📞', page: 0, dock: true },
+    { id: 'ustawienia', name: 'Ustawienia', icon: 'Icons/Settings_Icon.png', glyph: '⚙️', page: 0, dock: false },
+    { id: 'kalkulator', name: 'Kalkulator', icon: 'Icons/calculator_icon.png', glyph: '🧮', page: 0, dock: false },
+    { id: 'kalendarz', name: 'Kalendarz', icon: 'Icons/calendar_icon.png', glyph: '📅', page: 0, dock: false },
+    { id: 'zegar', name: 'Zegar', icon: 'Icons/clock_icons.png', glyph: '⏰', page: 0, dock: false },
+    { id: 'pliki', name: 'Pliki', icon: 'Icons/files_icons.png', glyph: '📁', page: 0, dock: false },
+    { id: 'galeria', name: 'Galeria', icon: 'Icons/gallery_icon.png', glyph: '🖼️', page: 1, dock: true },
+    { id: 'lens', name: 'Lens', icon: 'Icons/lens_icon.png', glyph: '🔍', page: 1, dock: true },
+    { id: 'notatki', name: 'Notatki', icon: 'Icons/notebook_icon.png', glyph: '📝', page: 1, dock: false },
+    { id: 'latarka', name: 'Latarka', icon: '', glyph: '🔦', page: 1, dock: false },
+    { id: 'sprzatacz', name: 'Sprzątacz', icon: '', glyph: '🧹', page: 1, dock: false },
+    { id: 'aktualizacje', name: 'Aktualizacje', icon: '', glyph: '🔄', page: 1, dock: false }
+  ];
+
+  const wallpapers = [
+    { id: 'wp1', label: 'Głębia iOS', css: 'var(--wp-1)', path: 'default_wallpapers/default_wallpaper_1' },
+    { id: 'wp2', label: 'Błękitne szkło', css: 'var(--wp-2)', path: 'default_wallpapers/default_wallpaper_2' },
+    { id: 'wp3', label: 'Ciepły bursztyn', css: 'var(--wp-3)', path: 'default_wallpapers/default_wallpaper_3' },
+    { id: 'wp4', label: 'Lodowy błękit', css: 'var(--wp-4)', path: 'default_wallpapers/default_wallpaper_4' }
+  ];
+
+  function createIconElement(app) {
+    const tile = document.createElement('div');
+    tile.className = 'app-tile';
+    tile.onclick = () => openApp(app.id);
+
+    const shell = document.createElement('div');
+    shell.className = 'app-icon-shell';
+
+    const glyph = document.createElement('span');
+    glyph.className = 'app-icon-glyph';
+    glyph.textContent = app.glyph;
+
+    if (app.icon) {
+      const img = document.createElement('img');
+      img.src = app.icon;
+      img.alt = app.name;
+      img.onerror = () => {
+        img.remove();
+        shell.appendChild(glyph);
+      };
+      shell.appendChild(img);
+    } else {
+      shell.appendChild(glyph);
+    }
+
+    const name = document.createElement('span');
+    name.className = 'app-name';
+    name.textContent = app.name;
+
+    tile.appendChild(shell);
+    tile.appendChild(name);
+    return tile;
+  }
+
+  function renderHome() {
+    const p1 = document.getElementById('grid-page-1');
+    const p2 = document.getElementById('grid-page-2');
+    const dock = document.getElementById('iphone-dock');
+    p1.innerHTML = '';
+    p2.innerHTML = '';
+    dock.innerHTML = '';
+
+    const dockApps = apps.filter(a => a.dock).slice(0, 4);
+    dockApps.forEach(app => dock.appendChild(createIconElement(app)));
+
+    const mainApps = apps.filter(a => !a.dock);
+    mainApps.forEach(app => {
+      if (app.page === 0) p1.appendChild(createIconElement(app));
+      else p2.appendChild(createIconElement(app));
+    });
+
+    const now = new Date();
+    const months = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
+    document.getElementById('w-day-num').textContent = String(now.getDate());
+    document.getElementById('w-month-name').textContent = months[now.getMonth()];
+
+    const latest = state.notes[0];
+    document.getElementById('w-note-title').textContent = latest ? latest.title : 'Brak notatek';
+    document.getElementById('w-note-sub').textContent = latest ? latest.body : 'Dodaj pierwszą notatkę';
+
+    document.getElementById('w-saver-status').textContent = state.batterySaver
+      ? 'Ochrona baterii: włączona (tło wstrzymane)'
+      : 'Ochrona baterii: wyłączona';
+  }
+
+  function renderLockNotifications() {
+    const box = document.getElementById('ls-notifications');
+    box.innerHTML = '';
+    if (state.focusMode) {
+      const card = document.createElement('div');
+      card.className = 'ls-notif-card liquid-glass';
+      card.innerHTML = '<div class="ls-notif-top"><span>🌙 Tryb skupienia</span><span>teraz</span></div><div class="ls-notif-msg">Powiadomienia są wyciszone.</div>';
+      box.appendChild(card);
+      return;
+    }
+    state.notifications.slice(0, 3).forEach(n => {
+      const card = document.createElement('div');
+      card.className = 'ls-notif-card liquid-glass';
+      card.onclick = () => unlockDevice();
+      card.innerHTML = `<div class="ls-notif-top"><span>${n.app}</span><span>${n.time}</span></div><div class="ls-notif-msg">${n.text}</div>`;
+      box.appendChild(card);
+    });
+  }
+
+  function goPage(idx) {
+    state.page = idx === 1 ? 1 : 0;
+    document.getElementById('pages-track').classList.toggle('page-2', state.page === 1);
+    document.getElementById('dot-1').classList.toggle('active', state.page === 0);
+    document.getElementById('dot-2').classList.toggle('active', state.page === 1);
+  }
+
+  function setupSwipe() {
+    const vp = document.getElementById('pages-viewport');
+    let startX = 0;
+    vp.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+    vp.addEventListener('touchend', e => {
+      const diff = e.changedTouches[0].clientX - startX;
+      if (diff < -50 && state.page === 0) goPage(1);
+      if (diff > 50 && state.page === 1) goPage(0);
+    }, { passive: true });
+  }
+
+  function unlockDevice() {
+    state.unlocked = true;
+    document.getElementById('lock-screen').classList.add('unlocked');
+    document.getElementById('wallpaper-layer').classList.remove('blurred');
+  }
+
+  function lockDevice() {
+    closeApp();
+    toggleControlCenter(false);
+    toggleSearch(false);
+    state.unlocked = false;
+    document.getElementById('lock-screen').classList.remove('unlocked');
+    document.getElementById('wallpaper-layer').classList.add('blurred');
+    renderLockNotifications();
+  }
+
+  function unlockAndOpen(appId) {
+    unlockDevice();
+    setTimeout(() => openApp(appId), 220);
+  }
+
+  function openApp(appId) {
+    const app = apps.find(a => a.id === appId);
+    if (!app) return;
+    document.getElementById('app-win-title').textContent = app.name;
+    const body = document.getElementById('app-body');
+    body.innerHTML = '';
+
+    if (appId === 'ustawienia') {
+      renderSettings(body);
+    } else if (appId === 'notatki') {
+      renderNotesApp(body);
+    } else if (appId === 'latarka') {
+      body.innerHTML = `<div class="ios-group"><div class="ios-row"><span>Latarka ekranowa</span><button class="chip-btn ${state.torchOn ? 'active' : ''}" onclick="toggleTorch(); openApp('latarka');">${state.torchOn ? 'Wyłącz' : 'Włącz'}</button></div></div>`;
+    } else {
+      body.innerHTML = `<div class="ios-group"><div class="ios-row"><div><div style="font-weight:700;">${app.name}</div><div style="font-size:12px;opacity:0.72;margin-top:2px;">Aplikacja działa w trybie pełnoekranowym ZenOS (TOP-1).</div></div><span>${app.glyph}</span></div></div>`;
+    }
+
+    document.getElementById('app-window').classList.add('open');
+    document.getElementById('home-screen').classList.add('scaled-back');
+  }
+
+  function closeApp() {
+    document.getElementById('app-window').classList.remove('open');
+    document.getElementById('home-screen').classList.remove('scaled-back');
+  }
+
+  function renderSettings(container) {
+    const styleTitle = document.createElement('div');
+    styleTitle.className = 'ios-group-title';
+    styleTitle.textContent = 'Styl ikon i Liquid Glass';
+    container.appendChild(styleTitle);
+
+    const styleGroup = document.createElement('div');
+    styleGroup.className = 'ios-group';
+    const styles = [
+      { id: 'liquid', label: '✦ Liquid Glass' },
+      { id: 'color', label: '🌈 Kolorowy' },
+      { id: 'dark', label: '🌑 Ciemny' },
+      { id: 'bw', label: '⚪ Szaro-biały' },
+      { id: 'pink-purple', label: '🦄 Różowo-fioletowy' }
+    ];
+    const chipRow = document.createElement('div');
+    chipRow.className = 'chip-row';
+    styles.forEach(st => {
+      const btn = document.createElement('button');
+      btn.className = `chip-btn ${state.iconStyle === st.id ? 'active' : ''}`;
+      btn.textContent = st.label;
+      btn.onclick = () => {
+        state.iconStyle = st.id;
+        document.body.dataset.iconStyle = st.id;
+        renderHome();
+        openApp('ustawienia');
+      };
+      chipRow.appendChild(btn);
+    });
+    styleGroup.appendChild(chipRow);
+    container.appendChild(styleGroup);
+
+    const wpTitle = document.createElement('div');
+    wpTitle.className = 'ios-group-title';
+    wpTitle.textContent = 'Tapeta';
+    container.appendChild(wpTitle);
+
+    const wpGroup = document.createElement('div');
+    wpGroup.className = 'ios-group';
+    const wpRow = document.createElement('div');
+    wpRow.className = 'chip-row';
+    wallpapers.forEach(wp => {
+      const btn = document.createElement('button');
+      btn.className = `chip-btn ${state.wallpaperId === wp.id ? 'active' : ''}`;
+      btn.textContent = wp.label;
+      btn.onclick = () => {
+        setWallpaper(wp);
+        openApp('ustawienia');
+      };
+      wpRow.appendChild(btn);
+    });
+    wpGroup.appendChild(wpRow);
+    container.appendChild(wpGroup);
+
+    const sysTitle = document.createElement('div');
+    sysTitle.className = 'ios-group-title';
+    sysTitle.textContent = 'Bateria i skupienie';
+    container.appendChild(sysTitle);
+
+    const sysGroup = document.createElement('div');
+    sysGroup.className = 'ios-group';
+    sysGroup.innerHTML = `
+      <div class="ios-row"><span>🔋 Ochrona baterii (hamuje tło)</span><input type="checkbox" class="ios-switch" ${state.batterySaver ? 'checked' : ''} onchange="toggleBatterySaver()"></div>
+      <div class="ios-row"><span>🌙 Tryb skupienia</span><input type="checkbox" class="ios-switch" ${state.focusMode ? 'checked' : ''} onchange="toggleFocusMode()"></div>
+    `;
+    container.appendChild(sysGroup);
+  }
+
+  function renderNotesApp(container) {
+    container.innerHTML = `
+      <div class="ios-group" style="padding:14px;display:flex;flex-direction:column;gap:10px;">
+        <input id="note-in-title" placeholder="Tytuł notatki" style="padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.08);color:#fff;font-size:14px;" />
+        <textarea id="note-in-body" placeholder="Treść..." style="padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.08);color:#fff;font-size:13px;min-height:80px;"></textarea>
+        <button class="chip-btn active" onclick="saveNewNote()">Dodaj notatkę</button>
+      </div>
+      <div class="ios-group">
+        ${state.notes.map(n => `<div class="ios-row" style="flex-direction:column;align-items:flex-start;"><strong>${n.title}</strong><span style="font-size:12px;opacity:0.78;">${n.body}</span></div>`).join('')}
+      </div>
+    `;
+  }
+
+  function saveNewNote() {
+    const t = document.getElementById('note-in-title').value.trim();
+    const b = document.getElementById('note-in-body').value.trim();
+    if (!t && !b) return;
+    state.notes.unshift({ title: t || 'Notatka', body: b || '' });
+    renderHome();
+    openApp('notatki');
+  }
+
+  function setWallpaper(wp) {
+    state.wallpaperId = wp.id;
+    const layer = document.getElementById('wallpaper-layer');
+    const imgTest = new Image();
+    imgTest.onload = () => {
+      layer.style.backgroundImage = `url("${wp.path}"), ${wp.css}`;
+    };
+    imgTest.onerror = () => {
+      layer.style.backgroundImage = wp.css;
+    };
+    imgTest.src = wp.path;
+  }
+
+  function toggleControlCenter(open) {
+    document.getElementById('control-center').classList.toggle('open', Boolean(open));
+  }
+
+  function toggleCcCustomize() {
+    state.ccSwapped = !state.ccSwapped;
+    document.getElementById('cc-custom-bar').style.display = state.ccSwapped ? 'block' : 'none';
+  }
+
+  function swapCcOrder() {
+    const extra = document.getElementById('cc-extra-controls');
+    if (extra.children.length >= 2) {
+      extra.appendChild(extra.firstElementChild);
+    }
+  }
+
+  function toggleCcFlag(key, btnId) {
+    state.flags[key] = !state.flags[key];
+    document.getElementById(btnId).classList.toggle('on-blue', state.flags[key]);
+  }
+
+  function toggleBatterySaver() {
+    state.batterySaver = !state.batterySaver;
+    document.getElementById('saver-icon').style.display = state.batterySaver ? 'inline' : 'none';
+    document.getElementById('ls-saver-pill').textContent = state.batterySaver ? '🔋 Oszczędzanie' : '⚡ TOP-1';
+    document.getElementById('cc-saver').classList.toggle('on', state.batterySaver);
+    document.getElementById('cc-saver-label').textContent = `Ochrona baterii: ${state.batterySaver ? 'ON (tło hamowane)' : 'OFF'}`;
+    renderHome();
+  }
+
+  function toggleFocusMode() {
+    state.focusMode = !state.focusMode;
+    document.getElementById('focus-icon').style.display = state.focusMode ? 'inline' : 'none';
+    const btn = document.getElementById('cc-focus-btn');
+    btn.classList.toggle('on', state.focusMode);
+    document.getElementById('cc-focus-state').textContent = state.focusMode ? 'Włączony' : 'Wyłączony';
+    renderLockNotifications();
+  }
+
+  function toggleTorch() {
+    state.torchOn = !state.torchOn;
+    document.getElementById('torch-veil').classList.toggle('active', state.torchOn);
+    document.getElementById('ls-torch-btn').classList.toggle('active', state.torchOn);
+    document.getElementById('cc-torch-btn').classList.toggle('on', state.torchOn);
+  }
+
+  function adjustSlider(e, type) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0.05, Math.min(1, 1 - (e.clientY - rect.top) / rect.height));
+    const pct = Math.round(ratio * 100);
+    if (type === 'brightness') {
+      state.brightness = pct;
+      document.getElementById('bright-fill').style.height = pct + '%';
+      document.getElementById('bright-val').textContent = pct + '%';
+      document.getElementById('brightness-veil').style.opacity = String((1 - ratio) * 0.65);
+    } else {
+      state.volume = pct;
+      document.getElementById('vol-fill').style.height = pct + '%';
+      document.getElementById('vol-val').textContent = pct + '%';
+    }
+  }
+
+  function toggleSearch(open) {
+    const modal = document.getElementById('search-modal');
+    modal.classList.toggle('open', Boolean(open));
+    if (open) {
+      renderSearch();
+      setTimeout(() => document.getElementById('search-input').focus(), 60);
+    }
+  }
+
+  function renderSearch() {
+    const q = (document.getElementById('search-input').value || '').trim().toLowerCase();
+    const box = document.getElementById('search-results');
+    box.innerHTML = '';
+    const matches = apps.filter(a => !q || a.name.toLowerCase().includes(q));
+    matches.forEach(app => {
+      const row = document.createElement('div');
+      row.className = 'search-row liquid-glass';
+      row.innerHTML = `<span>${app.glyph} ${app.name}</span><span style="font-size:11px;opacity:0.7;">Aplikacja</span>`;
+      row.onclick = () => {
+        toggleSearch(false);
+        openApp(app.id);
+      };
+      box.appendChild(row);
+    });
+  }
+
+  function pushNotification(app, text) {
+    state.notifications.unshift({ app, time: 'teraz', text });
+    renderLockNotifications();
+  }
+
+  function startClock() {
+    const days = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+    const months = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
+    const tick = () => {
+      const now = new Date();
+      const hhmm = now.toTimeString().slice(0, 5);
+      document.getElementById('status-clock').textContent = hhmm;
+      document.getElementById('ls-clock').textContent = hhmm;
+      document.getElementById('ls-date').textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
+    };
+    tick();
+    setInterval(tick, 1000);
+  }
+
+  function runBoot() {
+    const bar = document.getElementById('boot-bar');
+    setTimeout(() => { bar.style.width = '55%'; }, 120);
+    setTimeout(() => { bar.style.width = '100%'; }, 420);
+    setTimeout(() => {
+      document.getElementById('boot-screen').classList.add('done');
+      document.getElementById('wallpaper-layer').classList.add('blurred');
+    }, 760);
+  }
+
+  renderHome();
+  renderLockNotifications();
+  setupSwipe();
+  startClock();
+  runBoot();
+</script>
 </body>
 </html>
