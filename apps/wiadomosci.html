@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wiadomości</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            height: 100vh;
+            background: #090d16;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        h1 { font-size: 20px; }
+        .thread {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 4px;
+        }
+        .msg {
+            max-width: 82%;
+            padding: 10px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .msg.me {
+            align-self: flex-end;
+            background: #2563eb;
+            color: #ffffff;
+        }
+        .msg.sys {
+            align-self: flex-start;
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+        }
+        .msg-time {
+            font-size: 10px;
+            opacity: 0.7;
+            margin-top: 3px;
+            text-align: right;
+        }
+        .composer {
+            display: flex;
+            gap: 8px;
+        }
+        input {
+            flex: 1;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(15, 23, 42, 0.9);
+            color: #f8fafc;
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+        button {
+            padding: 0 14px;
+            border-radius: 14px;
+            border: none;
+            background: #38bdf8;
+            color: #090d16;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Wiadomości</h1>
+    <div id="thread" class="thread"></div>
+    <div class="composer">
+        <input id="input" type="text" placeholder="Napisz wiadomość..." onkeydown="if(event.key==='Enter') sendMsg()">
+        <button onclick="sendMsg()">Wyślij</button>
+    </div>
+
+    <script>
+        function getMessages() {
+            const p = window.parent;
+            return (p && p.StorageManager && p.StorageManager.get('messages_list', [
+                { id: 1, sender: 'sys', text: 'Witaj w ZeniOS v1.0.2! Każda aplikacja działa w osobnym iFrame.', time: '12:00' }
+            ])) || [];
+        }
+
+        function saveMessages(list) {
+            const p = window.parent;
+            if (p && p.StorageManager) {
+                p.StorageManager.set('messages_list', list.slice(-50));
+            }
+        }
+
+        function sendMsg() {
+            const input = document.getElementById('input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const time = new Date().toTimeString().slice(0, 5);
+            const msgs = getMessages();
+            msgs.push({ id: Date.now(), sender: 'me', text, time });
+            saveMessages(msgs);
+            input.value = '';
+            render();
+
+            const p = window.parent;
+            if (p && p.Notifications) {
+                p.Notifications.push('Wiadomości', text, 'wiadomosci');
+            }
+        }
+
+        function render() {
+            const msgs = getMessages();
+            const box = document.getElementById('thread');
+            box.innerHTML = '';
+            msgs.forEach(m => {
+                const div = document.createElement('div');
+                div.className = `msg ${m.sender === 'me' ? 'me' : 'sys'}`;
+                div.innerHTML = `<div>${esc(m.text)}</div><div class="msg-time">${esc(m.time || '')}</div>`;
+                box.appendChild(div);
+            });
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+
+        render();
+    </script>
+</body>
+</html>
