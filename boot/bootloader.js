@@ -5,22 +5,19 @@ const Bootloader = {
         const params = new URLSearchParams(window.location.search);
         this.isSafeMode = params.get('safemode') === '1';
 
-        this.updateBootScreen(15, this.isSafeMode ? 'Rozruch w Safe Mode...' : 'Sprawdzanie warstw ZeniOS v1.0.2...');
-        await this.delay(250);
+        this.updateBootScreen(20, this.isSafeMode ? 'Tryb bezpieczny...' : 'Inicjalizacja ZenOS v1.0.2...');
+        await this.delay(220);
 
         if (this.isSafeMode) {
             const badge = document.getElementById('perf-badge');
             if (badge) badge.textContent = '🛡️ SAFE MODE';
         }
 
-        this.updateBootScreen(55, 'Ładowanie jądra i nadzoru...');
-        await this.delay(250);
-
-        this.updateBootScreen(85, 'Przygotowanie widoku...');
-        await this.delay(250);
+        this.updateBootScreen(60, 'Ładowanie warstw Liquid Glass i jądra...');
+        await this.delay(220);
 
         this.updateBootScreen(100, 'Gotowe');
-        await this.delay(200);
+        await this.delay(180);
 
         this.hideBootScreen();
         return { safeMode: this.isSafeMode };
@@ -28,9 +25,7 @@ const Bootloader = {
 
     updateBootScreen(progress, text) {
         const frame = document.getElementById('boot-screen-frame');
-        if (frame && frame.contentWindow) {
-            frame.contentWindow.postMessage({ type: 'BOOT_PROGRESS', progress, text }, '*');
-        }
+        frame?.contentWindow?.postMessage({ type: 'BOOT_PROGRESS', progress, text }, '*');
     },
 
     hideBootScreen() {
@@ -45,10 +40,6 @@ const Bootloader = {
     },
 
     triggerErrorBoot(reasonCode = 'ERR_SYSTEM_OVERLOAD', details = '') {
-        try {
-            console.error(`[Bootloader] ERROR BOOT: ${reasonCode}`, details);
-        } catch (_) {}
-
         const query = new URLSearchParams({
             code: String(reasonCode),
             details: String(details),
