@@ -6,6 +6,109 @@
     <title>ZenOS v1.0.2 — Liquid Glass</title>
     <link rel="stylesheet" href="system/theme.css">
     <link id="icon-style-sheet" rel="stylesheet" href="system/icon-styles/liquid.css">
+    <style>
+        #wallpaper-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            pointer-events: none;
+        }
+
+        #wallpaper-picker-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.58);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            align-items: flex-end;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        #wallpaper-picker-modal.open {
+            display: flex;
+        }
+
+        .wp-sheet {
+            width: 100%;
+            max-width: 440px;
+            background: rgba(24, 25, 32, 0.92);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 26px;
+            padding: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .wp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .wp-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .wp-close-btn {
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .wp-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .wp-thumb {
+            aspect-ratio: 9 / 16;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.14);
+            background-size: cover;
+            background-position: center;
+            background-color: #1b1d26;
+            display: flex;
+            align-items: flex-end;
+            padding: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+        }
+
+        .wp-thumb.active {
+            border-color: #ffd60a;
+        }
+
+        .wp-custom-label {
+            display: block;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 14px;
+            padding: 9px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body data-icon-style="liquid">
     <div id="wallpaper-layer"></div>
@@ -74,6 +177,20 @@
         </div>
     </div>
 
+    <div id="wallpaper-picker-modal" aria-hidden="true">
+        <div class="wp-sheet">
+            <div class="wp-header">
+                <h3>Wybierz tapetę</h3>
+                <button id="wp-close-btn" class="wp-close-btn" type="button">Gotowe</button>
+            </div>
+            <div id="wp-grid" class="wp-grid"></div>
+            <label class="wp-custom-label">
+                Własny obrazek z urządzenia
+                <input id="wp-custom-input" type="file" accept="image/*" style="display:none;">
+            </label>
+        </div>
+    </div>
+
     <script src="boot/bootloader.js"></script>
     <script src="system/manifest.js"></script>
     <script src="system/storage.js"></script>
@@ -90,5 +207,212 @@
     <script src="system/widgets.js"></script>
     <script src="system/search.js"></script>
     <script src="system/kernel.js"></script>
+
+    <script>
+        (function initZenOSWallpaperControls() {
+            const STORAGE_KEY = 'zenos_active_wallpaper_v1';
+            const WALLPAPER_DIR = 'default_wallpapers/';
+            const WALLPAPERS = [
+                { id: 'default_wallpaper_1', label: 'Tapeta 1' },
+                { id: 'default_wallpaper_2', label: 'Tapeta 2' },
+                { id: 'default_wallpaper_3', label: 'Tapeta 3' },
+                { id: 'default_wallpaper_4', label: 'Tapeta 4' },
+                { id: 'default_wallpaper_5', label: 'Tapeta 5' },
+                { id: 'default_wallpaper_6', label: 'Tapeta 6' },
+                { id: 'default_wallpaper_7', label: 'Tapeta 7' }
+            ];
+            const EXTS = ['', '.png', '.jpg', '.jpeg', '.webp'];
+
+            const layer = document.getElementById('wallpaper-layer');
+            const modal = document.getElementById('wallpaper-picker-modal');
+            const grid = document.getElementById('wp-grid');
+            const closeBtn = document.getElementById('wp-close-btn');
+            const customInput = document.getElementById('wp-custom-input');
+            const desktop = document.getElementById('desktop');
+
+            function loadSaved() {
+                try {
+                    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+                } catch {
+                    return {};
+                }
+            }
+
+            let state = { id: 'default_wallpaper_1', customUrl: '', ...loadSaved() };
+
+            function persistAndBroadcast(resolvedUrl) {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                } catch {}
+                const msg = {
+                    type: 'WALLPAPER_CHANGED',
+                    wallpaperId: state.id,
+                    url: state.customUrl || resolvedUrl || ''
+                };
+                window.postMessage(msg, '*');
+                document.querySelectorAll('iframe').forEach((frame) => {
+                    try { frame.contentWindow?.postMessage(msg, '*'); } catch {}
+                });
+            }
+
+            function resolveFile(baseName, cb) {
+                const candidates = EXTS.map((ext) => `${WALLPAPER_DIR}${baseName}${ext}`);
+                let i = 0;
+                const next = () => {
+                    if (i >= candidates.length) {
+                        cb(`${WALLPAPER_DIR}${baseName}`);
+                        return;
+                    }
+                    const url = candidates[i++];
+                    const img = new Image();
+                    img.onload = () => cb(url);
+                    img.onerror = next;
+                    img.src = url;
+                };
+                next();
+            }
+
+            function applyWallpaper() {
+                if (state.customUrl) {
+                    if (layer) layer.style.backgroundImage = `url("${state.customUrl}")`;
+                    if (typeof Wallpapers !== 'undefined' && typeof Wallpapers.setCustom === 'function') {
+                        try { Wallpapers.setCustom(state.customUrl); } catch {}
+                    }
+                    persistAndBroadcast(state.customUrl);
+                    return;
+                }
+
+                const targetId = state.id || 'default_wallpaper_1';
+                resolveFile(targetId, (url) => {
+                    if (layer) layer.style.backgroundImage = `url("${url}")`;
+                    if (typeof Wallpapers !== 'undefined' && typeof Wallpapers.apply === 'function') {
+                        try { Wallpapers.apply(targetId, url); } catch {}
+                    }
+                    persistAndBroadcast(url);
+                });
+            }
+
+            function renderPickerGrid() {
+                if (!grid) return;
+                grid.innerHTML = '';
+                WALLPAPERS.forEach((wp) => {
+                    const item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = 'wp-thumb' + (!state.customUrl && state.id === wp.id ? ' active' : '');
+                    item.textContent = wp.label;
+                    resolveFile(wp.id, (url) => {
+                        item.style.backgroundImage = `url("${url}")`;
+                    });
+                    item.addEventListener('click', () => {
+                        state = { id: wp.id, customUrl: '' };
+                        applyWallpaper();
+                        closePicker();
+                    });
+                    grid.appendChild(item);
+                });
+            }
+
+            function openPicker() {
+                renderPickerGrid();
+                modal?.classList.add('open');
+                modal?.setAttribute('aria-hidden', 'false');
+            }
+
+            function closePicker() {
+                modal?.classList.remove('open');
+                modal?.setAttribute('aria-hidden', 'true');
+            }
+
+            closeBtn?.addEventListener('click', closePicker);
+            modal?.addEventListener('click', (e) => {
+                if (e.target === modal) closePicker();
+            });
+
+            customInput?.addEventListener('change', (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                    state = { id: 'custom', customUrl: String(reader.result || '') };
+                    applyWallpaper();
+                    closePicker();
+                };
+                reader.readAsDataURL(file);
+                e.target.value = '';
+            });
+
+            // Przytrzymanie na pustym obszarze ekranu otwiera wybór tapety
+            let pressTimer = null;
+            let startX = 0;
+            let startY = 0;
+
+            const cancelPress = () => {
+                if (pressTimer) {
+                    clearTimeout(pressTimer);
+                    pressTimer = null;
+                }
+            };
+
+            const lpTarget = desktop || document.body;
+            lpTarget.addEventListener('pointerdown', (e) => {
+                if (e.target.closest('button, a, input, iframe, .app-icon, .widget, .dock-zone, #wp-picker-modal')) return;
+                startX = e.clientX;
+                startY = e.clientY;
+                cancelPress();
+                pressTimer = setTimeout(() => {
+                    pressTimer = null;
+                    openPicker();
+                }, 550);
+            });
+
+            lpTarget.addEventListener('pointermove', (e) => {
+                if (!pressTimer) return;
+                if (Math.hypot(e.clientX - startX, e.clientY - startY) > 12) {
+                    cancelPress();
+                }
+            });
+
+            ['pointerup', 'pointercancel', 'contextmenu'].forEach((ev) => {
+                lpTarget.addEventListener(ev, (e) => {
+                    if (ev === 'contextmenu' && pressTimer) e.preventDefault();
+                    cancelPress();
+                });
+            });
+
+            // Komunikacja z Ustawieniami lub innymi ramkami
+            window.addEventListener('message', (e) => {
+                const data = e.data;
+                if (!data || !data.type) return;
+                if (data.type === 'OPEN_WALLPAPER_PICKER') {
+                    openPicker();
+                } else if (data.type === 'SET_WALLPAPER') {
+                    if (data.customUrl) {
+                        state = { id: 'custom', customUrl: data.customUrl };
+                    } else if (data.wallpaperId) {
+                        state = { id: data.wallpaperId, customUrl: '' };
+                    }
+                    applyWallpaper();
+                }
+            });
+
+            window.ZenOSWallpaper = {
+                openPicker,
+                closePicker,
+                setWallpaper(id) {
+                    state = { id, customUrl: '' };
+                    applyWallpaper();
+                },
+                setCustomWallpaper(dataUrl) {
+                    state = { id: 'custom', customUrl: dataUrl };
+                    applyWallpaper();
+                },
+                getList() {
+                    return WALLPAPERS.slice();
+                }
+            };
+
+            applyWallpaper();
+        })();
+    </script>
 </body>
 </html>
