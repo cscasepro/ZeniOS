@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Center</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body {
+            height: 100vh;
+            background: rgba(9, 13, 22, 0.88);
+            backdrop-filter: blur(18px);
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h2 { font-size: 16px; }
+        .close-btn {
+            background: rgba(255, 255, 255, 0.12);
+            border: none;
+            color: #fff;
+            border-radius: 10px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .tiles {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .tile {
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .tile.active {
+            background: rgba(56, 189, 248, 0.24);
+            border-color: #38bdf8;
+        }
+        .tile-icon { font-size: 22px; }
+        .tile-title { font-size: 13px; font-weight: 700; }
+        .tile-sub { font-size: 11px; color: #94a3b8; }
+        .shortcuts {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .short-btn {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            border-radius: 14px;
+            padding: 11px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>Centrum sterowania</h2>
+        <button class="close-btn" onclick="closeSelf()">Zamknij</button>
+    </div>
+
+    <div class="tiles">
+        <div id="tile-torch" class="tile" onclick="toggleTorch()">
+            <span class="tile-icon">🔦</span>
+            <span class="tile-title">Latarka</span>
+            <span id="torch-state" class="tile-sub">Wyłączona</span>
+        </div>
+        <div id="tile-battery" class="tile" onclick="toggleBattery()">
+            <span class="tile-icon">🔋</span>
+            <span class="tile-title">Ochrona baterii</span>
+            <span id="battery-state" class="tile-sub">Wyłączona</span>
+        </div>
+        <div id="tile-focus" class="tile" onclick="toggleFocus()">
+            <span class="tile-icon">🌙</span>
+            <span class="tile-title">Tryb skupienia</span>
+            <span id="focus-state" class="tile-sub">Wyłączony</span>
+        </div>
+        <div class="tile" onclick="openApp('sprzatacz')">
+            <span class="tile-icon">🧹</span>
+            <span class="tile-title">Sprzątacz</span>
+            <span class="tile-sub">Zweryfikuj pamięć</span>
+        </div>
+    </div>
+
+    <div class="shortcuts">
+        <button class="short-btn" onclick="openApp('ustawienia')">⚙️ Ustawienia</button>
+        <button class="short-btn" onclick="openApp('aktualizacje')">🔄 Moduły v1.0.2</button>
+    </div>
+
+    <script>
+        let torchOn = false;
+        let batteryOn = false;
+        let focusOn = false;
+
+        function syncUi() {
+            document.getElementById('tile-torch').classList.toggle('active', torchOn);
+            document.getElementById('torch-state').textContent = torchOn ? 'Włączona' : 'Wyłączona';
+
+            document.getElementById('tile-battery').classList.toggle('active', batteryOn);
+            document.getElementById('battery-state').textContent = batteryOn ? 'Hamuje tło' : 'Wyłączona';
+
+            document.getElementById('tile-focus').classList.toggle('active', focusOn);
+            document.getElementById('focus-state').textContent = focusOn ? 'Wyciszanie aktywne' : 'Wyłączony';
+        }
+
+        function toggleTorch() {
+            torchOn = !torchOn;
+            syncUi();
+            window.parent.postMessage({ type: 'TOGGLE_FLASHLIGHT', state: torchOn }, '*');
+        }
+
+        function toggleBattery() {
+            batteryOn = !batteryOn;
+            syncUi();
+            window.parent.postMessage({ type: 'TOGGLE_BATTERY_SAVER', state: batteryOn }, '*');
+        }
+
+        function toggleFocus() {
+            focusOn = !focusOn;
+            syncUi();
+            window.parent.postMessage({ type: 'TOGGLE_FOCUS_MODE', state: focusOn }, '*');
+        }
+
+        function openApp(appId) {
+            closeSelf();
+            window.parent.postMessage({ type: 'OPEN_APP', appId }, '*');
+        }
+
+        function closeSelf() {
+            window.parent.postMessage({ type: 'GO_HOME' }, '*');
+        }
+
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'OVERLAY_OPENED') {
+                const p = window.parent;
+                if (p && p.BatterySaver) batteryOn = Boolean(p.BatterySaver.enabled);
+                if (p && p.FocusMode) focusOn = Boolean(p.FocusMode.enabled);
+                syncUi();
+            }
+        });
+
+        syncUi();
+    </script>
+</body>
+</html>
