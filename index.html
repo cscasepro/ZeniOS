@@ -9,28 +9,41 @@
 </head>
 <body>
     <div id="device-frame">
-        <!-- Ekran startowy / ładowania systemu (na wierzchu przy starcie) -->
+        <!-- Ekran ładowania przy starcie -->
         <iframe id="boot-screen-frame" src="boot/boot-screen.html" class="boot-overlay"></iframe>
 
-        <!-- Pasek statusu (TOP 1) -->
+        <!-- Pasek statusu z wyspą w stylu iPhone (TOP 1) -->
         <header id="status-bar" class="priority-top">
-            <span id="clock">12:00</span>
+            <span id="clock">09:41</span>
+            <div id="dynamic-island" onclick="Kernel.toggleControlCenter()" title="Centrum sterowania">
+                <span id="island-dot">●</span>
+                <span id="island-label">ZeniOS</span>
+            </div>
             <div class="status-icons">
-                <span id="perf-badge" title="Priorytet i tryb pracy">⚡ TOP-1</span>
-                <span id="battery-badge" style="display:none;" title="Ochrona baterii aktywna">🔋 OSZCZ</span>
-                <span id="focus-badge" style="display:none;" title="Tryb skupienia">🌙</span>
-                <span id="flashlight-indicator" style="display:none;" title="Latarka włączona">🔦</span>
+                <span id="battery-badge" style="display:none;">🔋</span>
+                <span id="focus-badge" style="display:none;">🌙</span>
+                <span id="flashlight-indicator" style="display:none;">🔦</span>
+                <span id="perf-badge">⚡ TOP-1</span>
                 <span>100%</span>
             </div>
         </header>
 
-        <!-- Pulpit: widżety + siatka ikon z folderu Icons/ (TOP 1) -->
+        <!-- Pulpit: widżety + ikony + przycisk Szukaj + Dock (TOP 1) -->
         <main id="desktop" class="priority-top">
-            <iframe id="widgets-frame" src="modules/widgets.html" class="widgets-box"></iframe>
-            <div id="app-grid"></div>
+            <div class="desktop-scroll">
+                <iframe id="widgets-frame" src="modules/widgets.html" class="widgets-box"></iframe>
+                <div id="app-grid"></div>
+            </div>
+
+            <div class="bottom-cluster">
+                <button class="iphone-search-pill" onclick="Kernel.toggleSearch()">
+                    <span>🔍 Szukaj</span>
+                </button>
+                <div id="iphone-dock" class="iphone-dock"></div>
+            </div>
         </main>
 
-        <!-- Kontener na odizolowane aplikacje (iframe) -->
+        <!-- Kontener odizolowanych aplikacji -->
         <div id="app-container"></div>
 
         <!-- Warstwa modułów systemowych -->
@@ -43,7 +56,7 @@
         <footer id="nav-bar" class="priority-top">
             <button onclick="Kernel.showRecents()" title="Ostatnie zakładki">▢</button>
             <button onclick="Kernel.goHome()" title="Ekran główny">●</button>
-            <button onclick="Kernel.toggleSearch()" title="Szukaj">🔍</button>
+            <button onclick="Kernel.toggleNotifications()" title="Powiadomienia">🔔</button>
             <button onclick="Kernel.toggleControlCenter()" title="Centrum sterowania">☰</button>
             <button onclick="Kernel.lockDevice()" title="Zablokuj ekran">🔒</button>
         </footer>
@@ -56,7 +69,6 @@
         </div>
     </div>
 
-    <!-- Kolejność ładowania warstw: Boot -> System -> Kernel -->
     <script src="boot/bootloader.js"></script>
     <script src="system/manifest.js"></script>
     <script src="system/storage.js"></script>
