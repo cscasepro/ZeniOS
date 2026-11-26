@@ -1,0 +1,300 @@
+:root {
+    --bg-wallpaper: linear-gradient(145deg, #090d16 0%, #172554 55%, #1e1b4b 100%);
+    --wallpaper-image: none;
+    --accent-color: #38bdf8;
+    --text-primary: #f8fafc;
+    --text-muted: #94a3b8;
+    --glass-bg: rgba(15, 23, 42, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.14);
+    --blur-strength: 14px;
+    --device-radius: 28px;
+    --app-icon-radius: 18px;
+    --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Opcjonalny spokojniejszy motyw / tryb skupienia lub oszczędzania baterii */
+body.battery-saver-mode {
+    --blur-strength: 2px;
+}
+body.battery-saver-mode * {
+    transition-duration: 0.05s !important;
+}
+
+body.focus-mode-active #status-bar {
+    border-bottom: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+}
+
+body {
+    background: #030712;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: var(--font-main);
+    color: var(--text-primary);
+}
+
+#device-frame {
+    width: 390px;
+    height: 780px;
+    max-width: 100vw;
+    max-height: 100vh;
+    background-image: var(--wallpaper-image), var(--bg-wallpaper);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: var(--device-radius);
+    border: 3px solid rgba(148, 163, 184, 0.28);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+}
+
+.priority-top {
+    transform: translateZ(0);
+    will-change: transform, opacity;
+}
+
+/* Ekran ładowania przy starcie */
+.boot-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    z-index: 100;
+}
+
+/* Pasek statusu */
+#status-bar {
+    height: 36px;
+    padding: 0 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(2, 6, 23, 0.45);
+    backdrop-filter: blur(var(--blur-strength));
+    z-index: 20;
+}
+
+.status-icons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#perf-badge {
+    font-size: 10px;
+    background: rgba(56, 189, 248, 0.18);
+    color: var(--accent-color);
+    padding: 2px 6px;
+    border-radius: 8px;
+}
+
+#battery-badge {
+    font-size: 10px;
+    background: rgba(34, 197, 94, 0.2);
+    color: #86efac;
+    padding: 2px 6px;
+    border-radius: 8px;
+}
+
+/* Pulpit */
+#desktop {
+    flex: 1;
+    padding: 14px 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 10;
+}
+
+.widgets-box {
+    width: 100%;
+    height: 112px;
+    border: none;
+    border-radius: 20px;
+    background: transparent;
+    flex-shrink: 0;
+}
+
+#app-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px 10px;
+}
+
+.app-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.14s ease;
+}
+
+.app-icon:active {
+    transform: scale(0.92);
+}
+
+.app-icon-box {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--app-icon-radius);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    margin-bottom: 5px;
+    transition: background 0.2s ease, border-color 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+.app-icon-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: filter 0.2s ease;
+}
+
+.app-icon-fallback {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.app-label {
+    font-size: 11px;
+    text-align: center;
+    color: var(--text-primary);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+    max-width: 74px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Kontener aplikacji */
+#app-container {
+    position: absolute;
+    top: 36px;
+    bottom: 54px;
+    left: 0;
+    right: 0;
+    z-index: 25;
+    pointer-events: none;
+}
+
+.app-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #090d16;
+    position: absolute;
+    inset: 0;
+    display: none;
+    pointer-events: auto;
+}
+
+.app-frame.active {
+    display: block;
+}
+
+/* Moduły systemowe */
+.system-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    z-index: 40;
+}
+
+#lockscreen-frame {
+    z-index: 70;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Dolny pasek nawigacji */
+#nav-bar {
+    height: 54px;
+    background: rgba(2, 6, 23, 0.65);
+    backdrop-filter: blur(var(--blur-strength));
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 80;
+}
+
+#nav-bar button {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 17px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 12px;
+}
+
+#nav-bar button:active {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* Widok ostatnich zakładek */
+#recents-view {
+    position: absolute;
+    top: 36px;
+    bottom: 54px;
+    left: 0;
+    right: 0;
+    background: rgba(9, 13, 22, 0.94);
+    backdrop-filter: blur(var(--blur-strength));
+    z-index: 35;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+}
+
+#recents-view h3 {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.recent-item {
+    background: rgba(30, 41, 59, 0.85);
+    border: 1px solid var(--glass-border);
+    padding: 12px 14px;
+    border-radius: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.btn-close-all {
+    margin-top: auto;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: #ef4444;
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
