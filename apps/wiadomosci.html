@@ -2,137 +2,223 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wiadomości</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wiadomości — ZenOS</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             height: 100vh;
-            background: #090d16;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
-            padding: 16px;
+            background: linear-gradient(165deg, #2b2638 0%, #161822 48%, #0c1816 100%);
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            overflow: hidden;
         }
-        h1 { font-size: 20px; }
-        .thread {
+        .topbar {
+            padding: 50px 16px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 17, 24, 0.52);
+            backdrop-filter: blur(22px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            color: #ffffff;
+            padding: 7px 13px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .thread-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .chat-scroll {
             flex: 1;
             overflow-y: auto;
+            padding: 16px 14px 20px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            padding-right: 4px;
+            gap: 12px;
         }
-        .msg {
-            max-width: 82%;
-            padding: 10px 12px;
-            border-radius: 16px;
-            font-size: 13px;
-            line-height: 1.4;
-        }
-        .msg.me {
-            align-self: flex-end;
-            background: #2563eb;
-            color: #ffffff;
-        }
-        .msg.sys {
-            align-self: flex-start;
-            background: rgba(30, 41, 59, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #e2e8f0;
-        }
-        .msg-time {
-            font-size: 10px;
-            opacity: 0.7;
-            margin-top: 3px;
-            text-align: right;
-        }
-        .composer {
+        .msg-row {
             display: flex;
+            align-items: flex-end;
             gap: 8px;
+            max-width: 84%;
         }
-        input {
-            flex: 1;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: rgba(15, 23, 42, 0.9);
-            color: #f8fafc;
-            padding: 10px 12px;
-            font-size: 13px;
+        .msg-row.me {
+            align-self: flex-end;
+            flex-direction: row-reverse;
         }
-        button {
-            padding: 0 14px;
-            border-radius: 14px;
-            border: none;
-            background: #38bdf8;
-            color: #090d16;
-            font-size: 13px;
+        .mini-avatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
             font-weight: 700;
+            flex-shrink: 0;
+        }
+        .msg-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .sender-name {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.72);
+            padding-left: 6px;
+        }
+        .bubble {
+            padding: 10px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            line-height: 1.38;
+            backdrop-filter: blur(18px);
+        }
+        .msg-row.them .bubble {
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-bottom-left-radius: 6px;
+        }
+        .msg-row.me .bubble {
+            background: linear-gradient(135deg, #0a84ff, #2563eb);
+            color: #ffffff;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 6px 18px rgba(10, 132, 255, 0.35);
+        }
+        .composer-wrap {
+            padding: 10px 14px 28px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(15, 17, 24, 0.45);
+            backdrop-filter: blur(22px);
+        }
+        .circle-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            font-size: 17px;
             cursor: pointer;
+            flex-shrink: 0;
+        }
+        .input-pill {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+        }
+        .input-pill input {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 14px;
+            outline: none;
+        }
+        .input-pill input::placeholder {
+            color: rgba(255, 255, 255, 0.65);
         }
     </style>
 </head>
 <body>
-    <h1>Wiadomości</h1>
-    <div id="thread" class="thread"></div>
-    <div class="composer">
-        <input id="input" type="text" placeholder="Napisz wiadomość..." onkeydown="if(event.key==='Enter') sendMsg()">
-        <button onclick="sendMsg()">Wyślij</button>
+    <header class="topbar">
+        <button class="glass-btn" onclick="parent.Kernel?.goHome()">‹</button>
+        <div class="thread-header">
+            <div class="avatar">Z</div>
+            <span style="font-size:13px;font-weight:700;">Ekipa ZenOS ›</span>
+        </div>
+        <button class="glass-btn" onclick="quickNoteBubble()">✦</button>
+    </header>
+
+    <div id="chat" class="chat-scroll">
+        <div class="msg-row them">
+            <div class="mini-avatar">M</div>
+            <div class="msg-stack">
+                <span class="sender-name">Maja</span>
+                <div class="bubble">Testujemy nowy wygląd dymków i szkła w ZenOS. Jak wypada?</div>
+            </div>
+        </div>
+        <div class="msg-row me">
+            <div class="msg-stack">
+                <div class="bubble">Wygląda bardzo czysto i responsywnie.</div>
+            </div>
+        </div>
+        <div class="msg-row them">
+            <div class="mini-avatar">K</div>
+            <div class="msg-stack">
+                <span class="sender-name">Kacper</span>
+                <div class="bubble">Każda aplikacja ma swój własny charakter przy zachowaniu spójnego stylu.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="composer-wrap">
+        <button class="circle-icon" onclick="quickNoteBubble()" title="Dodaj szybki załącznik">+</button>
+        <div class="input-pill">
+            <input id="msg-input" type="text" placeholder="Wiadomość" onkeydown="if(event.key==='Enter') sendMessage()">
+            <button style="background:none;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;" onclick="sendMessage()">Wyślij</button>
+        </div>
     </div>
 
     <script>
-        function getMessages() {
-            const p = window.parent;
-            return (p && p.StorageManager && p.StorageManager.get('messages_list', [
-                { id: 1, sender: 'sys', text: 'Witaj w ZeniOS v1.0.2! Każda aplikacja działa w osobnym iFrame.', time: '12:00' }
-            ])) || [];
-        }
-
-        function saveMessages(list) {
-            const p = window.parent;
-            if (p && p.StorageManager) {
-                p.StorageManager.set('messages_list', list.slice(-50));
+        function appendBubble(side, sender, text) {
+            const chat = document.getElementById('chat');
+            const row = document.createElement('div');
+            row.className = `msg-row ${side}`;
+            if (side === 'them') {
+                row.innerHTML = `<div class="mini-avatar">${sender[0]}</div><div class="msg-stack"><span class="sender-name">${sender}</span><div class="bubble">${text}</div></div>`;
+            } else {
+                row.innerHTML = `<div class="msg-stack"><div class="bubble">${text}</div></div>`;
             }
+            chat.appendChild(row);
+            chat.scrollTop = chat.scrollHeight;
         }
 
-        function sendMsg() {
-            const input = document.getElementById('input');
-            const text = input.value.trim();
+        function sendMessage() {
+            const inp = document.getElementById('msg-input');
+            const text = inp.value.trim();
             if (!text) return;
-
-            const time = new Date().toTimeString().slice(0, 5);
-            const msgs = getMessages();
-            msgs.push({ id: Date.now(), sender: 'me', text, time });
-            saveMessages(msgs);
-            input.value = '';
-            render();
-
-            const p = window.parent;
-            if (p && p.Notifications) {
-                p.Notifications.push('Wiadomości', text, 'wiadomosci');
-            }
+            appendBubble('me', 'Ty', text);
+            inp.value = '';
+            setTimeout(() => {
+                appendBubble('them', 'Maja', 'Odebrane w ZenOS!');
+            }, 450);
         }
 
-        function render() {
-            const msgs = getMessages();
-            const box = document.getElementById('thread');
-            box.innerHTML = '';
-            msgs.forEach(m => {
-                const div = document.createElement('div');
-                div.className = `msg ${m.sender === 'me' ? 'me' : 'sys'}`;
-                div.innerHTML = `<div>${esc(m.text)}</div><div class="msg-time">${esc(m.time || '')}</div>`;
-                box.appendChild(div);
-            });
-            box.scrollTop = box.scrollHeight;
+        function quickNoteBubble() {
+            appendBubble('me', 'Ty', '📎 Podgląd motywu Liquid Glass');
         }
-
-        function esc(s) {
-            return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-        }
-
-        render();
     </script>
 </body>
 </html>
