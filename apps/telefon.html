@@ -2,211 +2,306 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telefon</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Telefon — ZenOS</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
             min-height: 100vh;
-            background: #090d16;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
-            padding: 16px;
+            background: #ffffff;
+            color: #111827;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+            padding: 48px 16px 104px;
+        }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .pill-btn {
+            background: #f2f2f7;
+            border: none;
+            color: #111827;
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .view-sec { display: none; }
+        .view-sec.active { display: block; }
+        .fav-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px 8px;
+            margin: 14px 0 22px;
+            text-align: center;
+        }
+        .fav-item {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-size: 12px;
         }
-        .num-display {
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 16px;
-            padding: 12px 14px;
-            font-size: 24px;
-            font-weight: 700;
+        .fav-avatar {
+            width: 58px;
+            height: 72px;
+            border-radius: 18px;
+            background: linear-gradient(145deg, #dbeafe, #93c5fd);
+            color: #1e3a8a;
+            font-weight: 800;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sec-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+        .call-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 4px;
+            border-bottom: 1px solid #f2f2f7;
+        }
+        .call-badge {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #eff6ff;
+            color: #0a84ff;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .dial-screen {
             text-align: center;
-            min-height: 52px;
+            font-size: 32px;
+            font-weight: 600;
+            min-height: 44px;
+            margin: 14px 0 18px;
             letter-spacing: 1px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
         .keypad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
+            gap: 14px;
+            max-width: 280px;
+            margin: 0 auto 20px;
         }
-        .key {
-            height: 48px;
-            border-radius: 14px;
+        .key-circle {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto;
+            border-radius: 50%;
             border: none;
-            background: rgba(30, 41, 59, 0.88);
-            color: #f8fafc;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .key:active { opacity: 0.75; }
-        .actions {
-            display: flex;
-            gap: 8px;
-        }
-        .btn-call {
-            flex: 1;
-            padding: 11px;
-            border-radius: 14px;
-            border: none;
-            background: #22c55e;
-            color: #052e16;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-        .btn-del {
-            padding: 11px 14px;
-            border-radius: 14px;
-            border: none;
-            background: rgba(239, 68, 68, 0.22);
-            color: #fca5a5;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-        .call-banner {
-            background: rgba(34, 197, 94, 0.16);
-            border: 1px solid rgba(34, 197, 94, 0.35);
-            border-radius: 14px;
-            padding: 10px 12px;
-            font-size: 12px;
-            display: none;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .history {
+            background: #f2f2f7;
+            color: #111827;
+            font-size: 26px;
+            font-weight: 500;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
         }
-        .hist-item {
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 8px 12px;
-            font-size: 12px;
-            display: flex;
+        .key-sub { font-size: 9px; letter-spacing: 1.4px; color: #6b7280; font-weight: 700; }
+        .call-green {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: none;
+            background: #30d158;
+            color: #ffffff;
+            font-size: 28px;
+            cursor: pointer;
+        }
+        .active-call-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(160deg, #1e293b, #090d16);
+            color: #ffffff;
+            z-index: 40;
+            display: none;
+            flex-direction: column;
             justify-content: space-between;
+            align-items: center;
+            padding: 74px 24px 68px;
         }
+        .active-call-overlay.open { display: flex; }
+        .hangup-btn {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: none;
+            background: #ff3b30;
+            color: #ffffff;
+            font-size: 26px;
+            cursor: pointer;
+        }
+        .dock-bar {
+            position: fixed;
+            bottom: 54px;
+            left: 16px;
+            right: 16px;
+            height: 60px;
+            border-radius: 30px;
+            background: rgba(248, 250, 252, 0.9);
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.1);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            align-items: center;
+        }
+        .d-tab {
+            background: none;
+            border: none;
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7280;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+        }
+        .d-tab.active { color: #0a84ff; }
     </style>
 </head>
 <body>
-    <div id="num" class="num-display"></div>
-
-    <div class="keypad">
-        <button class="key" onclick="press('1')">1</button>
-        <button class="key" onclick="press('2')">2</button>
-        <button class="key" onclick="press('3')">3</button>
-        <button class="key" onclick="press('4')">4</button>
-        <button class="key" onclick="press('5')">5</button>
-        <button class="key" onclick="press('6')">6</button>
-        <button class="key" onclick="press('7')">7</button>
-        <button class="key" onclick="press('8')">8</button>
-        <button class="key" onclick="press('9')">9</button>
-        <button class="key" onclick="press('*')">*</button>
-        <button class="key" onclick="press('0')">0</button>
-        <button class="key" onclick="press('#')">#</button>
+    <div class="topbar">
+        <button class="pill-btn" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
+        <strong style="font-size:17px;">Telefon</strong>
+        <button class="pill-btn" onclick="switchTab('keypad')">Klawiatura</button>
     </div>
 
-    <div class="actions">
-        <button class="btn-call" onclick="startCall()">📞 Zadzwoń</button>
-        <button class="btn-del" onclick="backspace()">⌫</button>
+    <section id="sec-calls" class="view-sec active">
+        <div class="fav-grid" id="fav-grid"></div>
+        <div class="sec-title">Ostatnie</div>
+        <div id="recents-calls"></div>
+    </section>
+
+    <section id="sec-contacts" class="view-sec">
+        <div class="sec-title">Kontakty</div>
+        <div id="contacts-list"></div>
+    </section>
+
+    <section id="sec-keypad" class="view-sec">
+        <div id="dial-out" class="dial-screen"></div>
+        <div class="keypad" id="keypad-grid"></div>
+        <div style="display:flex;justify-content:center;gap:24px;align-items:center;">
+            <button class="pill-btn" onclick="backspace()">⌫</button>
+            <button class="call-green" onclick="startCall(document.getElementById('dial-out').textContent || '112')">📞</button>
+            <span style="width:48px;"></span>
+        </div>
+    </section>
+
+    <div id="call-modal" class="active-call-overlay">
+        <div style="text-align:center;">
+            <div style="font-size:13px;opacity:0.75;">Połączenie aktywne</div>
+            <div id="call-target" style="font-size:32px;font-weight:700;margin-top:6px;">Kontakt</div>
+            <div id="call-timer" style="font-size:16px;opacity:0.85;margin-top:6px;">00:00</div>
+        </div>
+        <div style="display:flex;gap:24px;font-size:24px;">
+            <button class="pill-btn" style="padding:14px 18px;" onclick="alert('Mikrofon przełączony')">🎙️</button>
+            <button class="pill-btn" style="padding:14px 18px;" onclick="alert('Głośnik przełączony')">🔊</button>
+        </div>
+        <button class="hangup-btn" onclick="endCall()">✕</button>
     </div>
 
-    <div id="call-banner" class="call-banner">
-        <span id="call-text">Połączenie aktywne...</span>
-        <button style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;" onclick="endCall()">Rozłącz</button>
+    <div class="dock-bar">
+        <button id="tab-calls" class="d-tab active" onclick="switchTab('calls')"><span>📞</span><span>Połączenia</span></button>
+        <button id="tab-contacts" class="d-tab" onclick="switchTab('contacts')"><span>👤</span><span>Kontakty</span></button>
+        <button id="tab-keypad" class="d-tab" onclick="switchTab('keypad')"><span>⌨️</span><span>Klawiatura</span></button>
     </div>
-
-    <div id="history" class="history"></div>
 
     <script>
-        let number = '';
-        let callTimer = null;
-        let callSec = 0;
+        const people = [
+            { name: 'Anna', phone: '+48 600 100 201', time: '09:41', type: '↗ wychodzące' },
+            { name: 'Marek', phone: '+48 600 100 202', time: 'Wczoraj', type: '↙ przychodzące' },
+            { name: 'Zofia', phone: '+48 600 100 203', time: 'Wczoraj', type: '↙ nieodebrane' },
+            { name: 'Tomasz', phone: '+48 600 100 204', time: 'Wtorek', type: '↗ wychodzące' }
+        ];
 
-        function press(ch) {
-            if (number.length >= 16) return;
-            number += ch;
-            document.getElementById('num').textContent = number;
-        }
+        document.getElementById('fav-grid').innerHTML = people.map(p => `
+            <div class="fav-item" onclick="startCall('${p.name}')">
+                <div class="fav-avatar">${p.name[0]}</div>
+                <span>${p.name}</span>
+            </div>
+        `).join('');
+
+        document.getElementById('recents-calls').innerHTML = people.map(p => `
+            <div class="call-row">
+                <div>
+                    <div style="font-weight:700;font-size:15px;color:${p.type.includes('nieodebrane') ? '#ff3b30' : '#111827'};">${p.name}</div>
+                    <div style="font-size:12.5px;color:#6b7280;">${p.type} • ${p.phone}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:12.5px;color:#6b7280;">${p.time}</span>
+                    <button class="call-badge" onclick="startCall('${p.name}')">📞</button>
+                </div>
+            </div>
+        `).join('');
+
+        document.getElementById('contacts-list').innerHTML = people.map(p => `
+            <div class="call-row" onclick="startCall('${p.name}')">
+                <div><strong>${p.name}</strong><div style="font-size:12.5px;color:#6b7280;">${p.phone}</div></div>
+                <span style="color:#0a84ff;font-size:13px;font-weight:600;">Zadzwoń</span>
+            </div>
+        `).join('');
+
+        const keys = [
+            ['1', ''], ['2', 'ABC'], ['3', 'DEF'],
+            ['4', 'GHI'], ['5', 'JKL'], ['6', 'MNO'],
+            ['7', 'PQRS'], ['8', 'TUV'], ['9', 'WXYZ'],
+            ['*', ''], ['0', '+'], ['#', '']
+        ];
+        const kp = document.getElementById('keypad-grid');
+        keys.forEach(([d, sub]) => {
+            const btn = document.createElement('button');
+            btn.className = 'key-circle';
+            btn.innerHTML = `<span>${d}</span>${sub ? `<span class="key-sub">${sub}</span>` : ''}`;
+            btn.onclick = () => {
+                const el = document.getElementById('dial-out');
+                el.textContent += d;
+            };
+            kp.appendChild(btn);
+        });
 
         function backspace() {
-            number = number.slice(0, -1);
-            document.getElementById('num').textContent = number;
+            const el = document.getElementById('dial-out');
+            el.textContent = el.textContent.slice(0, -1);
         }
 
-        function getCalls() {
-            const p = window.parent;
-            return (p && p.StorageManager && p.StorageManager.get('call_history', [])) || [];
+        function switchTab(name) {
+            ['calls', 'contacts', 'keypad'].forEach(t => {
+                document.getElementById(`sec-${t}`).classList.toggle('active', t === name);
+                document.getElementById(`tab-${t}`)?.classList.toggle('active', t === name);
+            });
         }
 
-        function startCall() {
-            if (!number) return;
-            endCall();
+        let callSec = 0, callTimer = null;
+        function startCall(target) {
+            document.getElementById('call-target').textContent = target;
             callSec = 0;
-            const banner = document.getElementById('call-banner');
-            const text = document.getElementById('call-text');
-            banner.style.display = 'flex';
-            text.textContent = `Rozmowa z ${number} (00:00)`;
-
-            const p = window.parent;
-            const calls = getCalls();
-            calls.unshift({ number, time: new Date().toTimeString().slice(0, 5) });
-            if (p && p.StorageManager) {
-                p.StorageManager.set('call_history', calls.slice(0, 20));
-            }
-            if (p && p.Notifications) {
-                p.Notifications.push('Telefon', `Połączenie z numerem ${number}`, 'telefon');
-            }
-            renderHistory();
-
+            document.getElementById('call-timer').textContent = '00:00';
+            document.getElementById('call-modal').classList.add('open');
+            clearInterval(callTimer);
             callTimer = setInterval(() => {
-                callSec += 1;
-                const mm = String(Math.floor(callSec / 60)).padStart(2, '0');
-                const ss = String(callSec % 60).padStart(2, '0');
-                text.textContent = `Rozmowa z ${number} (${mm}:${ss})`;
+                callSec++;
+                const m = String(Math.floor(callSec / 60)).padStart(2, '0');
+                const s = String(callSec % 60).padStart(2, '0');
+                document.getElementById('call-timer').textContent = `${m}:${s}`;
             }, 1000);
         }
 
         function endCall() {
-            if (callTimer) {
-                clearInterval(callTimer);
-                callTimer = null;
-            }
-            document.getElementById('call-banner').style.display = 'none';
+            clearInterval(callTimer);
+            document.getElementById('call-modal').classList.remove('open');
         }
-
-        function renderHistory() {
-            const calls = getCalls();
-            const box = document.getElementById('history');
-            box.innerHTML = '';
-            calls.slice(0, 6).forEach(c => {
-                const row = document.createElement('div');
-                row.className = 'hist-item';
-                row.innerHTML = `<span>${esc(c.number)}</span><span style="color:#94a3b8;">${esc(c.time)}</span>`;
-                box.appendChild(row);
-            });
-        }
-
-        function esc(s) {
-            return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-        }
-
-        window.addEventListener('message', (e) => {
-            if (e.data && e.data.type === 'OS_PRIORITY' && e.data.level === 'BACKGROUND') {
-                endCall();
-            }
-        });
-
-        renderHistory();
     </script>
 </body>
 </html>
