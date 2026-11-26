@@ -7,84 +7,95 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
-            min-height: 100vh;
+            width: 100%;
+            height: 100%;
             background: #050507;
             color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
             display: flex;
             flex-direction: column;
-            padding: 50px 18px 86px;
+            padding: 46px 16px 84px;
+            overflow-y: auto;
         }
         .topbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .link-orange {
             background: none;
             border: none;
             color: #ff9f0a;
-            font-size: 16px;
-            font-weight: 500;
+            font-size: 15px;
+            font-weight: 600;
             cursor: pointer;
         }
-        .screen-title {
-            font-size: 30px;
-            font-weight: 800;
-            margin-bottom: 16px;
-        }
-        .tab-panel {
+        .screen-title { font-size: 28px; font-weight: 800; margin-bottom: 12px; }
+        .ios-banner {
             display: none;
-            flex-direction: column;
-            gap: 14px;
+            background: rgba(255, 159, 10, 0.2);
+            border: 1px solid rgba(255, 159, 10, 0.55);
+            color: #ffd60a;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            justify-content: space-between;
+            align-items: center;
         }
-        .tab-panel.active {
-            display: flex;
+        .ios-banner.show { display: flex; }
+        .add-alarm-box {
+            display: none;
+            gap: 8px;
+            margin-bottom: 12px;
+            background: #141417;
+            padding: 10px;
+            border-radius: 16px;
         }
+        .add-alarm-box.open { display: flex; }
+        .add-alarm-box input {
+            flex: 1;
+            background: #2c2c2e;
+            border: none;
+            color: #ffffff;
+            border-radius: 10px;
+            padding: 8px 10px;
+            font-size: 14px;
+        }
+        .tab-panel { display: none; flex-direction: column; gap: 12px; }
+        .tab-panel.active { display: flex; }
         .world-big {
-            font-size: 46px;
+            font-size: 42px;
             font-weight: 300;
             font-variant-numeric: tabular-nums;
             text-align: center;
-            padding: 16px 0;
+            padding: 10px 0;
         }
         .row-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 14px 4px;
+            padding: 12px 4px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.12);
         }
-        .alarm-time {
-            font-size: 38px;
-            font-weight: 300;
-            font-variant-numeric: tabular-nums;
-        }
-        .switch-ios {
-            width: 48px;
-            height: 28px;
-            accent-color: #30d158;
-            cursor: pointer;
-        }
+        .alarm-time { font-size: 34px; font-weight: 300; font-variant-numeric: tabular-nums; }
+        .switch-ios { width: 44px; height: 26px; accent-color: #30d158; cursor: pointer; }
         .stopwatch-display {
-            font-size: 56px;
+            font-size: 48px;
             font-weight: 300;
             text-align: center;
             font-variant-numeric: tabular-nums;
-            padding: 24px 0;
+            padding: 16px 0;
         }
-        .sw-controls {
-            display: flex;
-            justify-content: space-between;
-            padding: 0 12px;
-        }
+        .sw-controls { display: flex; justify-content: space-between; padding: 0 10px; }
         .round-btn {
-            width: 72px;
-            height: 72px;
+            width: 66px;
+            height: 66px;
             border-radius: 50%;
             border: none;
-            font-size: 15px;
+            font-size: 13.5px;
             font-weight: 600;
             cursor: pointer;
         }
@@ -93,36 +104,30 @@
         .btn-red { background: #471515; color: #ff453a; }
         .picker-box {
             background: #141417;
-            border-radius: 20px;
-            padding: 16px;
+            border-radius: 18px;
+            padding: 14px;
             display: flex;
             justify-content: space-around;
-            align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
-        .picker-col {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-        }
+        .picker-col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .picker-col select {
             background: #2c2c2e;
             color: #ffffff;
             border: none;
             border-radius: 10px;
-            padding: 8px 10px;
-            font-size: 16px;
+            padding: 7px 9px;
+            font-size: 15px;
         }
         .bottom-nav {
             position: fixed;
-            bottom: 10px;
+            bottom: 44px;
             left: 14px;
             right: 14px;
-            height: 62px;
-            border-radius: 30px;
-            background: rgba(28, 28, 32, 0.85);
-            backdrop-filter: blur(22px);
+            height: 54px;
+            border-radius: 28px;
+            background: rgba(28, 28, 32, 0.88);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.16);
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -132,7 +137,7 @@
             background: none;
             border: none;
             color: #9ca3af;
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 600;
             display: flex;
             flex-direction: column;
@@ -140,42 +145,48 @@
             gap: 2px;
             cursor: pointer;
         }
-        .nav-tab.active {
-            color: #ff9f0a;
-        }
+        .nav-tab.active { color: #ff9f0a; }
     </style>
 </head>
 <body>
     <div class="topbar">
         <button class="link-orange" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
-        <button class="link-orange" onclick="addAlarm()">+</button>
+        <button class="link-orange" onclick="toggleAddAlarm()">+</button>
     </div>
 
-    <!-- Zegar światowy -->
+    <div id="banner" class="ios-banner">
+        <span id="banner-txt">Minutnik zakończony</span>
+        <button class="link-orange" style="font-size:12px;" onclick="hideBanner()">OK</button>
+    </div>
+
+    <div id="add-alarm-box" class="add-alarm-box">
+        <input id="new-alarm-time" type="time" value="07:15">
+        <input id="new-alarm-label" type="text" placeholder="Etykieta">
+        <button class="link-orange" onclick="confirmAddAlarm()">Dodaj</button>
+    </div>
+
     <section id="panel-world" class="tab-panel active">
         <h1 class="screen-title">Zegar światowy</h1>
         <div id="local-big-clock" class="world-big">00:00:00</div>
         <div class="row-item">
-            <div><div style="font-size:12px;color:#9ca3af;">Dzisiaj, +0h</div><div style="font-size:20px;font-weight:600;">Warszawa</div></div>
-            <span id="city-waw" style="font-size:28px;font-weight:300;">--:--</span>
+            <div><div style="font-size:11.5px;color:#9ca3af;">Lokalnie</div><div style="font-size:18px;font-weight:600;">Warszawa</div></div>
+            <span id="city-waw" style="font-size:26px;font-weight:300;">--:--</span>
         </div>
         <div class="row-item">
-            <div><div style="font-size:12px;color:#9ca3af;">Dzisiaj, -6h</div><div style="font-size:20px;font-weight:600;">Nowy Jork</div></div>
-            <span id="city-nyc" style="font-size:28px;font-weight:300;">--:--</span>
+            <div><div style="font-size:11.5px;color:#9ca3af;">Ameryka</div><div style="font-size:18px;font-weight:600;">Nowy Jork</div></div>
+            <span id="city-nyc" style="font-size:26px;font-weight:300;">--:--</span>
         </div>
         <div class="row-item">
-            <div><div style="font-size:12px;color:#9ca3af;">Jutro, +8h</div><div style="font-size:20px;font-weight:600;">Tokio</div></div>
-            <span id="city-tyo" style="font-size:28px;font-weight:300;">--:--</span>
+            <div><div style="font-size:11.5px;color:#9ca3af;">Azja</div><div style="font-size:18px;font-weight:600;">Tokio</div></div>
+            <span id="city-tyo" style="font-size:26px;font-weight:300;">--:--</span>
         </div>
     </section>
 
-    <!-- Alarmy -->
     <section id="panel-alarms" class="tab-panel">
         <h1 class="screen-title">Alarmy</h1>
         <div id="alarms-list"></div>
     </section>
 
-    <!-- Stoper -->
     <section id="panel-stopwatch" class="tab-panel">
         <h1 class="screen-title">Stoper</h1>
         <div id="sw-time" class="stopwatch-display">00:00.00</div>
@@ -183,18 +194,17 @@
             <button class="round-btn btn-gray" onclick="lapOrReset()">Okrążenie</button>
             <button id="sw-toggle" class="round-btn btn-green" onclick="toggleStopwatch()">Start</button>
         </div>
-        <div id="laps-list" style="margin-top:12px;"></div>
+        <div id="laps-list" style="margin-top:10px;"></div>
     </section>
 
-    <!-- Minutnik -->
     <section id="panel-timers" class="tab-panel">
         <h1 class="screen-title">Minutnik</h1>
         <div class="picker-box">
-            <div class="picker-col"><span style="font-size:12px;color:#9ca3af;">Godz.</span><select id="t-h"></select></div>
-            <div class="picker-col"><span style="font-size:12px;color:#9ca3af;">Min.</span><select id="t-m"></select></div>
-            <div class="picker-col"><span style="font-size:12px;color:#9ca3af;">Sek.</span><select id="t-s"></select></div>
+            <div class="picker-col"><span style="font-size:11px;color:#9ca3af;">Godz.</span><select id="t-h"></select></div>
+            <div class="picker-col"><span style="font-size:11px;color:#9ca3af;">Min.</span><select id="t-m"></select></div>
+            <div class="picker-col"><span style="font-size:11px;color:#9ca3af;">Sek.</span><select id="t-s"></select></div>
         </div>
-        <div id="timer-display" class="stopwatch-display" style="padding:10px 0;font-size:44px;">05:00</div>
+        <div id="timer-display" class="stopwatch-display" style="padding:8px 0;font-size:40px;">05:00</div>
         <div class="sw-controls">
             <button class="round-btn btn-gray" onclick="resetTimer()">Anuluj</button>
             <button id="t-start-btn" class="round-btn btn-green" onclick="toggleTimer()">Start</button>
@@ -209,13 +219,19 @@
     </nav>
 
     <script>
+        function showBanner(msg) {
+            document.getElementById('banner-txt').textContent = msg;
+            document.getElementById('banner').classList.add('show');
+        }
+        function hideBanner() {
+            document.getElementById('banner').classList.remove('show');
+        }
         function switchTab(name) {
             ['world', 'alarms', 'stopwatch', 'timers'].forEach(t => {
                 document.getElementById(`panel-${t}`).classList.toggle('active', t === name);
                 document.getElementById(`tab-${t}`).classList.toggle('active', t === name);
             });
         }
-
         function updateWorldClocks() {
             const now = new Date();
             document.getElementById('local-big-clock').textContent = now.toTimeString().slice(0, 8);
@@ -232,20 +248,24 @@
             { time: '08:30', label: 'Praca', on: false }
         ];
         function renderAlarms() {
-            const box = document.getElementById('alarms-list');
-            box.innerHTML = alarms.map((a, i) => `
+            document.getElementById('alarms-list').innerHTML = alarms.map((a, i) => `
                 <div class="row-item">
-                    <div><div class="alarm-time">${a.time}</div><div style="font-size:13px;color:#9ca3af;">${a.label}</div></div>
+                    <div><div class="alarm-time">${a.time}</div><div style="font-size:12.5px;color:#9ca3af;">${a.label}</div></div>
                     <input type="checkbox" class="switch-ios" ${a.on ? 'checked' : ''} onchange="alarms[${i}].on = this.checked">
                 </div>
             `).join('');
         }
-        function addAlarm() {
-            const t = prompt('Godzina alarmu (np. 06:45):', '06:45');
-            if (!t) return;
-            alarms.push({ time: t.trim(), label: 'Alarm', on: true });
-            renderAlarms();
+        function toggleAddAlarm() {
             switchTab('alarms');
+            document.getElementById('add-alarm-box').classList.toggle('open');
+        }
+        function confirmAddAlarm() {
+            const t = document.getElementById('new-alarm-time').value || '07:00';
+            const lbl = document.getElementById('new-alarm-label').value.trim() || 'Alarm';
+            alarms.push({ time: t, label: lbl, on: true });
+            document.getElementById('new-alarm-label').value = '';
+            document.getElementById('add-alarm-box').classList.remove('open');
+            renderAlarms();
         }
         renderAlarms();
 
@@ -279,22 +299,18 @@
                 laps.unshift(fmtSw(swElapsed));
                 document.getElementById('laps-list').innerHTML = laps.map((l, i) => `<div class="row-item"><span>Okrążenie ${laps.length - i}</span><span>${l}</span></div>`).join('');
             } else {
-                swElapsed = 0;
-                laps = [];
+                swElapsed = 0; laps = [];
                 document.getElementById('sw-time').textContent = '00:00.00';
                 document.getElementById('laps-list').innerHTML = '';
             }
         }
 
-        const selH = document.getElementById('t-h');
-        const selM = document.getElementById('t-m');
-        const selS = document.getElementById('t-s');
+        const selH = document.getElementById('t-h'), selM = document.getElementById('t-m'), selS = document.getElementById('t-s');
         for (let i = 0; i < 24; i++) selH.add(new Option(i, i));
         for (let i = 0; i < 60; i++) {
             selM.add(new Option(i, i, false, i === 5));
             selS.add(new Option(i, i));
         }
-
         let remSec = 300, tInterval = null, tRunning = false;
         function syncPickerToSec() {
             remSec = Number(selH.value) * 3600 + Number(selM.value) * 60 + Number(selS.value);
@@ -314,13 +330,8 @@
                 btn.textContent = 'Pauza';
                 btn.className = 'round-btn btn-gray';
                 tInterval = setInterval(() => {
-                    if (remSec > 0) {
-                        remSec--;
-                        renderTimer();
-                    } else {
-                        resetTimer();
-                        alert('Minutnik zakończył odliczanie!');
-                    }
+                    if (remSec > 0) { remSec--; renderTimer(); }
+                    else { resetTimer(); showBanner('Minutnik zakończył odliczanie'); }
                 }, 1000);
             } else {
                 tRunning = false;
