@@ -2,161 +2,214 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lockscreen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lock Screen — ZenOS</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
+            width: 100vw;
             height: 100vh;
-            background-color: #050811;
-            background-image: linear-gradient(160deg, #0b132b 0%, #1c2541 55%, #111827 100%);
-            background-size: cover;
-            background-position: center;
+            padding: 64px 20px 26px;
             color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+            background: radial-gradient(circle at 70% 25%, rgba(37, 99, 235, 0.35), rgba(6, 9, 19, 0.72));
+            backdrop-filter: blur(16px);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 64px 22px 30px;
-            position: relative;
             overflow: hidden;
         }
-        .scrim {
-            position: absolute;
-            inset: 0;
-            background: rgba(4, 7, 16, 0.92);
-            z-index: 0;
+        .glass {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08));
+            border: 1px solid rgba(255, 255, 255, 0.36);
+            backdrop-filter: blur(22px) saturate(180%);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), inset 0 1px 1px rgba(255, 255, 255, 0.55);
         }
-        .content {
-            position: relative;
-            z-index: 1;
+        .top-block {
+            text-align: center;
             display: flex;
             flex-direction: column;
-            height: 100%;
-            justify-content: space-between;
+            align-items: center;
+            gap: 4px;
         }
-        .top-clock {
-            text-align: center;
+        .date-txt {
+            font-size: 18px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.84);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
         }
-        .lock-glyph {
-            font-size: 16px;
-            margin-bottom: 6px;
-            opacity: 0.9;
-        }
-        .time {
-            font-size: 64px;
+        .clock-glass {
+            font-size: clamp(86px, 24vw, 132px);
             font-weight: 700;
-            letter-spacing: -1.5px;
-            line-height: 1.05;
+            line-height: 0.96;
+            letter-spacing: -3px;
+            color: rgba(255, 255, 255, 0.36);
+            -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.75);
+            text-shadow: 0 10px 28px rgba(0, 0, 0, 0.25), inset 0 2px 6px rgba(255, 255, 255, 0.65);
         }
-        .sub {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.72);
-            margin-top: 6px;
+        .ls-widgets {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
-        .notif-list {
+        .ls-chip {
+            padding: 7px 13px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .notif-stack {
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-height: 280px;
+            max-height: 210px;
             overflow-y: auto;
-            margin: 16px 0;
         }
         .notif-card {
-            background: rgba(44, 44, 46, 0.88);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 18px;
             padding: 12px 14px;
-            font-size: 12px;
+            border-radius: 20px;
+            font-size: 13.5px;
         }
         .notif-head {
             display: flex;
             justify-content: space-between;
+            font-size: 11.5px;
             font-weight: 700;
-            margin-bottom: 3px;
+            opacity: 0.85;
+            margin-bottom: 2px;
         }
-        .notif-body {
-            color: #d1d1d6;
-        }
-        .unlock-wrap {
+        .bottom-block {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 14px;
         }
-        .unlock-btn {
+        .shortcuts {
             width: 100%;
-            max-width: 270px;
-            padding: 14px 18px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.24);
-            background: rgba(255, 255, 255, 0.16);
+            max-width: 420px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 8px;
+        }
+        .circle-btn {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: none;
             color: #ffffff;
-            font-size: 14px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .circle-btn.active {
+            background: #ffffff;
+            color: #090d16;
+        }
+        .unlock-pill {
+            border: none;
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 999px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
         }
-        .home-bar {
-            width: 120px;
-            height: 4px;
+        .bar-ind {
+            width: 134px;
+            height: 5px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.75);
-            margin-top: 4px;
+            background: rgba(255, 255, 255, 0.85);
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div class="scrim"></div>
-    <div class="content">
-        <div class="top-clock">
-            <div class="lock-glyph">🔒</div>
-            <div id="ls-time" class="time">09:41</div>
-            <div class="sub">ZeniOS v1.0.2 • Ekran blokady</div>
-        </div>
-
-        <div id="ls-notifs" class="notif-list"></div>
-
-        <div class="unlock-wrap">
-            <button class="unlock-btn" onclick="unlock()">Odblokuj ZeniOS</button>
-            <div class="home-bar"></div>
+    <div class="top-block">
+        <div id="ls-date" class="date-txt">Czwartek, 26 listopada</div>
+        <div id="ls-clock" class="clock-glass">15:00</div>
+        <div class="ls-widgets">
+            <div class="ls-chip glass">🌤️ ZenOS • Liquid Glass</div>
+            <div id="ls-saver" class="ls-chip glass">⚡ TOP-1</div>
         </div>
     </div>
 
+    <div id="ls-notifs" class="notif-stack"></div>
+
+    <div class="bottom-block">
+        <div class="shortcuts">
+            <button id="torch-btn" class="circle-btn glass" onclick="toggleTorch()" title="Latarka">🔦</button>
+            <button class="circle-btn glass" onclick="openCamera()" title="Aparat">📷</button>
+        </div>
+        <button class="unlock-pill glass" onclick="unlock()">Przesuń w górę lub kliknij, aby odblokować</button>
+        <div class="bar-ind" onclick="unlock()"></div>
+    </div>
+
     <script>
-        function unlock() {
-            window.parent.postMessage({ type: 'UNLOCK_SCREEN' }, '*');
-        }
+        let torchOn = false;
+        let focusOn = false;
+        let items = [];
 
-        function esc(s) {
-            return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-        }
+        const days = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+        const months = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
 
-        function renderNotifs(items = [], focusMode = false) {
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('ls-clock').textContent = now.toTimeString().slice(0, 5);
+            document.getElementById('ls-date').textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        function renderNotifs() {
             const box = document.getElementById('ls-notifs');
             box.innerHTML = '';
-            if (focusMode) {
-                box.innerHTML = '<div class="notif-card"><div class="notif-head"><span>🌙 Tryb skupienia</span></div><div class="notif-body">Powiadomienia wyciszone.</div></div>';
+            if (focusOn) {
+                box.innerHTML = '<div class="notif-card glass"><div class="notif-head"><span>🌙 Tryb skupienia</span><span>teraz</span></div><div>Powiadomienia są wyciszone.</div></div>';
                 return;
             }
-            items.slice(0, 4).forEach(n => {
+            items.slice(0, 3).forEach(n => {
                 const div = document.createElement('div');
-                div.className = 'notif-card';
-                div.innerHTML = `<div class="notif-head"><span>${esc(n.title)}</span><span>${esc(n.time || '')}</span></div><div class="notif-body">${esc(n.body || '')}</div>`;
+                div.className = 'notif-card glass';
+                div.onclick = unlock;
+                div.innerHTML = `<div class="notif-head"><span>${n.title}</span><span>${n.time}</span></div><div>${n.body}</div>`;
                 box.appendChild(div);
             });
         }
 
-        window.addEventListener('message', (e) => {
-            const data = e.data;
-            if (!data || typeof data !== 'object') return;
-            if (data.type === 'OS_CLOCK' && data.time) {
-                document.getElementById('ls-time').textContent = data.time;
-            }
-            if (data.type === 'SET_LOCK_WALLPAPER' && data.url) {
-                document.body.style.backgroundImage = `url("${data.url}")`;
-            }
-            if (data.type === 'NOTIFICATIONS_UPDATED') {
-                renderNotifs(data.items || [], Boolean(data.focusMode));
+        function unlock() {
+            parent.postMessage({ type: 'UNLOCK_DEVICE' }, '*');
+        }
+
+        function openCamera() {
+            parent.postMessage({ type: 'OPEN_APP', appId: 'aparat' }, '*');
+        }
+
+        function toggleTorch() {
+            torchOn = !torchOn;
+            document.getElementById('torch-btn').classList.toggle('active', torchOn);
+            parent.postMessage({ type: 'TORCH_STATE', active: torchOn, intensity: 85 }, '*');
+        }
+
+        let startY = 0;
+        document.body.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+        document.body.addEventListener('touchend', e => {
+            if (startY - e.changedTouches[0].clientY > 60) unlock();
+        }, { passive: true });
+
+        window.addEventListener('message', e => {
+            if (!e.data || !e.data.type) return;
+            if (e.data.type === 'NOTIFICATIONS_UPDATED') {
+                items = e.data.items || [];
+                renderNotifs();
+            } else if (e.data.type === 'FOCUS_MODE_CHANGED') {
+                focusOn = Boolean(e.data.enabled);
+                renderNotifs();
+            } else if (e.data.type === 'BATTERY_SAVER_CHANGED') {
+                document.getElementById('ls-saver').textContent = e.data.enabled ? '🔋 Oszczędzanie' : '⚡ TOP-1';
             }
         });
     </script>
