@@ -2,90 +2,189 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Latarka</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Latarka — ZenOS</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
-            height: 100vh;
-            background: #090d16;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            background: radial-gradient(circle at 50% 35%, #1c2233 0%, #090c14 75%);
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 54px 20px 36px;
+        }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            backdrop-filter: blur(18px);
+            color: #ffffff;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .center-panel {
+            margin: auto;
+            width: 100%;
+            max-width: 320px;
+            border-radius: 36px;
+            padding: 28px 22px;
+            background: rgba(18, 20, 26, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.35);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 24px;
-            transition: background 0.2s ease, color 0.2s ease;
+            gap: 20px;
         }
-        body.on {
-            background: #ffffff;
-            color: #090d16;
+        .beam-stage {
+            width: 190px;
+            height: 150px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
         }
-        .bulb {
+        .arc-meter {
+            position: absolute;
+            top: 8px;
+            width: 136px;
+            height: 68px;
+            border-top: 3px solid rgba(255, 255, 255, 0.7);
+            border-radius: 136px 136px 0 0;
+            opacity: 0.35;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .beam-cone {
+            position: absolute;
+            bottom: 44px;
             width: 120px;
-            height: 120px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            height: 92px;
+            clip-path: polygon(34% 100%, 66% 100%, 96% 0%, 4% 0%);
+            background: linear-gradient(to top, rgba(167, 139, 250, 0.45), rgba(255, 255, 255, 0.02));
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+        }
+        .beam-cone.active {
+            opacity: var(--beam-opacity, 0.85);
+        }
+        .torch-icon-btn {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            font-size: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 52px;
-            box-shadow: 0 0 0 rgba(255, 250, 200, 0);
-            transition: all 0.25s ease;
-        }
-        body.on .bulb {
-            background: #fef08a;
-            border-color: #eab308;
-            box-shadow: 0 0 60px rgba(250, 204, 21, 0.9);
-        }
-        button {
-            padding: 13px 28px;
-            border-radius: 999px;
-            border: none;
-            background: #38bdf8;
-            color: #090d16;
-            font-size: 14px;
-            font-weight: 700;
             cursor: pointer;
+            z-index: 2;
+            transition: transform 0.2s cubic-bezier(0.22, 1.18, 0.36, 1), background 0.2s ease;
         }
-        body.on button {
-            background: #090d16;
-            color: #ffffff;
+        .torch-icon-btn.on {
+            background: #7c3aed;
+            box-shadow: 0 0 28px rgba(139, 92, 246, 0.7);
         }
-        .hint {
-            font-size: 12px;
-            opacity: 0.7;
+        .torch-icon-btn:active {
+            transform: scale(0.9);
+        }
+        .slider-wrap {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: #8b5cf6;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div id="bulb" class="bulb">🔦</div>
-    <button id="btn" onclick="toggleTorch()">Włącz latarkę</button>
-    <div id="status" class="hint">Stan: wyłączona</div>
+    <div class="topbar">
+        <button class="glass-btn" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
+        <span style="font-weight:700;font-size:16px;">Latarka</span>
+        <span id="state-pill" style="font-size:12px;opacity:0.75;">WYŁ.</span>
+    </div>
+
+    <div class="center-panel">
+        <div class="beam-stage">
+            <div id="arc" class="arc-meter"></div>
+            <div id="beam" class="beam-cone"></div>
+            <button id="toggle-btn" class="torch-icon-btn" onclick="toggleLight()">🔦</button>
+        </div>
+
+        <div class="slider-wrap">
+            <div class="slider-header">
+                <span>Jasność światła</span>
+                <span id="pct-label">80%</span>
+            </div>
+            <input id="level-slider" type="range" min="10" max="100" value="80" oninput="setLevel(this.value)">
+        </div>
+    </div>
+
+    <div></div>
 
     <script>
-        let state = false;
+        let isOn = false;
+        let level = 80;
 
-        function applyState(next) {
-            state = Boolean(next);
-            document.body.classList.toggle('on', state);
-            document.getElementById('btn').textContent = state ? 'Wyłącz latarkę' : 'Włącz latarkę';
-            document.getElementById('status').textContent = state ? 'Stan: świeci (TOP 1)' : 'Stan: wyłączona';
-            window.parent.postMessage({ type: 'TOGGLE_FLASHLIGHT', state }, '*');
-        }
+        function applyVisuals() {
+            const beam = document.getElementById('beam');
+            const arc = document.getElementById('arc');
+            const btn = document.getElementById('toggle-btn');
+            const pill = document.getElementById('state-pill');
+            const pct = document.getElementById('pct-label');
 
-        function toggleTorch() {
-            applyState(!state);
-        }
+            pct.textContent = `${level}%`;
+            beam.style.setProperty('--beam-opacity', String((level / 100) * 0.95));
+            arc.style.opacity = isOn ? String(0.35 + (level / 100) * 0.65) : '0.25';
 
-        window.addEventListener('message', (e) => {
-            if (e.data && e.data.type === 'OS_PRIORITY' && e.data.level === 'BACKGROUND') {
-                // Oszczędność energii gdy aplikacja schodzi do tła
-                if (state) applyState(false);
+            if (isOn) {
+                beam.classList.add('active');
+                btn.classList.add('on');
+                pill.textContent = 'WŁ.';
+            } else {
+                beam.classList.remove('active');
+                btn.classList.remove('on');
+                pill.textContent = 'WYŁ.';
             }
-        });
+
+            parent.postMessage({ type: 'TORCH_STATE', active: isOn, intensity: level }, '*');
+        }
+
+        function toggleLight() {
+            isOn = !isOn;
+            applyVisuals();
+        }
+
+        function setLevel(val) {
+            level = Number(val);
+            if (level > 0 && !isOn) isOn = true;
+            applyVisuals();
+        }
+
+        applyVisuals();
     </script>
 </body>
 </html>
