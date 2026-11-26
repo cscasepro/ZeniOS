@@ -13,12 +13,7 @@ const Supervisor = {
     },
 
     handleAppHang(appId, reason) {
-        console.warn(`[Supervisor] ${appId}: ${reason}`);
-        PerformanceManager.closeApp(appId);
-        if (typeof Kernel !== 'undefined') {
-            Kernel.goHome();
-            Notifications?.push?.('Supervisor ZenOS', `Zamknięto zawieszoną aplikację: ${appId}`);
-        }
+        console.error(`[Supervisor] ${appId}: ${reason}`);
     },
 
     handleSystemError(code, details) {
