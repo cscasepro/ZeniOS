@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            height: 100vh;
+            background: rgba(9, 13, 22, 0.92);
+            backdrop-filter: blur(18px);
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .bar {
+            display: flex;
+            gap: 8px;
+        }
+        input {
+            flex: 1;
+            padding: 11px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(30, 41, 59, 0.9);
+            color: #ffffff;
+            font-size: 14px;
+            outline: none;
+        }
+        .close {
+            padding: 0 12px;
+            border-radius: 14px;
+            border: none;
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .results {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .res {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 11px 13px;
+            cursor: pointer;
+        }
+        .res-top {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .res-tag {
+            font-size: 10px;
+            color: #38bdf8;
+        }
+        .res-sub {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="bar">
+        <input id="q" type="text" placeholder="Szukaj aplikacji, notatek, wydarzeń..." oninput="runSearch()">
+        <button class="close" onclick="closeSearch()">Zamknij</button>
+    </div>
+    <div id="results" class="results"></div>
+
+    <script>
+        const input = document.getElementById('q');
+
+        function runSearch() {
+            window.parent.postMessage({ type: 'SEARCH_QUERY', query: input.value }, '*');
+        }
+
+        function closeSearch() {
+            window.parent.postMessage({ type: 'GO_HOME' }, '*');
+        }
+
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+
+        window.addEventListener('message', (e) => {
+            const data = e.data;
+            if (!data) return;
+
+            if (data.type === 'OVERLAY_OPENED') {
+                input.focus();
+                runSearch();
+            }
+
+            if (data.type === 'SEARCH_RESULTS') {
+                const box = document.getElementById('results');
+                box.innerHTML = '';
+                const items = data.items || [];
+                if (!items.length) {
+                    box.innerHTML = '<div class="res"><div class="res-sub">Brak dopasowań.</div></div>';
+                    return;
+                }
+                items.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'res';
+                    el.innerHTML = `<div class="res-top"><span>${esc(item.title)}</span><span class="res-tag">${esc(item.type)}</span></div><div class="res-sub">${esc(item.subtitle || '')}</div>`;
+                    el.onclick = () => {
+                        closeSearch();
+                        if (item.action && item.action.type === 'OPEN_APP' && item.action.appId) {
+                            window.parent.postMessage({ type: 'OPEN_APP', appId: item.action.appId }, '*');
+                        }
+                    };
+                    box.appendChild(el);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
