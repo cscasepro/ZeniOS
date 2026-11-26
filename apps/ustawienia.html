@@ -8,96 +8,118 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             min-height: 100vh;
-            background: #090d16;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
-            padding: 16px 16px 28px;
+            background: #000000;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+            padding: 14px 16px 32px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 16px;
             overflow-y: auto;
         }
-        h1 { font-size: 20px; }
-        .card {
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 18px;
-            padding: 14px;
+        .nav-header {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
         }
-        .card-title {
+        .back-circle {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            background: #1c1c1e;
+            border: none;
+            color: #ffffff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        h1 { font-size: 17px; font-weight: 700; }
+        .sec-title {
             font-size: 12px;
+            color: #98989f;
+            margin: 0 0 6px 8px;
             text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: #94a3b8;
-            font-weight: 700;
+            letter-spacing: 0.4px;
         }
+        .group {
+            background: #1c1c1e;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .row {
+            padding: 12px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 14px;
+        }
+        .row:last-child { border-bottom: none; }
+        .val-muted { color: #98989f; font-size: 13px; }
         .style-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 8px;
+            padding: 12px;
         }
         .style-btn {
             padding: 10px;
-            border-radius: 12px;
+            border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.14);
-            background: rgba(30, 41, 59, 0.8);
-            color: #f8fafc;
+            background: #2c2c2e;
+            color: #ffffff;
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             text-align: left;
         }
         .style-btn.active {
-            border-color: #38bdf8;
-            background: rgba(56, 189, 248, 0.22);
+            border-color: #0a84ff;
+            background: rgba(10, 132, 255, 0.25);
         }
         .wp-row {
             display: flex;
             gap: 8px;
             overflow-x: auto;
-            padding-bottom: 4px;
+            padding: 12px;
         }
         .wp-chip {
             flex-shrink: 0;
             padding: 8px 12px;
-            border-radius: 12px;
+            border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.14);
-            background: rgba(30, 41, 59, 0.85);
-            color: #f8fafc;
+            background: #2c2c2e;
+            color: #ffffff;
             font-size: 12px;
             cursor: pointer;
         }
-        .toggle-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
+        .switch {
+            width: 44px;
+            height: 26px;
+            accent-color: #30d158;
+            cursor: pointer;
         }
-        .btn-action {
-            padding: 10px 12px;
-            border-radius: 12px;
+        .btn-pill {
+            padding: 8px 12px;
+            border-radius: 10px;
             border: none;
-            background: rgba(56, 189, 248, 0.2);
-            color: #7dd3fc;
+            background: #2c2c2e;
+            color: #ffffff;
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
         }
         .btn-danger {
-            background: rgba(239, 68, 68, 0.22);
-            color: #fca5a5;
+            background: rgba(255, 69, 58, 0.22);
+            color: #ff6961;
         }
         .log-box {
-            background: #030712;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            padding: 8px;
+            background: #0c0c0e;
+            padding: 10px;
             font-family: ui-monospace, monospace;
             font-size: 10px;
-            color: #cbd5e1;
+            color: #d1d1d6;
             max-height: 110px;
             overflow-y: auto;
             white-space: pre-wrap;
@@ -105,62 +127,87 @@
     </style>
 </head>
 <body>
-    <h1>Ustawienia • ZeniOS v1.0.2</h1>
+    <div class="nav-header">
+        <button class="back-circle" onclick="goHome()">‹</button>
+        <h1>Ustawienia</h1>
+        <span class="val-muted">v1.0.2</span>
+    </div>
 
-    <div class="card">
-        <div class="card-title">Styl ikon (jak iPhone)</div>
-        <div class="style-grid">
-            <button id="st-color" class="style-btn" onclick="setIconStyle('color')">🌈 Kolorowy</button>
-            <button id="st-dark" class="style-btn" onclick="setIconStyle('dark')">🌑 Ciemny</button>
-            <button id="st-bw" class="style-btn" onclick="setIconStyle('bw')">⚪ Szaro-biały</button>
-            <button id="st-pink-purple" class="style-btn" onclick="setIconStyle('pink-purple')">🦄 Różowo-fioletowy</button>
+    <div>
+        <div class="sec-title">Wygląd i styl ikon</div>
+        <div class="group">
+            <div class="row">
+                <span>Tryb jasny paska / tekstu</span>
+                <input type="checkbox" class="switch" id="chk-light" onchange="toggleLight(this.checked)">
+            </div>
+            <div class="style-grid">
+                <button id="st-color" class="style-btn" onclick="setIconStyle('color')">🌈 Kolorowy</button>
+                <button id="st-dark" class="style-btn" onclick="setIconStyle('dark')">🌑 Ciemny</button>
+                <button id="st-bw" class="style-btn" onclick="setIconStyle('bw')">⚪ Szaro-biały</button>
+                <button id="st-pink-purple" class="style-btn" onclick="setIconStyle('pink-purple')">🦄 Różowo-fioletowy</button>
+            </div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-title">Tapety z repozytorium (default_wallpapers)</div>
-        <div class="wp-row" id="wp-list"></div>
-        <input type="file" id="custom-wp" accept="image/*" style="font-size:11px;color:#94a3b8;" onchange="uploadWallpaper(this)">
-    </div>
-
-    <div class="card">
-        <div class="card-title">Zasilanie, skupienie i widżety</div>
-        <div class="toggle-row">
-            <span>🔋 Ochrona baterii (hamuje tło)</span>
-            <input type="checkbox" id="chk-battery" onchange="toggleBattery(this.checked)">
-        </div>
-        <div class="toggle-row">
-            <span>🌙 Tryb skupienia</span>
-            <input type="checkbox" id="chk-focus" onchange="toggleFocus(this.checked)">
-        </div>
-        <div class="toggle-row">
-            <span>🧩 Widżety na pulpicie</span>
-            <input type="checkbox" id="chk-widgets" onchange="toggleWidgets(this.checked)">
+    <div>
+        <div class="sec-title">Tapeta (default_wallpapers)</div>
+        <div class="group">
+            <div class="wp-row" id="wp-list"></div>
+            <div class="row">
+                <span style="font-size:12px;color:#98989f;">Własna tapeta:</span>
+                <input type="file" accept="image/*" style="font-size:11px;color:#98989f;max-width:190px;" onchange="uploadWallpaper(this)">
+            </div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-title">Nadzór w tle (Supervisor)</div>
-        <div style="display:flex;gap:8px;">
-            <button class="btn-action" onclick="loadLogs()">Odśwież logi</button>
-            <button class="btn-action btn-danger" onclick="forceErrorBoot()">Test Error Boot</button>
+    <div>
+        <div class="sec-title">Bateria, skupienie i widżety</div>
+        <div class="group">
+            <div class="row">
+                <span>Ochrona baterii (hamuje tło)</span>
+                <input type="checkbox" class="switch" id="chk-battery" onchange="toggleBattery(this.checked)">
+            </div>
+            <div class="row">
+                <span>Tryb skupienia</span>
+                <input type="checkbox" class="switch" id="chk-focus" onchange="toggleFocus(this.checked)">
+            </div>
+            <div class="row">
+                <span>Widżety na ekranie głównym</span>
+                <input type="checkbox" class="switch" id="chk-widgets" onchange="toggleWidgets(this.checked)">
+            </div>
         </div>
-        <div id="logs" class="log-box">Kliknij „Odśwież logi”, aby zobaczyć zdarzenia systemu.</div>
+    </div>
+
+    <div>
+        <div class="sec-title">To urządzenie</div>
+        <div class="group">
+            <div class="row"><span>Nazwa</span><span class="val-muted">ZeniPhone</span></div>
+            <div class="row"><span>Wersja systemu</span><span class="val-muted">ZeniOS 1.0.2</span></div>
+            <div class="row"><span>Priorytet</span><span class="val-muted">TOP-1 + Izolacja iFrame</span></div>
+        </div>
+    </div>
+
+    <div>
+        <div class="sec-title">Nadzór i awarie (Supervisor)</div>
+        <div class="group">
+            <div class="row">
+                <button class="btn-pill" onclick="loadLogs()">Pobierz logi</button>
+                <button class="btn-pill btn-danger" onclick="forceErrorBoot()">Wywołaj Error Boot</button>
+            </div>
+            <div id="logs" class="log-box">Brak wczytanych logów. Kliknij „Pobierz logi”.</div>
+        </div>
     </div>
 
     <script>
         const p = window.parent;
 
-        function initUi() {
+        function initSettings() {
             const wpList = document.getElementById('wp-list');
             wpList.innerHTML = '';
             const presets = (p && p.Wallpapers && p.Wallpapers.presets) || [
-                { id: 'wp_1', name: 'Tapeta 1' },
-                { id: 'wp_2', name: 'Tapeta 2' },
-                { id: 'wp_3', name: 'Tapeta 3' },
-                { id: 'wp_4', name: 'Tapeta 4' },
-                { id: 'wp_5', name: 'Tapeta 5' },
-                { id: 'wp_6', name: 'Tapeta 6' },
+                { id: 'wp_1', name: 'Tapeta 1' }, { id: 'wp_2', name: 'Tapeta 2' },
+                { id: 'wp_3', name: 'Tapeta 3' }, { id: 'wp_4', name: 'Tapeta 4' },
+                { id: 'wp_5', name: 'Tapeta 5' }, { id: 'wp_6', name: 'Tapeta 6' },
                 { id: 'wp_7', name: 'Tapeta 7' }
             ];
 
@@ -175,23 +222,28 @@
                 wpList.appendChild(btn);
             });
 
-            const currentStyle = (p && p.IconTheme && p.IconTheme.getStyle()) || 'color';
-            highlightStyle(currentStyle);
+            const style = (p && p.IconTheme && p.IconTheme.getStyle()) || 'color';
+            ['color', 'dark', 'bw', 'pink-purple'].forEach(id => {
+                document.getElementById('st-' + id)?.classList.toggle('active', id === style);
+            });
 
             document.getElementById('chk-battery').checked = Boolean(p && p.BatterySaver && p.BatterySaver.enabled);
             document.getElementById('chk-focus').checked = Boolean(p && p.FocusMode && p.FocusMode.enabled);
             document.getElementById('chk-widgets').checked = Boolean(p && p.Widgets && p.Widgets.config && p.Widgets.config.enabled !== false);
-        }
-
-        function highlightStyle(styleId) {
-            ['color', 'dark', 'bw', 'pink-purple'].forEach(id => {
-                document.getElementById('st-' + id)?.classList.toggle('active', id === styleId);
-            });
+            document.getElementById('chk-light').checked = Boolean(p && p.document && p.document.body.classList.contains('light-ui'));
         }
 
         function setIconStyle(style) {
-            highlightStyle(style);
+            ['color', 'dark', 'bw', 'pink-purple'].forEach(id => {
+                document.getElementById('st-' + id)?.classList.toggle('active', id === style);
+            });
             p.postMessage({ type: 'SET_ICON_STYLE', style }, '*');
+        }
+
+        function toggleLight(state) {
+            if (p && p.document) {
+                p.document.body.classList.toggle('light-ui', Boolean(state));
+            }
         }
 
         function uploadWallpaper(input) {
@@ -225,8 +277,12 @@
             p.postMessage({
                 type: 'FORCE_ERROR_BOOT',
                 code: 'ERR_MANUAL_RECOVERY_TEST',
-                details: 'Ręczne wywołanie Error Boot z Ustawień'
+                details: 'Test z Ustawień ZeniOS v1.0.2'
             }, '*');
+        }
+
+        function goHome() {
+            p.postMessage({ type: 'GO_HOME' }, '*');
         }
 
         window.addEventListener('message', (e) => {
@@ -235,11 +291,11 @@
                 document.getElementById('logs').textContent = lines.length ? lines.join('\n') : 'Brak logów.';
             }
             if (e.data && e.data.type === 'OS_PRIORITY' && e.data.level === 'TOP_1') {
-                initUi();
+                initSettings();
             }
         });
 
-        initUi();
+        initSettings();
     </script>
 </body>
 </html>
