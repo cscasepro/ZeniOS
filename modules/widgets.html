@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widgets</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body {
+            height: 112px;
+            background: transparent;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            overflow: hidden;
+        }
+        .widget {
+            background: rgba(15, 23, 42, 0.62);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 20px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .w-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+        .w-main {
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .w-sub {
+            font-size: 11px;
+            color: #cbd5e1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .photo-preview {
+            width: 100%;
+            height: 44px;
+            border-radius: 10px;
+            object-fit: cover;
+            display: none;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="w-note" class="widget" onclick="openApp('notatki')">
+        <span class="w-title">📝 Szybka notatka</span>
+        <span id="note-text" class="w-main">Brak notatek</span>
+        <span class="w-sub">Dotknij, aby otworzyć Notatki</span>
+    </div>
+
+    <div id="w-photo" class="widget" onclick="openApp('galeria')">
+        <span class="w-title">🖼️ Ostatnie zdjęcie</span>
+        <img id="photo-img" class="photo-preview" alt="Podgląd">
+        <span id="photo-sub" class="w-sub">Otwórz Galerię</span>
+    </div>
+
+    <script>
+        function openApp(appId) {
+            window.parent.postMessage({ type: 'OPEN_APP', appId }, '*');
+        }
+
+        window.addEventListener('message', (e) => {
+            const data = e.data;
+            if (!data || data.type !== 'WIDGETS_DATA') return;
+
+            const cfg = data.config || {};
+            document.getElementById('w-note').style.display = cfg.showNote !== false ? 'flex' : 'none';
+            document.getElementById('w-photo').style.display = cfg.showPhoto !== false ? 'flex' : 'none';
+
+            document.getElementById('note-text').textContent = data.latestNote || 'Brak notatek';
+
+            const img = document.getElementById('photo-img');
+            const sub = document.getElementById('photo-sub');
+            if (data.latestPhoto) {
+                img.src = data.latestPhoto;
+                img.style.display = 'block';
+                sub.textContent = 'Najnowsze ujęcie';
+            } else {
+                img.style.display = 'none';
+                sub.textContent = 'Brak zdjęć w galerii';
+            }
+        });
+    </script>
+</body>
+</html>
