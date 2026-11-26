@@ -2,121 +2,341 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zegar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zegar — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
             min-height: 100vh;
-            background: #090d16;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
-            padding: 18px;
+            background: #050507;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            padding: 50px 18px 86px;
         }
-        .card {
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 18px;
-            padding: 16px;
-            text-align: center;
-        }
-        .big-clock {
-            font-size: 40px;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-        .label {
-            font-size: 11px;
-            text-transform: uppercase;
-            color: #94a3b8;
-            letter-spacing: 0.6px;
-            margin-bottom: 6px;
-        }
-        .sw-time {
-            font-size: 28px;
-            font-weight: 700;
-            color: #38bdf8;
-            margin: 8px 0 12px;
-        }
-        .btns {
+        .topbar {
             display: flex;
-            justify-content: center;
-            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
         }
-        button {
-            padding: 9px 14px;
-            border-radius: 12px;
+        .link-orange {
+            background: none;
             border: none;
-            background: #38bdf8;
-            color: #090d16;
-            font-size: 12px;
-            font-weight: 700;
+            color: #ff9f0a;
+            font-size: 16px;
+            font-weight: 500;
             cursor: pointer;
         }
-        button.sec {
-            background: rgba(255, 255, 255, 0.12);
-            color: #f8fafc;
+        .screen-title {
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+        .tab-panel {
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .tab-panel.active {
+            display: flex;
+        }
+        .world-big {
+            font-size: 46px;
+            font-weight: 300;
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+            padding: 16px 0;
+        }
+        .row-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .alarm-time {
+            font-size: 38px;
+            font-weight: 300;
+            font-variant-numeric: tabular-nums;
+        }
+        .switch-ios {
+            width: 48px;
+            height: 28px;
+            accent-color: #30d158;
+            cursor: pointer;
+        }
+        .stopwatch-display {
+            font-size: 56px;
+            font-weight: 300;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            padding: 24px 0;
+        }
+        .sw-controls {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 12px;
+        }
+        .round-btn {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-gray { background: #2c2c2e; color: #ffffff; }
+        .btn-green { background: #143d22; color: #30d158; }
+        .btn-red { background: #471515; color: #ff453a; }
+        .picker-box {
+            background: #141417;
+            border-radius: 20px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 10px;
+        }
+        .picker-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .picker-col select {
+            background: #2c2c2e;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 10px;
+            font-size: 16px;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 10px;
+            left: 14px;
+            right: 14px;
+            height: 62px;
+            border-radius: 30px;
+            background: rgba(28, 28, 32, 0.85);
+            backdrop-filter: blur(22px);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            align-items: center;
+        }
+        .nav-tab {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+        }
+        .nav-tab.active {
+            color: #ff9f0a;
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <div class="label">Czas systemowy</div>
-        <div id="now-clock" class="big-clock">00:00:00</div>
+    <div class="topbar">
+        <button class="link-orange" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
+        <button class="link-orange" onclick="addAlarm()">+</button>
     </div>
 
-    <div class="card">
-        <div class="label">Stoper</div>
-        <div id="sw-display" class="sw-time">00.0s</div>
-        <div class="btns">
-            <button onclick="startSw()">Start</button>
-            <button class="sec" onclick="stopSw()">Stop</button>
-            <button class="sec" onclick="resetSw()">Reset</button>
+    <!-- Zegar światowy -->
+    <section id="panel-world" class="tab-panel active">
+        <h1 class="screen-title">Zegar światowy</h1>
+        <div id="local-big-clock" class="world-big">00:00:00</div>
+        <div class="row-item">
+            <div><div style="font-size:12px;color:#9ca3af;">Dzisiaj, +0h</div><div style="font-size:20px;font-weight:600;">Warszawa</div></div>
+            <span id="city-waw" style="font-size:28px;font-weight:300;">--:--</span>
         </div>
-    </div>
+        <div class="row-item">
+            <div><div style="font-size:12px;color:#9ca3af;">Dzisiaj, -6h</div><div style="font-size:20px;font-weight:600;">Nowy Jork</div></div>
+            <span id="city-nyc" style="font-size:28px;font-weight:300;">--:--</span>
+        </div>
+        <div class="row-item">
+            <div><div style="font-size:12px;color:#9ca3af;">Jutro, +8h</div><div style="font-size:20px;font-weight:600;">Tokio</div></div>
+            <span id="city-tyo" style="font-size:28px;font-weight:300;">--:--</span>
+        </div>
+    </section>
+
+    <!-- Alarmy -->
+    <section id="panel-alarms" class="tab-panel">
+        <h1 class="screen-title">Alarmy</h1>
+        <div id="alarms-list"></div>
+    </section>
+
+    <!-- Stoper -->
+    <section id="panel-stopwatch" class="tab-panel">
+        <h1 class="screen-title">Stoper</h1>
+        <div id="sw-time" class="stopwatch-display">00:00.00</div>
+        <div class="sw-controls">
+            <button class="round-btn btn-gray" onclick="lapOrReset()">Okrążenie</button>
+            <button id="sw-toggle" class="round-btn btn-green" onclick="toggleStopwatch()">Start</button>
+        </div>
+        <div id="laps-list" style="margin-top:12px;"></div>
+    </section>
+
+    <!-- Minutnik -->
+    <section id="panel-timers" class="tab-panel">
+        <h1 class="screen-title">Minutnik</h1>
+        <div class="picker-box">
+            <div class="picker-col"><span style="font-size:12px;color:#9ca3af;">Godz.</span><select id="t-h"></select></div>
+            <div class="picker-col"><span style="font-size:12px;color:#9ca3af;">Min.</span><select id="t-m"></select></div>
+            <div class="picker-col"><span style="font-size:12px;color:#9ca3af;">Sek.</span><select id="t-s"></select></div>
+        </div>
+        <div id="timer-display" class="stopwatch-display" style="padding:10px 0;font-size:44px;">05:00</div>
+        <div class="sw-controls">
+            <button class="round-btn btn-gray" onclick="resetTimer()">Anuluj</button>
+            <button id="t-start-btn" class="round-btn btn-green" onclick="toggleTimer()">Start</button>
+        </div>
+    </section>
+
+    <nav class="bottom-nav">
+        <button id="tab-world" class="nav-tab active" onclick="switchTab('world')"><span>🌐</span><span>Świat</span></button>
+        <button id="tab-alarms" class="nav-tab" onclick="switchTab('alarms')"><span>⏰</span><span>Alarmy</span></button>
+        <button id="tab-stopwatch" class="nav-tab" onclick="switchTab('stopwatch')"><span>⏱️</span><span>Stoper</span></button>
+        <button id="tab-timers" class="nav-tab" onclick="switchTab('timers')"><span>⏳</span><span>Minutnik</span></button>
+    </nav>
 
     <script>
-        function tickClock() {
-            document.getElementById('now-clock').textContent = new Date().toTimeString().slice(0, 8);
-        }
-        tickClock();
-        setInterval(tickClock, 1000);
-
-        let swStart = null;
-        let swAccumulated = 0;
-        let swTimer = null;
-
-        function renderSw() {
-            const elapsed = swAccumulated + (swStart ? (performance.now() - swStart) : 0);
-            document.getElementById('sw-display').textContent = `${(elapsed / 1000).toFixed(1)}s`;
+        function switchTab(name) {
+            ['world', 'alarms', 'stopwatch', 'timers'].forEach(t => {
+                document.getElementById(`panel-${t}`).classList.toggle('active', t === name);
+                document.getElementById(`tab-${t}`).classList.toggle('active', t === name);
+            });
         }
 
-        function startSw() {
-            if (swTimer) return;
-            swStart = performance.now();
-            swTimer = setInterval(renderSw, 100);
+        function updateWorldClocks() {
+            const now = new Date();
+            document.getElementById('local-big-clock').textContent = now.toTimeString().slice(0, 8);
+            const fmt = (tz) => new Intl.DateTimeFormat('pl-PL', { hour: '2-digit', minute: '2-digit', timeZone: tz }).format(now);
+            document.getElementById('city-waw').textContent = fmt('Europe/Warsaw');
+            document.getElementById('city-nyc').textContent = fmt('America/New_York');
+            document.getElementById('city-tyo').textContent = fmt('Asia/Tokyo');
         }
+        updateWorldClocks();
+        setInterval(updateWorldClocks, 1000);
 
-        function stopSw() {
-            if (swStart) {
-                swAccumulated += performance.now() - swStart;
-                swStart = null;
-            }
-            if (swTimer) {
+        const alarms = [
+            { time: '07:00', label: 'Poranek', on: true },
+            { time: '08:30', label: 'Praca', on: false }
+        ];
+        function renderAlarms() {
+            const box = document.getElementById('alarms-list');
+            box.innerHTML = alarms.map((a, i) => `
+                <div class="row-item">
+                    <div><div class="alarm-time">${a.time}</div><div style="font-size:13px;color:#9ca3af;">${a.label}</div></div>
+                    <input type="checkbox" class="switch-ios" ${a.on ? 'checked' : ''} onchange="alarms[${i}].on = this.checked">
+                </div>
+            `).join('');
+        }
+        function addAlarm() {
+            const t = prompt('Godzina alarmu (np. 06:45):', '06:45');
+            if (!t) return;
+            alarms.push({ time: t.trim(), label: 'Alarm', on: true });
+            renderAlarms();
+            switchTab('alarms');
+        }
+        renderAlarms();
+
+        let swRunning = false, swElapsed = 0, swTimer = null, swStart = 0, laps = [];
+        function fmtSw(ms) {
+            const mins = Math.floor(ms / 60000);
+            const secs = Math.floor((ms % 60000) / 1000);
+            const cs = Math.floor((ms % 1000) / 10);
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+        }
+        function toggleStopwatch() {
+            const btn = document.getElementById('sw-toggle');
+            if (!swRunning) {
+                swRunning = true;
+                swStart = performance.now() - swElapsed;
+                btn.textContent = 'Stop';
+                btn.className = 'round-btn btn-red';
+                swTimer = setInterval(() => {
+                    swElapsed = performance.now() - swStart;
+                    document.getElementById('sw-time').textContent = fmtSw(swElapsed);
+                }, 30);
+            } else {
+                swRunning = false;
                 clearInterval(swTimer);
-                swTimer = null;
+                btn.textContent = 'Start';
+                btn.className = 'round-btn btn-green';
             }
-            renderSw();
+        }
+        function lapOrReset() {
+            if (swRunning) {
+                laps.unshift(fmtSw(swElapsed));
+                document.getElementById('laps-list').innerHTML = laps.map((l, i) => `<div class="row-item"><span>Okrążenie ${laps.length - i}</span><span>${l}</span></div>`).join('');
+            } else {
+                swElapsed = 0;
+                laps = [];
+                document.getElementById('sw-time').textContent = '00:00.00';
+                document.getElementById('laps-list').innerHTML = '';
+            }
         }
 
-        function resetSw() {
-            stopSw();
-            swAccumulated = 0;
-            renderSw();
+        const selH = document.getElementById('t-h');
+        const selM = document.getElementById('t-m');
+        const selS = document.getElementById('t-s');
+        for (let i = 0; i < 24; i++) selH.add(new Option(i, i));
+        for (let i = 0; i < 60; i++) {
+            selM.add(new Option(i, i, false, i === 5));
+            selS.add(new Option(i, i));
         }
+
+        let remSec = 300, tInterval = null, tRunning = false;
+        function syncPickerToSec() {
+            remSec = Number(selH.value) * 3600 + Number(selM.value) * 60 + Number(selS.value);
+            renderTimer();
+        }
+        selH.onchange = selM.onchange = selS.onchange = syncPickerToSec;
+        function renderTimer() {
+            const m = Math.floor(remSec / 60);
+            const s = remSec % 60;
+            document.getElementById('timer-display').textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+        function toggleTimer() {
+            const btn = document.getElementById('t-start-btn');
+            if (!tRunning) {
+                if (remSec <= 0) syncPickerToSec();
+                tRunning = true;
+                btn.textContent = 'Pauza';
+                btn.className = 'round-btn btn-gray';
+                tInterval = setInterval(() => {
+                    if (remSec > 0) {
+                        remSec--;
+                        renderTimer();
+                    } else {
+                        resetTimer();
+                        alert('Minutnik zakończył odliczanie!');
+                    }
+                }, 1000);
+            } else {
+                tRunning = false;
+                clearInterval(tInterval);
+                btn.textContent = 'Start';
+                btn.className = 'round-btn btn-green';
+            }
+        }
+        function resetTimer() {
+            tRunning = false;
+            clearInterval(tInterval);
+            document.getElementById('t-start-btn').textContent = 'Start';
+            document.getElementById('t-start-btn').className = 'round-btn btn-green';
+            syncPickerToSec();
+        }
+        renderTimer();
     </script>
 </body>
 </html>
