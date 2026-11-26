@@ -2,111 +2,184 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lens</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QR — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
             min-height: 100vh;
-            background: #090d16;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
-            padding: 16px;
+            background: linear-gradient(155deg, #1e293b 0%, #0f172a 55%, #060911 100%);
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 54px 18px 28px;
+        }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 3;
+        }
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(16px);
+            color: #ffffff;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .result-card {
+            margin-top: 14px;
+            border-radius: 24px;
+            padding: 15px 17px;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.34);
+            backdrop-filter: blur(22px);
+            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .result-tag {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #93c5fd;
+        }
+        .result-text {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .scan-reticle {
+            margin: auto;
+            width: 220px;
+            height: 220px;
+            border-radius: 34px;
+            border: 2px solid rgba(255, 255, 255, 0.45);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.24);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .bottom-controls {
             display: flex;
             flex-direction: column;
             gap: 12px;
+            z-index: 3;
         }
-        h1 { font-size: 20px; }
-        .card {
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 14px;
+        .mode-pills {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            justify-content: center;
+            gap: 8px;
         }
-        img {
-            width: 100%;
-            max-height: 170px;
-            object-fit: cover;
-            border-radius: 12px;
-            display: none;
-        }
-        button {
-            padding: 10px 14px;
-            border-radius: 12px;
-            border: none;
-            background: #38bdf8;
-            color: #090d16;
+        .mode-pill {
+            padding: 7px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
             font-size: 12px;
-            font-weight: 700;
+            font-weight: 600;
             cursor: pointer;
         }
-        .info {
-            font-size: 12px;
-            color: #cbd5e1;
-            line-height: 1.5;
+        .mode-pill.active {
+            background: #ffffff;
+            color: #090d16;
+        }
+        .prompt-bar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.32);
+            backdrop-filter: blur(20px);
+            border-radius: 999px;
+            padding: 6px 8px 6px 14px;
+        }
+        .prompt-bar input {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 13.5px;
+            outline: none;
+        }
+        .prompt-bar input::placeholder {
+            color: rgba(255, 255, 255, 0.65);
         }
     </style>
 </head>
 <body>
-    <h1>Lens • Analiza obrazu</h1>
-    <div class="card">
-        <button onclick="analyzeLatest()">Analizuj ostatnie zdjęcie z Galerii</button>
-        <input type="file" accept="image/*" style="font-size:11px;color:#94a3b8;" onchange="analyzeFile(this)">
-        <img id="target" alt="Podgląd analizy">
-        <div id="result" class="info">Wybierz zdjęcie lub wczytaj plik, aby sprawdzić dominującą tonację i jasność.</div>
+    <div>
+        <div class="topbar">
+            <button class="glass-btn" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
+            <span style="font-weight:700;font-size:16px;">QR</span>
+            <button class="glass-btn" onclick="cycleSample()">Skanuj</button>
+        </div>
+
+        <div class="result-card">
+            <span id="res-tag" class="result-tag">Kod QR / Obiekt</span>
+            <p id="res-text" class="result-text">Skieruj kadr na kod QR, tekst lub obiekt albo wpisz zapytanie poniżej.</p>
+        </div>
+    </div>
+
+    <div class="scan-reticle" onclick="cycleSample()">
+        <span style="font-size:34px;">⌖</span>
+        <span style="font-size:12px;opacity:0.85;">Dotknij, aby rozpoznać kadr</span>
+    </div>
+
+    <div class="bottom-controls">
+        <div class="mode-pills">
+            <button class="mode-pill active" onclick="setMode(this, 'QR')">Kod QR</button>
+            <button class="mode-pill" onclick="setMode(this, 'Tekst')">Tekst</button>
+            <button class="mode-pill" onclick="setMode(this, 'Obiekt')">Obiekt</button>
+        </div>
+
+        <div class="prompt-bar">
+            <input id="query-input" type="text" placeholder="Zapytaj o zeskanowany kod lub obiekt..." onkeydown="if(event.key==='Enter') askQuery()">
+            <button class="glass-btn" onclick="askQuery()">Wyślij</button>
+        </div>
     </div>
 
     <script>
-        function analyzeDataUrl(dataUrl) {
-            const img = document.getElementById('target');
-            img.src = dataUrl;
-            img.style.display = 'block';
+        const samples = [
+            { tag: 'Kod QR • Link', text: 'https://zenos.local/connect — szybkie parowanie urządzenia ZenOS.' },
+            { tag: 'Tekst OCR', text: 'Wykryto tekst w kadrze: „ZenOS Liquid Glass — tryb gotowości”.' },
+            { tag: 'Rozpoznany obiekt', text: 'Wykryto roślinę doniczkową oraz jasne otoczenie biurkowe.' }
+        ];
+        let idx = 0;
+        let currentMode = 'QR';
 
-            img.onload = () => {
-                const c = document.createElement('canvas');
-                c.width = 64;
-                c.height = 64;
-                const ctx = c.getContext('2d');
-                ctx.drawImage(img, 0, 0, 64, 64);
-                const d = ctx.getImageData(0, 0, 64, 64).data;
-
-                let r = 0, g = 0, b = 0;
-                const px = d.length / 4;
-                for (let i = 0; i < d.length; i += 4) {
-                    r += d[i];
-                    g += d[i + 1];
-                    b += d[i + 2];
-                }
-                r = Math.round(r / px);
-                g = Math.round(g / px);
-                b = Math.round(b / px);
-                const lum = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-                const tone = lum > 155 ? 'Jasna scena' : lum > 75 ? 'Zrównoważona ekspozycja' : 'Ciemna scena / noc';
-
-                document.getElementById('result').textContent =
-                    `Wynik: ${tone} (jasność ${lum}/255, średni RGB: ${r}, ${g}, ${b}).`;
-            };
+        function setMode(el, mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-pill').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('res-tag').textContent = `Tryb: ${mode}`;
         }
 
-        function analyzeLatest() {
-            const p = window.parent;
-            const photos = (p && p.StorageManager && p.StorageManager.get('gallery_photos', [])) || [];
-            if (!photos.length) {
-                document.getElementById('result').textContent = 'Brak zdjęć w Galerii.';
-                return;
-            }
-            analyzeDataUrl(photos[0].dataUrl);
+        function cycleSample() {
+            const item = samples[idx % samples.length];
+            idx++;
+            document.getElementById('res-tag').textContent = item.tag;
+            document.getElementById('res-text').textContent = item.text;
         }
 
-        function analyzeFile(input) {
-            const file = input.files && input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = () => analyzeDataUrl(reader.result);
-            reader.readAsDataURL(file);
+        function askQuery() {
+            const inp = document.getElementById('query-input');
+            const val = inp.value.trim();
+            if (!val) return;
+            document.getElementById('res-tag').textContent = `${currentMode} • Odpowiedź`;
+            document.getElementById('res-text').textContent = `Analiza „${val}” w trybie ${currentMode} zakończona.`;
+            inp.value = '';
         }
     </script>
 </body>
