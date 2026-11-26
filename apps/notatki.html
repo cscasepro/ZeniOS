@@ -5,236 +5,1181 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Notatki — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #000000;
+            --surface: rgba(24, 25, 30, 0.9);
+            --surface-2: rgba(42, 44, 52, 0.96);
+            --glass: rgba(28, 30, 38, 0.76);
+            --border: rgba(255, 255, 255, 0.16);
+            --text: #ffffff;
+            --muted: #8e8e93;
+            --sep: rgba(255, 255, 255, 0.11);
+            --accent: #ffd60a;
+            --accent-ink: #000000;
+            --danger: #ff453a;
+            --motion: 0.18s;
+        }
+
+        body.theme-light {
+            --bg: #f6f6f9;
+            --surface: #ffffff;
+            --surface-2: #ececf2;
+            --glass: rgba(255, 255, 255, 0.84);
+            --border: rgba(0, 0, 0, 0.1);
+            --text: #000000;
+            --muted: #6e6e73;
+            --sep: rgba(0, 0, 0, 0.09);
+            --accent: #e6a800;
+            --accent-ink: #ffffff;
+            --danger: #ff3b30;
+        }
+
+        body.reduced-motion,
+        body.reduced-motion * {
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
             width: 100%;
             height: 100%;
-            background: #f2f2f7;
-            color: #111827;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-            padding: 46px 14px 62px;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
             overflow-y: auto;
+            padding: 44px 14px 96px;
+            transition: background var(--motion) ease, color var(--motion) ease;
         }
+
+        .glass-pill {
+            background: var(--glass);
+            backdrop-filter: blur(18px) saturate(170%);
+            -webkit-backdrop-filter: blur(18px) saturate(170%);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform var(--motion) ease;
+        }
+
+        .glass-pill:active {
+            transform: scale(0.95);
+        }
+
+        .glass-pill.accent {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--accent-ink);
+        }
+
         .topbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            min-height: 36px;
             margin-bottom: 6px;
+            gap: 8px;
         }
-        .link-gold {
-            background: none;
-            border: none;
-            color: #d97706;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
+
+        .big-title {
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.6px;
+            margin: 2px 4px 10px;
         }
-        h1 { font-size: 28px; font-weight: 800; margin-bottom: 10px; }
-        .search-input {
-            width: 100%;
-            padding: 9px 13px;
-            border-radius: 12px;
+
+        .search-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+        }
+
+        .search-wrap input {
+            flex: 1;
+            background: transparent;
             border: none;
-            background: #e5e5ea;
-            font-size: 14px;
-            margin-bottom: 14px;
+            color: var(--text);
+            font-size: 14.5px;
             outline: none;
         }
-        .sec-title {
-            font-size: 16px;
-            font-weight: 700;
-            margin: 10px 0 6px;
+
+        .folder-chips {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 4px;
+            margin-bottom: 10px;
         }
-        .note-card {
-            background: #ffffff;
-            border-radius: 16px;
+
+        .folder-chips::-webkit-scrollbar {
+            display: none;
+        }
+
+        .f-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12.5px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .f-chip.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--accent-ink);
+        }
+
+        .f-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .sec-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin: 12px 4px 6px;
+        }
+
+        /* Widok listy i siatki */
+        .notes-list {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .note-item-list {
             padding: 12px 14px;
-            margin-bottom: 8px;
+            border-bottom: 1px solid var(--sep);
+            cursor: pointer;
+        }
+
+        .note-item-list:last-child {
+            border-bottom: none;
+        }
+
+        .note-item-grid {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 12px;
+            min-height: 118px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .note-title-txt {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .note-meta-txt {
+            font-size: 12px;
+            color: var(--muted);
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .note-preview-txt {
+            font-size: 12.5px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+        }
+
+        /* Dolny pasek główny */
+        .bottom-bar {
+            position: fixed;
+            left: 14px;
+            right: 14px;
+            bottom: 20px;
+            z-index: 30;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            background: var(--glass);
+            backdrop-filter: blur(22px) saturate(175%);
+            -webkit-backdrop-filter: blur(22px) saturate(175%);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 8px 14px;
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
         }
-        .pin-badge {
-            width: 30px;
-            height: 30px;
-            border-radius: 9px;
-            background: #f59e0b;
-            color: #ffffff;
+
+        .compose-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            background: var(--accent);
+            color: var(--accent-ink);
+            font-size: 20px;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-        .del-btn {
-            background: #fee2e2;
-            color: #b91c1c;
-            border: none;
-            border-radius: 999px;
-            padding: 4px 10px;
-            font-size: 11.5px;
-            font-weight: 600;
             cursor: pointer;
         }
-        .editor-modal {
+
+        /* Pełnoekranowy edytor notatki */
+        .editor-screen {
+            display: none;
             position: fixed;
             inset: 0;
-            background: #ffffff;
-            z-index: 30;
-            display: none;
+            z-index: 60;
+            background: var(--bg);
             flex-direction: column;
-            padding: 46px 16px 36px;
-            gap: 10px;
+            padding: 44px 16px 24px;
+            overflow-y: auto;
         }
-        .editor-modal.open { display: flex; }
-        .fmt-bar { display: flex; gap: 6px; flex-wrap: wrap; }
-        .fmt-btn {
-            padding: 5px 10px;
-            border-radius: 9px;
-            border: 1px solid #e5e7eb;
-            background: #f9fafb;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
+
+        .editor-screen.open {
+            display: flex;
         }
-        .ed-title {
-            font-size: 20px;
-            font-weight: 700;
+
+        .ed-dates {
+            font-size: 11.5px;
+            color: var(--muted);
+            text-align: center;
+            margin: 6px 0 8px;
+        }
+
+        .ed-title-input {
+            width: 100%;
+            background: transparent;
             border: none;
+            color: var(--text);
+            font-size: 26px;
+            font-weight: 700;
             outline: none;
+            margin-bottom: 8px;
         }
+
         .ed-body {
             flex: 1;
+            min-height: 220px;
+            background: transparent;
             border: none;
-            outline: none;
-            font-size: 15px;
+            color: var(--text);
+            font-size: 16px;
             line-height: 1.5;
-            resize: none;
-            font-family: inherit;
+            outline: none;
+            overflow-y: auto;
+            padding-bottom: 18px;
+        }
+
+        .ed-body h2 {
+            font-size: 21px;
+            margin: 8px 0 4px;
+        }
+
+        .ed-body a {
+            color: #0a84ff;
+            text-decoration: underline;
+        }
+
+        .chk-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0;
+        }
+
+        .chk-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .chk-row.done span {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .ed-attachments {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 8px 0 12px;
+        }
+
+        .att-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .att-card img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            display: block;
+        }
+
+        /* Pasek narzędzi formatowania */
+        .fmt-toolbar {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding: 8px;
+            border-radius: 18px;
+            background: var(--glass);
+            backdrop-filter: blur(18px);
+            border: 1px solid var(--border);
+            margin-top: 8px;
+        }
+
+        .fmt-toolbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .fmt-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-size: 12.5px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        /* Arkusz folderów i blokady */
+        .modal-sheet {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 80;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(8px);
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .modal-sheet.open {
+            display: flex;
+        }
+
+        .sheet-box {
+            width: 100%;
+            max-width: 480px;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            border-top-left-radius: 26px;
+            border-top-right-radius: 26px;
+            padding: 16px 16px 34px;
+            max-height: 82vh;
+            overflow-y: auto;
+        }
+
+        .sheet-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 4px;
+            border-bottom: 1px solid var(--sep);
+            gap: 8px;
+        }
+
+        .sheet-row:last-child {
+            border-bottom: none;
+        }
+
+        /* Obszar rysowania */
+        .draw-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 95;
+            background: #101114;
+            color: #ffffff;
+            flex-direction: column;
+            padding: 44px 14px 26px;
+            gap: 10px;
+        }
+
+        .draw-modal.open {
+            display: flex;
+        }
+
+        canvas#draw-canvas {
+            flex: 1;
+            width: 100%;
+            background: #1c1d22;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            touch-action: none;
         }
     </style>
 </head>
 <body>
     <div class="topbar">
-        <button class="link-gold" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
-        <button class="link-gold" onclick="openEditor()">+ Nowa</button>
+        <button class="glass-pill" onclick="goHome()">‹ Pulpit</button>
+        <div style="display:flex;gap:6px;">
+            <button class="glass-pill" onclick="openFoldersSheet()">Foldery</button>
+            <button id="btn-layout" class="glass-pill" onclick="toggleLayout()">Lista</button>
+        </div>
     </div>
-    <h1>Notatki</h1>
-    <input id="q" class="search-input" type="text" placeholder="Szukaj w notatkach" oninput="renderNotes()">
 
-    <div id="pinned-sec"></div>
-    <div id="recent-sec"></div>
+    <h1 id="page-heading" class="big-title">Notatki</h1>
 
-    <div id="editor" class="editor-modal">
+    <div class="search-wrap">
+        <span>🔍</span>
+        <input id="search-input" type="text" placeholder="Szukaj we wszystkich notatkach..." oninput="renderNotesList()">
+    </div>
+
+    <div id="folder-chips" class="folder-chips"></div>
+
+    <div id="pinned-section" style="display:none;">
+        <div class="sec-label">📌 Przypięte</div>
+        <div id="pinned-container"></div>
+    </div>
+
+    <div class="sec-label" id="main-list-label">Notatki</div>
+    <div id="notes-container"></div>
+
+    <div class="bottom-bar">
+        <span id="footer-count" style="font-size:12.5px;color:var(--muted);font-weight:600;">0 notatek</span>
+        <button class="compose-btn" onclick="createNewNote()" aria-label="Nowa notatka">✎</button>
+    </div>
+
+    <!-- EDYTOR NOTATKI -->
+    <div id="editor-screen" class="editor-screen">
         <div class="topbar">
-            <button class="link-gold" onclick="saveAndClose()">‹ Notatki</button>
-            <div style="display:flex;gap:10px;">
-                <button id="pin-toggle" class="link-gold" onclick="togglePinCurrent()">📌 Przypnij</button>
-                <button class="link-gold" onclick="saveAndClose()">Gotowe</button>
+            <button class="glass-pill" style="color:var(--accent);" onclick="closeEditor()">‹ Notatki</button>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button id="btn-pin" class="glass-pill" onclick="togglePinCurrent()">📌</button>
+                <button id="btn-share-note" class="glass-pill" onclick="toggleSharedCurrent()">👥</button>
+                <button class="glass-pill" onclick="exportShareCurrent()">⬆️</button>
+                <button id="btn-lock-note" class="glass-pill" onclick="toggleLockCurrent()">🔒</button>
+                <button id="btn-delete-note" class="glass-pill" style="color:var(--danger);" onclick="deleteOrRestoreCurrent()">🗑️</button>
             </div>
         </div>
-        <div class="fmt-bar">
-            <button class="fmt-btn" onclick="insertTag('**Pogrubienie**')">B</button>
-            <button class="fmt-btn" onclick="insertTag('_Kursywa_')">I</button>
-            <button class="fmt-btn" onclick="insertTag('\n☑ Zadanie')">☑ Checklista</button>
+
+        <div id="ed-dates" class="ed-dates"></div>
+        <input id="ed-title" class="ed-title-input" type="text" placeholder="Tytuł notatki" oninput="autoSaveNote()">
+        <div id="ed-body" class="ed-body" contenteditable="true" oninput="autoSaveNote()"></div>
+        <div id="ed-attachments" class="ed-attachments"></div>
+
+        <div class="fmt-toolbar">
+            <button class="fmt-btn" onclick="execFmt('bold')"><b>B</b></button>
+            <button class="fmt-btn" onclick="execFmt('italic')"><i>I</i></button>
+            <button class="fmt-btn" onclick="execFmt('underline')"><u>U</u></button>
+            <button class="fmt-btn" onclick="execFmt('strikeThrough')"><s>S</s></button>
+            <button class="fmt-btn" onclick="insertHeading()">H2</button>
+            <button class="fmt-btn" onclick="execFmt('insertUnorderedList')">• Lista</button>
+            <button class="fmt-btn" onclick="execFmt('insertOrderedList')">1. Lista</button>
+            <button class="fmt-btn" onclick="insertChecklistItem()">☑ Zadanie</button>
+            <button class="fmt-btn" onclick="insertLinkPrompt()">🔗 Link</button>
+            <button class="fmt-btn" onclick="openDrawModal()">✏️ Rysuj</button>
+            <label class="fmt-btn" style="cursor:pointer;">
+                🖼️ Zdjęcie
+                <input type="file" accept="image/*" style="display:none;" onchange="handleAddImage(event)">
+            </label>
+            <label class="fmt-btn" style="cursor:pointer;">
+                📎 Plik
+                <input type="file" style="display:none;" onchange="handleAddAttachment(event)">
+            </label>
         </div>
-        <input id="ed-title" class="ed-title" type="text" placeholder="Tytuł notatki">
-        <textarea id="ed-body" class="ed-body" placeholder="Zacznij pisać..."></textarea>
+    </div>
+
+    <!-- ZARZĄDZANIE FOLDERAMI I KOLORAMI -->
+    <div id="folders-modal" class="modal-sheet" onclick="if(event.target===this)closeFoldersSheet()">
+        <div class="sheet-box">
+            <div class="topbar">
+                <strong style="font-size:16px;">Foldery i kolory</strong>
+                <button class="glass-pill" onclick="closeFoldersSheet()">Gotowe</button>
+            </div>
+
+            <div id="custom-folders-list" style="margin-bottom:12px;"></div>
+
+            <div class="sec-label">Nowy folder</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <input id="new-folder-name" type="text" placeholder="Nazwa folderu" style="flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:8px 10px;font-size:14px;">
+                <input id="new-folder-color" type="color" value="#ffd60a" style="width:36px;height:36px;border:none;background:none;cursor:pointer;">
+                <button class="glass-pill accent" onclick="addCustomFolder()">Dodaj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OBSZAR RYSOWANIA -->
+    <div id="draw-modal" class="draw-modal">
+        <div class="topbar">
+            <button class="glass-pill" onclick="closeDrawModal()">Anuluj</button>
+            <div style="display:flex;gap:6px;">
+                <button class="glass-pill" onclick="undoDraw()">↶ Cofnij</button>
+                <button class="glass-pill" onclick="redoDraw()">↷ Ponów</button>
+                <button class="glass-pill accent" onclick="saveDrawingToNote()">Zapisz</button>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button class="glass-pill" onclick="setPenColor('#ffffff')">Biały</button>
+            <button class="glass-pill" onclick="setPenColor('#ffd60a')">Żółty</button>
+            <button class="glass-pill" onclick="setPenColor('#0a84ff')">Niebieski</button>
+            <button class="glass-pill" onclick="setPenColor('#ff453a')">Czerwony</button>
+            <button id="btn-eraser" class="glass-pill" onclick="toggleEraser()">🧽 Gumka</button>
+        </div>
+        <canvas id="draw-canvas" width="360" height="420"></canvas>
     </div>
 
     <script>
-        let notes = [];
-        try {
-            notes = parent.StorageManager?.get('zen_notes', null) || JSON.parse(localStorage.getItem('zenos_zen_notes') || 'null') || [
-                { id: 1, title: 'Lista zakupów', body: '☑ Mleko\n☑ Kawa', pinned: true, date: 'Dzisiaj' }
-            ];
-        } catch {
-            notes = [{ id: 1, title: 'Lista zakupów', body: '☑ Mleko\n☑ Kawa', pinned: true, date: 'Dzisiaj' }];
+        const STORAGE_KEY = 'zenos_notes_v1';
+        const SETTINGS_KEY = 'zenos_settings_v1';
+
+        const SYSTEM_FOLDERS = [
+            { id: 'all', name: 'Wszystkie notatki', color: '#ffd60a' },
+            { id: 'recent', name: 'Ostatnie', color: '#64d2ff' },
+            { id: 'pinned', name: 'Przypięte', color: '#ff9f0a' },
+            { id: 'shared', name: 'Udostępnione', color: '#30d158' },
+            { id: 'trash', name: 'Ostatnio usunięte', color: '#ff453a' }
+        ];
+
+        const defaultData = {
+            layout: 'list', // 'list' | 'grid'
+            activeFolder: 'all',
+            pinCode: '',
+            customFolders: [
+                { id: 'f-work', name: 'Projekty ZenOS', color: '#0a84ff' },
+                { id: 'f-ideas', name: 'Pomysły', color: '#30d158' }
+            ],
+            notes: [
+                {
+                    id: 'n-1',
+                    title: 'Notatki powitalne ZenOS',
+                    html: '<p>Witaj w aplikacji <b>Notatki</b> w stylu iOS 26.</p><div class="chk-row"><input type="checkbox"><span>Przetestować checklistę i formatowanie</span></div>',
+                    folderId: 'f-work',
+                    pinned: true,
+                    shared: false,
+                    trashed: false,
+                    locked: false,
+                    attachments: [],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            ]
+        };
+
+        function loadData() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return structuredClone(defaultData);
+                const p = JSON.parse(raw);
+                return {
+                    ...structuredClone(defaultData),
+                    ...p,
+                    customFolders: Array.isArray(p.customFolders) ? p.customFolders : defaultData.customFolders,
+                    notes: Array.isArray(p.notes) ? p.notes : defaultData.notes
+                };
+            } catch {
+                return structuredClone(defaultData);
+            }
         }
 
-        let activeId = null;
-        let currentPinned = false;
+        let store = loadData();
+        let activeNoteId = null;
+        let saveTimer = null;
 
-        function persist() {
-            try { parent.StorageManager?.set('zen_notes', notes); } catch {}
-            try { localStorage.setItem('zenos_zen_notes', JSON.stringify(notes)); } catch {}
+        function syncTheme() {
+            try {
+                const raw = localStorage.getItem(SETTINGS_KEY);
+                if (raw) {
+                    const s = JSON.parse(raw);
+                    document.body.classList.toggle('theme-light', s.theme === 'light');
+                    document.body.classList.toggle('reduced-motion', Boolean(s.reduceMotion));
+                }
+            } catch {}
         }
 
-        function renderNotes() {
-            const q = document.getElementById('q').value.trim().toLowerCase();
-            const filtered = notes.filter(n => !q || n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q));
-            const pinned = filtered.filter(n => n.pinned);
-            const others = filtered.filter(n => !n.pinned);
-
-            document.getElementById('pinned-sec').innerHTML = pinned.length
-                ? `<div class="sec-title">Przypięte</div>` + pinned.map(cardHtml).join('')
-                : '';
-            document.getElementById('recent-sec').innerHTML = `<div class="sec-title">Ostatnie</div>` + others.map(cardHtml).join('');
+        function saveStore(broadcast = true) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+            } catch {}
+            if (broadcast) {
+                try {
+                    parent.postMessage({ type: 'NOTES_UPDATED', count: store.notes.filter(n => !n.trashed).length }, '*');
+                } catch {}
+            }
         }
 
-        function cardHtml(n) {
-            return `
-                <div class="note-card" onclick="openEditor(${n.id})">
-                    <div style="display:flex;align-items:center;gap:10px;overflow:hidden;">
-                        ${n.pinned ? '<div class="pin-badge">📌</div>' : ''}
-                        <div style="overflow:hidden;">
-                            <div style="font-weight:700;font-size:14.5px;">${n.title || 'Bez tytułu'}</div>
-                            <div style="font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.date} • ${n.body.replace(/\n/g, ' ')}</div>
-                        </div>
+        function stripHtml(html) {
+            const div = document.createElement('div');
+            div.innerHTML = html || '';
+            return (div.textContent || div.innerText || '').trim();
+        }
+
+        function renderFolderChips() {
+            const allFolders = [...SYSTEM_FOLDERS, ...store.customFolders];
+            document.getElementById('folder-chips').innerHTML = allFolders.map(f => `
+                <button class="f-chip ${store.activeFolder === f.id ? 'active' : ''}" onclick="selectFolder('${f.id}')">
+                    <span class="f-dot" style="background:${f.color};"></span>
+                    <span>${f.name}</span>
+                </button>
+            `).join('');
+
+            const cur = allFolders.find(f => f.id === store.activeFolder);
+            document.getElementById('page-heading').textContent = cur ? cur.name : 'Notatki';
+        }
+
+        function selectFolder(id) {
+            store.activeFolder = id;
+            saveStore(false);
+            renderFolderChips();
+            renderNotesList();
+        }
+
+        function toggleLayout() {
+            store.layout = store.layout === 'grid' ? 'list' : 'grid';
+            document.getElementById('btn-layout').textContent = store.layout === 'grid' ? 'Siatka' : 'Lista';
+            saveStore(false);
+            renderNotesList();
+        }
+
+        function getFilteredNotes() {
+            const q = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
+            const f = store.activeFolder;
+            const sevenDaysAgo = Date.now() - 7 * 86400000;
+
+            return store.notes
+                .filter(n => {
+                    if (f === 'trash') return Boolean(n.trashed);
+                    if (n.trashed) return false;
+                    if (f === 'pinned') return Boolean(n.pinned);
+                    if (f === 'shared') return Boolean(n.shared);
+                    if (f === 'recent') return new Date(n.updatedAt).getTime() >= sevenDaysAgo;
+                    if (f === 'all') return true;
+                    return n.folderId === f;
+                })
+                .filter(n => {
+                    if (!q) return true;
+                    const txt = `${n.title || ''} ${stripHtml(n.html)}`.toLowerCase();
+                    return txt.includes(q);
+                })
+                .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        }
+
+        function renderNoteCard(n) {
+            const isGrid = store.layout === 'grid';
+            const dateStr = new Date(n.updatedAt).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' });
+            const preview = n.locked ? '🔒 Notatka zablokowana' : (stripHtml(n.html) || 'Brak dodatkowej treści');
+            const badge = `${n.pinned ? '📌 ' : ''}${n.locked ? '🔒 ' : ''}${dateStr}`;
+
+            if (isGrid) {
+                return `
+                    <div class="note-item-grid" onclick="openNote('${n.id}')">
+                        <div class="note-title-txt">${n.title || 'Nowa notatka'}</div>
+                        <div class="note-preview-txt">${preview}</div>
+                        <div class="note-meta-txt">${badge}</div>
                     </div>
-                    <button class="del-btn" onclick="event.stopPropagation(); deleteNote(${n.id})">Usuń</button>
+                `;
+            }
+            return `
+                <div class="note-item-list" onclick="openNote('${n.id}')">
+                    <div class="note-title-txt">${n.title || 'Nowa notatka'}</div>
+                    <div class="note-meta-txt"><span>${badge}</span><span>•</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${preview}</span></div>
                 </div>
             `;
         }
 
-        function deleteNote(id) {
-            notes = notes.filter(n => n.id !== id);
-            persist();
-            renderNotes();
+        function renderNotesList() {
+            syncTheme();
+            const list = getFilteredNotes();
+            const pinned = list.filter(n => n.pinned && !n.trashed);
+            const regular = store.activeFolder === 'pinned' ? list : list.filter(n => !n.pinned || store.activeFolder === 'trash');
+
+            const isGrid = store.layout === 'grid';
+            const cls = isGrid ? 'notes-grid' : 'notes-list';
+
+            const pinSec = document.getElementById('pinned-section');
+            if (pinned.length && store.activeFolder !== 'trash' && store.activeFolder !== 'pinned') {
+                pinSec.style.display = 'block';
+                document.getElementById('pinned-container').innerHTML = `<div class="${cls}">${pinned.map(renderNoteCard).join('')}</div>`;
+            } else {
+                pinSec.style.display = 'none';
+            }
+
+            document.getElementById('notes-container').innerHTML = regular.length
+                ? `<div class="${cls}">${regular.map(renderNoteCard).join('')}</div>`
+                : `<div class="notes-list"><div class="note-item-list" style="color:var(--muted);">Brak notatek w tym widoku.</div></div>`;
+
+            document.getElementById('footer-count').textContent = `${list.length} notatek`;
         }
 
-        function openEditor(id = null) {
-            activeId = id;
-            const found = notes.find(n => n.id === id);
-            document.getElementById('ed-title').value = found ? found.title : '';
-            document.getElementById('ed-body').value = found ? found.body : '';
-            currentPinned = found ? found.pinned : false;
-            document.getElementById('pin-toggle').textContent = currentPinned ? '📌 Przypięta' : '📌 Przypnij';
-            document.getElementById('editor').classList.add('open');
-            document.getElementById('ed-title').focus();
+        function createNewNote() {
+            const folderId = (!['all', 'recent', 'pinned', 'shared', 'trash'].includes(store.activeFolder))
+                ? store.activeFolder
+                : (store.customFolders[0]?.id || 'all');
+
+            const note = {
+                id: `n-${Date.now()}`,
+                title: '',
+                html: '<p><br></p>',
+                folderId,
+                pinned: store.activeFolder === 'pinned',
+                shared: store.activeFolder === 'shared',
+                trashed: false,
+                locked: false,
+                attachments: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            store.notes.unshift(note);
+            saveStore(true);
+            openNote(note.id);
+        }
+
+        async function unlockNoteIfNeeded(note) {
+            if (!note.locked) return true;
+            if (window.PublicKeyCredential && navigator.credentials) {
+                try {
+                    // Próba biometrii/passkey w bezpiecznym kontekście lub fallback na PIN
+                    if (window.isSecureContext && typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
+                        const available = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+                        if (available && confirm('Odblokować notatkę biometrią urządzenia?')) {
+                            return true;
+                        }
+                    }
+                } catch {}
+            }
+            const entered = prompt('Podaj kod PIN notatki:');
+            if (!store.pinCode) return Boolean(entered);
+            return entered === store.pinCode;
+        }
+
+        async function openNote(id) {
+            const note = store.notes.find(n => n.id === id);
+            if (!note) return;
+            const ok = await unlockNoteIfNeeded(note);
+            if (!ok) return;
+
+            activeNoteId = note.id;
+            document.getElementById('ed-title').value = note.title || '';
+            const bodyEl = document.getElementById('ed-body');
+            bodyEl.innerHTML = note.html || '';
+            // Odtworzenie stanu zaznaczonych checkboxów w DOM
+            bodyEl.querySelectorAll('.chk-row').forEach(row => {
+                const cb = row.querySelector('input[type="checkbox"]');
+                if (cb) {
+                    cb.checked = row.classList.contains('done');
+                    cb.onchange = () => {
+                        row.classList.toggle('done', cb.checked);
+                        autoSaveNote();
+                    };
+                }
+            });
+
+            document.getElementById('ed-dates').textContent =
+                `Utworzono: ${new Date(note.createdAt).toLocaleString('pl-PL')} • Edytowano: ${new Date(note.updatedAt).toLocaleString('pl-PL')}`;
+            document.getElementById('btn-pin').classList.toggle('accent', Boolean(note.pinned));
+            document.getElementById('btn-share-note').classList.toggle('accent', Boolean(note.shared));
+            document.getElementById('btn-lock-note').textContent = note.locked ? '🔓' : '🔒';
+            document.getElementById('btn-delete-note').textContent = note.trashed ? '♻️' : '🗑️';
+
+            renderAttachments(note);
+            document.getElementById('editor-screen').classList.add('open');
+        }
+
+        function renderAttachments(note) {
+            const box = document.getElementById('ed-attachments');
+            const list = note.attachments || [];
+            box.innerHTML = list.map((att, i) => `
+                <div class="att-card">
+                    ${att.type === 'image'
+                        ? `<img src="${att.dataUrl}" alt="${att.name || 'Obraz'}">`
+                        : `<span>📎 ${att.name || 'Załącznik'}</span>`}
+                    <button class="glass-pill" onclick="removeAttachment(${i})">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function removeAttachment(idx) {
+            const note = store.notes.find(n => n.id === activeNoteId);
+            if (!note) return;
+            note.attachments.splice(idx, 1);
+            note.updatedAt = new Date().toISOString();
+            renderAttachments(note);
+            saveStore(true);
+        }
+
+        function autoSaveNote() {
+            if (!activeNoteId) return;
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+                const note = store.notes.find(n => n.id === activeNoteId);
+                if (!note) return;
+                note.title = document.getElementById('ed-title').value;
+                note.html = document.getElementById('ed-body').innerHTML;
+                note.updatedAt = new Date().toISOString();
+                saveStore(true);
+            }, 180);
+        }
+
+        function closeEditor() {
+            clearTimeout(saveTimer);
+            if (activeNoteId) {
+                const note = store.notes.find(n => n.id === activeNoteId);
+                if (note) {
+                    note.title = document.getElementById('ed-title').value;
+                    note.html = document.getElementById('ed-body').innerHTML;
+                    note.updatedAt = new Date().toISOString();
+                    saveStore(true);
+                }
+            }
+            activeNoteId = null;
+            document.getElementById('editor-screen').classList.remove('open');
+            renderNotesList();
+        }
+
+        function execFmt(cmd) {
+            document.getElementById('ed-body').focus();
+            document.execCommand(cmd, false, null);
+            autoSaveNote();
+        }
+
+        function insertHeading() {
+            document.getElementById('ed-body').focus();
+            document.execCommand('formatBlock', false, 'h2');
+            autoSaveNote();
+        }
+
+        function insertLinkPrompt() {
+            const url = prompt('Podaj adres URL (np. https://...):');
+            if (!url) return;
+            document.getElementById('ed-body').focus();
+            document.execCommand('createLink', false, url.trim());
+            autoSaveNote();
+        }
+
+        function insertChecklistItem() {
+            const bodyEl = document.getElementById('ed-body');
+            bodyEl.focus();
+            const row = document.createElement('div');
+            row.className = 'chk-row';
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.onchange = () => {
+                row.classList.toggle('done', cb.checked);
+                autoSaveNote();
+            };
+            const span = document.createElement('span');
+            span.contentEditable = 'true';
+            span.textContent = 'Nowe zadanie';
+            row.appendChild(cb);
+            row.appendChild(span);
+            bodyEl.appendChild(row);
+            autoSaveNote();
+        }
+
+        function handleAddImage(ev) {
+            const file = ev.target.files?.[0];
+            const note = store.notes.find(n => n.id === activeNoteId);
+            if (!file || !note) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                note.attachments = note.attachments || [];
+                note.attachments.push({ type: 'image', name: file.name, dataUrl: String(reader.result || '') });
+                note.updatedAt = new Date().toISOString();
+                renderAttachments(note);
+                saveStore(true);
+            };
+            reader.readAsDataURL(file);
+            ev.target.value = '';
+        }
+
+        function handleAddAttachment(ev) {
+            const file = ev.target.files?.[0];
+            const note = store.notes.find(n => n.id === activeNoteId);
+            if (!file || !note) return;
+            note.attachments = note.attachments || [];
+            note.attachments.push({ type: 'file', name: file.name, size: file.size });
+            note.updatedAt = new Date().toISOString();
+            renderAttachments(note);
+            saveStore(true);
+            ev.target.value = '';
         }
 
         function togglePinCurrent() {
-            currentPinned = !currentPinned;
-            document.getElementById('pin-toggle').textContent = currentPinned ? '📌 Przypięta' : '📌 Przypnij';
+            const note = store.notes.find(n => n.id === activeNoteId);
+            if (!note) return;
+            note.pinned = !note.pinned;
+            document.getElementById('btn-pin').classList.toggle('accent', note.pinned);
+            saveStore(true);
         }
 
-        function insertTag(snippet) {
-            const area = document.getElementById('ed-body');
-            area.value += snippet;
-            area.focus();
+        function toggleSharedCurrent() {
+            const note = store.notes.find(n => n.id === activeNoteId);
+            if (!note) return;
+            note.shared = !note.shared;
+            document.getElementById('btn-share-note').classList.toggle('accent', note.shared);
+            saveStore(true);
         }
 
-        function saveAndClose() {
-            const title = document.getElementById('ed-title').value.trim();
-            const body = document.getElementById('ed-body').value.trim();
-            if (title || body) {
-                if (activeId) {
-                    const idx = notes.findIndex(n => n.id === activeId);
-                    if (idx !== -1) notes[idx] = { ...notes[idx], title: title || 'Bez tytułu', body, pinned: currentPinned, date: 'Dzisiaj' };
-                } else {
-                    notes.unshift({ id: Date.now(), title: title || 'Bez tytułu', body, pinned: currentPinned, date: 'Dzisiaj' });
-                }
-                persist();
+        function toggleLockCurrent() {
+            const note = store.notes.find(n => n.id === activeNoteId);
+            if (!note) return;
+            if (!note.locked && !store.pinCode) {
+                const pin = prompt('Ustaw 4-cyfrowy kod PIN dla blokowanych notatek:');
+                if (!pin) return;
+                store.pinCode = pin.trim();
             }
-            document.getElementById('editor').classList.remove('open');
-            renderNotes();
+            note.locked = !note.locked;
+            document.getElementById('btn-lock-note').textContent = note.locked ? '🔓' : '🔒';
+            saveStore(true);
         }
 
-        renderNotes();
+        function deleteOrRestoreCurrent() {
+            const note = store.notes.find(n => n.id === activeNoteId);
+            if (!note) return;
+            if (note.trashed) {
+                note.trashed = false;
+            } else {
+                note.trashed = true;
+            }
+            note.updatedAt = new Date().toISOString();
+            saveStore(true);
+            closeEditor();
+        }
+
+        async function exportShareCurrent() {
+            const note = store.notes.find(n => n.id === activeNoteId);
+            if (!note) return;
+            const text = `${note.title || 'Notatka'}\n\n${stripHtml(note.html)}`;
+            try {
+                if (navigator.share) {
+                    await navigator.share({ title: note.title || 'Notatka', text });
+                    return;
+                }
+            } catch {}
+            try { navigator.clipboard?.writeText?.(text); } catch {}
+        }
+
+        /* FOLDERY */
+        function openFoldersSheet() {
+            renderCustomFoldersList();
+            document.getElementById('folders-modal').classList.add('open');
+        }
+
+        function closeFoldersSheet() {
+            document.getElementById('folders-modal').classList.remove('open');
+            renderFolderChips();
+            renderNotesList();
+        }
+
+        function renderCustomFoldersList() {
+            document.getElementById('custom-folders-list').innerHTML = store.customFolders.map((f, idx) => `
+                <div class="sheet-row">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="f-dot" style="background:${f.color};width:12px;height:12px;"></span>
+                        <strong>${f.name}</strong>
+                    </div>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <input type="color" value="${f.color}" onchange="changeFolderColor(${idx}, this.value)" style="width:28px;height:28px;border:none;background:none;cursor:pointer;">
+                        <button class="glass-pill" onclick="renameFolder(${idx})">Nazwa</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addCustomFolder() {
+            const inp = document.getElementById('new-folder-name');
+            const name = inp.value.trim();
+            if (!name) return;
+            store.customFolders.push({
+                id: `f-${Date.now()}`,
+                name,
+                color: document.getElementById('new-folder-color').value || '#ffd60a'
+            });
+            inp.value = '';
+            saveStore(false);
+            renderCustomFoldersList();
+        }
+
+        function changeFolderColor(idx, color) {
+            store.customFolders[idx].color = color;
+            saveStore(false);
+            renderCustomFoldersList();
+        }
+
+        function renameFolder(idx) {
+            const next = prompt('Nowa nazwa folderu:', store.customFolders[idx].name);
+            if (next && next.trim()) {
+                store.customFolders[idx].name = next.trim();
+                saveStore(false);
+                renderCustomFoldersList();
+            }
+        }
+
+        /* RYSOWANIE */
+        let drawHistory = [];
+        let drawRedo = [];
+        let drawing = false;
+        let penColor = '#ffffff';
+        let eraserMode = false;
+
+        function openDrawModal() {
+            const canvas = document.getElementById('draw-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#1c1d22';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            drawHistory = [canvas.toDataURL()];
+            drawRedo = [];
+            document.getElementById('draw-modal').classList.add('open');
+        }
+
+        function closeDrawModal() {
+            document.getElementById('draw-modal').classList.remove('open');
+        }
+
+        function setPenColor(col) {
+            eraserMode = false;
+            penColor = col;
+            document.getElementById('btn-eraser').classList.remove('accent');
+        }
+
+        function toggleEraser() {
+            eraserMode = !eraserMode;
+            document.getElementById('btn-eraser').classList.toggle('accent', eraserMode);
+        }
+
+        function undoDraw() {
+            if (drawHistory.length <= 1) return;
+            drawRedo.push(drawHistory.pop());
+            const canvas = document.getElementById('draw-canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = drawHistory[drawHistory.length - 1];
+        }
+
+        function redoDraw() {
+            if (!drawRedo.length) return;
+            const next = drawRedo.pop();
+            drawHistory.push(next);
+            const canvas = document.getElementById('draw-canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = () => ctx.drawImage(img, 0, 0);
+            img.src = next;
+        }
+
+        function saveDrawingToNote() {
+            const note = store.notes.find(n => n.id === activeNoteId);
+            const canvas = document.getElementById('draw-canvas');
+            if (!note) return closeDrawModal();
+            note.attachments = note.attachments || [];
+            note.attachments.push({
+                type: 'image',
+                name: `Rysunek_${new Date().toLocaleTimeString('pl-PL')}.png`,
+                dataUrl: canvas.toDataURL('image/png')
+            });
+            note.updatedAt = new Date().toISOString();
+            renderAttachments(note);
+            saveStore(true);
+            closeDrawModal();
+        }
+
+        const dCanvas = document.getElementById('draw-canvas');
+        const dCtx = dCanvas.getContext('2d');
+        function getCanvasPos(e) {
+            const r = dCanvas.getBoundingClientRect();
+            const scaleX = dCanvas.width / r.width;
+            const scaleY = dCanvas.height / r.height;
+            return {
+                x: (e.clientX - r.left) * scaleX,
+                y: (e.clientY - r.top) * scaleY
+            };
+        }
+        dCanvas.addEventListener('pointerdown', (e) => {
+            drawing = true;
+            const p = getCanvasPos(e);
+            dCtx.beginPath();
+            dCtx.moveTo(p.x, p.y);
+        });
+        dCanvas.addEventListener('pointermove', (e) => {
+            if (!drawing) return;
+            const p = getCanvasPos(e);
+            dCtx.lineCap = 'round';
+            dCtx.lineJoin = 'round';
+            dCtx.lineWidth = eraserMode ? 18 : 3.5;
+            dCtx.strokeStyle = eraserMode ? '#1c1d22' : penColor;
+            dCtx.lineTo(p.x, p.y);
+            dCtx.stroke();
+        });
+        ['pointerup', 'pointercancel'].forEach(ev => {
+            dCanvas.addEventListener(ev, () => {
+                if (!drawing) return;
+                drawing = false;
+                drawHistory.push(dCanvas.toDataURL());
+                drawRedo = [];
+            });
+        });
+
+        function goHome() {
+            try { parent.Kernel?.goHome?.(); } catch {}
+        }
+
+        window.addEventListener('message', (e) => {
+            if (e.data?.type === 'SETTINGS_SYNC') renderNotesList();
+        });
+
+        document.getElementById('btn-layout').textContent = store.layout === 'grid' ? 'Siatka' : 'Lista';
+        renderFolderChips();
+        renderNotesList();
     </script>
 </body>
 </html>
