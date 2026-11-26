@@ -7,19 +7,25 @@
     <link rel="stylesheet" href="system/theme.css">
     <link id="icon-style-sheet" rel="stylesheet" href="system/icon-styles/liquid.css">
     <style>
+        #os-shell {
+            position: relative;
+            overflow: hidden;
+        }
+
         #wallpaper-layer {
-            position: fixed;
+            position: absolute;
             inset: 0;
             z-index: 0;
+            border-radius: inherit;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             pointer-events: none;
-            transition: filter 0.25s ease;
+            transition: filter 0.25s ease, transform 0.25s ease;
         }
 
         #wallpaper-layer.blurred {
-            filter: blur(14px) brightness(0.82);
+            filter: blur(14px) brightness(0.85);
             transform: scale(1.04);
         }
 
@@ -117,13 +123,14 @@
     </style>
 </head>
 <body data-icon-style="liquid">
-    <div id="wallpaper-layer"></div>
     <div id="brightness-veil"></div>
     <div id="torch-veil"></div>
 
     <iframe id="boot-screen-frame" src="boot/boot-screen.html" class="boot-overlay"></iframe>
 
     <div id="os-shell">
+        <div id="wallpaper-layer"></div>
+
         <header id="status-bar" class="priority-top">
             <div class="status-left">
                 <span id="clock">15:58</span>
