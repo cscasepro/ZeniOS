@@ -3,170 +3,1499 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kalkulator — ZenOS</title>
+    <title>Kalendarz — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        :root {
+            --bg: #000000;
+            --surface: rgba(24, 25, 30, 0.86);
+            --surface-2: rgba(40, 42, 50, 0.94);
+            --glass: rgba(28, 30, 38, 0.74);
+            --border: rgba(255, 255, 255, 0.14);
+            --text: #ffffff;
+            --muted: #8e8e93;
+            --sep: rgba(255, 255, 255, 0.11);
+            --accent: #ff453a;
+            --accent-2: #0a84ff;
+            --motion: 0.2s;
+        }
+
+        body.theme-light {
+            --bg: #ffffff;
+            --surface: rgba(245, 245, 248, 0.9);
+            --surface-2: rgba(229, 229, 236, 0.96);
+            --glass: rgba(255, 255, 255, 0.78);
+            --border: rgba(0, 0, 0, 0.1);
+            --text: #000000;
+            --muted: #6e6e73;
+            --sep: rgba(0, 0, 0, 0.09);
+            --accent: #ff3b30;
+        }
+
+        body.reduced-motion,
+        body.reduced-motion * {
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
             width: 100%;
             height: 100%;
-            background: #06080d;
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: 46px 14px 44px;
-            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+            overflow-y: auto;
+            padding: 44px 14px 96px;
+            transition: background var(--motion) ease, color var(--motion) ease;
         }
-        .calc-shell {
-            width: 100%;
-            max-width: 340px;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
+
         .topbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            height: 36px;
+            margin-bottom: 4px;
         }
-        .back-btn {
-            background: rgba(255, 255, 255, 0.14);
-            border: 1px solid rgba(255, 255, 255, 0.24);
-            backdrop-filter: blur(14px);
-            color: #ffffff;
-            padding: 6px 13px;
+
+        .top-pill-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--glass);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 3px 8px;
+        }
+
+        .btn-back {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 6px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--accent);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .icon-btn:active {
+            background: var(--surface-2);
+        }
+
+        .month-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin: 4px 2px 10px;
+        }
+
+        .month-title {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.6px;
+        }
+
+        .month-nav {
+            display: flex;
+            gap: 6px;
+        }
+
+        .mini-nav-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 4px 10px;
             border-radius: 999px;
             font-size: 12.5px;
             font-weight: 600;
             cursor: pointer;
         }
-        .display {
-            width: 100%;
-            text-align: right;
-            font-size: 54px;
-            font-weight: 300;
-            padding: 8px 6px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-variant-numeric: tabular-nums;
+
+        /* Pasek wyszukiwania */
+        .search-bar {
+            display: none;
+            gap: 8px;
+            margin-bottom: 10px;
         }
-        .keys {
-            width: 100%;
+
+        .search-bar.open {
+            display: flex;
+        }
+
+        .search-bar input {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 14px;
+            padding: 8px 12px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        /* Przełącznik 4 widoków */
+        .view-switcher {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 3px;
+            margin-bottom: 12px;
+        }
+
+        .v-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            padding: 6px 4px;
+            border-radius: 13px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background var(--motion) ease, color var(--motion) ease;
+        }
+
+        .v-btn.active {
+            background: var(--surface-2);
+            color: var(--text);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+        }
+
+        .cal-view {
+            display: none;
+            animation: viewFade var(--motion) ease;
+        }
+
+        .cal-view.active {
+            display: block;
+        }
+
+        @keyframes viewFade {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* WIDOK MIESIĄC */
+        .dow-row {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--muted);
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--sep);
+        }
+
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            border-bottom: 1px solid var(--sep);
+        }
+
+        .day-cell {
+            min-height: 76px;
+            border-right: 1px solid var(--sep);
+            border-bottom: 1px solid var(--sep);
+            padding: 4px 2px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+        }
+
+        .day-cell:nth-child(7n) {
+            border-right: none;
+        }
+
+        .day-cell.outside {
+            opacity: 0.36;
+        }
+
+        .day-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .day-cell.today .day-num {
+            background: var(--accent);
+            color: #ffffff;
+        }
+
+        .day-cell.selected:not(.today) .day-num {
+            outline: 1.5px solid var(--accent);
+        }
+
+        .ev-pill {
+            width: 100%;
+            border-radius: 5px;
+            padding: 1px 4px;
+            font-size: 9.5px;
+            font-weight: 600;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .more-pill {
+            font-size: 9px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        /* Pasek tygodnia nad widokiem Dzień i Tydzień */
+        .week-strip {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            text-align: center;
+            padding: 6px 0 10px;
+            border-bottom: 1px solid var(--sep);
+            margin-bottom: 8px;
+        }
+
+        .ws-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .ws-dow {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .ws-num {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .ws-col.today .ws-num {
+            background: var(--accent);
+            color: #ffffff;
+        }
+
+        .ws-col.selected:not(.today) .ws-num {
+            background: var(--surface-2);
+            color: var(--accent);
+        }
+
+        /* WIDOK DZIEŃ */
+        .day-heading {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--muted);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .allday-box {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .allday-chip {
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #ffffff;
+            cursor: pointer;
+        }
+
+        .timeline {
+            position: relative;
+            border-top: 1px solid var(--sep);
+        }
+
+        .hour-slot {
+            display: grid;
+            grid-template-columns: 48px 1fr;
+            min-height: 48px;
+            border-bottom: 1px solid var(--sep);
+            cursor: pointer;
+        }
+
+        .hour-lbl {
+            font-size: 11px;
+            color: var(--muted);
+            padding-top: 3px;
+            text-align: right;
+            padding-right: 8px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .hour-body {
+            padding: 2px 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .slot-event {
+            border-radius: 8px;
+            padding: 5px 8px;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* WIDOK TYDZIEŃ */
+        .week-matrix {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .wk-day-col {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 6px 4px;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .wk-day-head {
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+            color: var(--muted);
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--sep);
+        }
+
+        .wk-ev {
+            border-radius: 6px;
+            padding: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #ffffff;
+            cursor: pointer;
+            word-break: break-word;
+        }
+
+        /* WIDOK LISTA I SEKCJE DODATKOWE */
+        .sec-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin: 12px 2px 6px;
+        }
+
+        .card-list {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .ev-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--sep);
+            cursor: pointer;
+        }
+
+        .ev-row:last-child {
+            border-bottom: none;
+        }
+
+        .color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .countdown-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: var(--surface-2);
+            color: var(--accent-2);
+            white-space: nowrap;
+        }
+
+        /* Arkusz szczegółów / dodawania / edycji / kalendarzy */
+        .sheet {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 60;
+            background: var(--bg);
+            padding: 44px 16px 88px;
+            overflow-y: auto;
+        }
+
+        .sheet.open {
+            display: block;
+            animation: viewFade var(--motion) ease;
+        }
+
+        .form-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--sep);
+            font-size: 14.5px;
+        }
+
+        .form-row:last-child {
+            border-bottom: none;
+        }
+
+        .form-row input[type="text"],
+        .form-row input[type="date"],
+        .form-row input[type="time"],
+        .form-row select,
+        .form-row textarea {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-size: 14px;
+            text-align: right;
+            outline: none;
+            max-width: 62%;
+            font-family: inherit;
+        }
+
+        .form-row textarea {
+            width: 100%;
+            max-width: 100%;
+            text-align: left;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .btn-danger {
+            width: 100%;
+            padding: 12px;
+            border-radius: 16px;
+            border: none;
+            background: rgba(255, 69, 58, 0.16);
+            color: var(--accent);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        /* Dolny pasek nawigacyjny w stylu iOS */
+        .bottom-bar {
+            position: fixed;
+            bottom: 22px;
+            left: 14px;
+            right: 14px;
+            z-index: 40;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             gap: 10px;
         }
-        button.key {
-            height: 64px;
+
+        .today-pill {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 18px;
             border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            font-size: 24px;
-            font-weight: 500;
             cursor: pointer;
-            backdrop-filter: blur(16px);
-            transition: transform 0.1s ease, filter 0.12s ease;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
         }
-        button.key:active {
-            transform: scale(0.94);
-            filter: brightness(1.25);
+
+        .nav-right-glass {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 999px;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
         }
-        .fn { background: rgba(165, 165, 174, 0.85); color: #090c12; }
-        .num { background: rgba(44, 46, 56, 0.88); color: #ffffff; }
-        .op { background: linear-gradient(145deg, #ffab2e, #ff9500); color: #ffffff; }
-        .zero {
-            grid-column: span 2;
-            text-align: left;
-            padding-left: 24px;
+
+        .nav-pill-btn {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 2px 6px;
+        }
+
+        .fab-add {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: var(--accent);
+            color: #ffffff;
+            font-size: 24px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(255, 69, 58, 0.38);
         }
     </style>
 </head>
 <body>
-    <div class="calc-shell">
+    <div class="topbar">
+        <button class="btn-back" onclick="goHome()">‹ Pulpit</button>
+        <div class="top-pill-group">
+            <button class="icon-btn" onclick="openCalendarsSheet()" title="Kalendarze">☰</button>
+            <button class="icon-btn" onclick="toggleSearch()" title="Szukaj">🔍</button>
+            <button class="icon-btn" onclick="openEventEditor(null, selectedDateStr)" title="Dodaj wydarzenie">+</button>
+        </div>
+    </div>
+
+    <div class="month-header">
+        <h1 id="month-heading" class="month-title">Listopad 2026</h1>
+        <div class="month-nav">
+            <button class="mini-nav-btn" onclick="shiftPeriod(-1)">‹</button>
+            <button class="mini-nav-btn" onclick="shiftPeriod(1)">›</button>
+        </div>
+    </div>
+
+    <div id="search-bar" class="search-bar">
+        <input id="search-input" type="text" placeholder="Szukaj wydarzeń, świąt, urodzin..." oninput="renderAll()">
+        <button class="mini-nav-btn" onclick="toggleSearch()">Zamknij</button>
+    </div>
+
+    <div class="view-switcher">
+        <button id="vbtn-day" class="v-btn" onclick="setView('day')">Dzień</button>
+        <button id="vbtn-week" class="v-btn" onclick="setView('week')">Tydzień</button>
+        <button id="vbtn-month" class="v-btn active" onclick="setView('month')">Miesiąc</button>
+        <button id="vbtn-list" class="v-btn" onclick="setView('list')">Lista</button>
+    </div>
+
+    <!-- 1. WIDOK MIESIĄC -->
+    <section id="view-month" class="cal-view active">
+        <div class="dow-row">
+            <span>Pn</span><span>Wt</span><span>Śr</span><span>Cz</span><span>Pt</span><span>So</span><span>Nd</span>
+        </div>
+        <div id="month-grid" class="month-grid"></div>
+        <div class="sec-title" id="selected-day-label">Wydarzenia dnia</div>
+        <div id="selected-day-events" class="card-list"></div>
+    </section>
+
+    <!-- 2. WIDOK DZIEŃ -->
+    <section id="view-day" class="cal-view">
+        <div id="day-week-strip" class="week-strip"></div>
+        <div id="day-full-date" class="day-heading"></div>
+        <div id="day-allday" class="allday-box"></div>
+        <div id="day-timeline" class="timeline"></div>
+    </section>
+
+    <!-- 3. WIDOK TYDZIEŃ -->
+    <section id="view-week" class="cal-view">
+        <div id="week-matrix" class="week-matrix"></div>
+    </section>
+
+    <!-- 4. WIDOK LISTA (NADCHODZĄCE, ŚWIĘTA PL, URODZINY I ROCZNICE, ODLICZANIE) -->
+    <section id="view-list" class="cal-view">
+        <div class="sec-title">Nadchodzące wydarzenia i odliczanie</div>
+        <div id="upcoming-list" class="card-list"></div>
+
+        <div class="sec-title">Urodziny i rocznice</div>
+        <div id="birthdays-list" class="card-list"></div>
+
+        <div class="sec-title">Święta i dni wolne w Polsce</div>
+        <div id="holidays-list" class="card-list"></div>
+    </section>
+
+    <!-- ARKUSZ SZCZEGÓŁÓW WYDARZENIA -->
+    <div id="detail-sheet" class="sheet">
         <div class="topbar">
-            <button class="back-btn" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
-            <span style="font-size:12px;opacity:0.65;font-weight:600;">Kalkulator</span>
-            <span style="width:62px;"></span>
+            <button class="btn-back" onclick="closeDetailSheet()">‹ Kalendarz</button>
+            <button id="detail-edit-btn" class="btn-back" onclick="editCurrentDetail()">Edytuj</button>
+        </div>
+        <h2 id="det-title" style="font-size:26px;font-weight:700;margin:10px 0 4px;"></h2>
+        <div id="det-sub" style="font-size:13.5px;color:var(--muted);margin-bottom:14px;"></div>
+
+        <div class="form-card">
+            <div class="form-row"><span>Kalendarz</span><strong id="det-cal"></strong></div>
+            <div class="form-row"><span>Lokalizacja</span><span id="det-loc" style="color:var(--muted);"></span></div>
+            <div class="form-row"><span>Powtarzanie</span><span id="det-repeat" style="color:var(--muted);"></span></div>
+            <div class="form-row"><span>Przypomnienie</span><span id="det-alert" style="color:var(--muted);"></span></div>
+            <div class="form-row"><span>Pozostało</span><strong id="det-countdown" style="color:var(--accent-2);"></strong></div>
         </div>
 
-        <div id="disp" class="display">0</div>
+        <div id="det-notes-card" class="form-card" style="padding:14px;">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Opis</div>
+            <div id="det-notes" style="font-size:14px;line-height:1.45;"></div>
+        </div>
 
-        <div class="keys">
-            <button class="key fn" onclick="clearAll()">AC</button>
-            <button class="key fn" onclick="toggleSign()">+/-</button>
-            <button class="key fn" onclick="percent()">%</button>
-            <button class="key op" onclick="setOp('/')">÷</button>
+        <button id="det-delete-btn" class="btn-danger" onclick="deleteCurrentDetail()">Usuń wydarzenie</button>
+    </div>
 
-            <button class="key num" onclick="digit('7')">7</button>
-            <button class="key num" onclick="digit('8')">8</button>
-            <button class="key num" onclick="digit('9')">9</button>
-            <button class="key op" onclick="setOp('*')">×</button>
+    <!-- ARKUSZ DODAWANIA / EDYCJI WYDARZENIA -->
+    <div id="editor-sheet" class="sheet">
+        <div class="topbar">
+            <button class="btn-back" onclick="closeEventEditor()">Anuluj</button>
+            <strong id="editor-heading" style="font-size:16px;">Nowe wydarzenie</strong>
+            <button class="btn-back" onclick="saveEventEditor()">Zapisz</button>
+        </div>
 
-            <button class="key num" onclick="digit('4')">4</button>
-            <button class="key num" onclick="digit('5')">5</button>
-            <button class="key num" onclick="digit('6')">6</button>
-            <button class="key op" onclick="setOp('-')">−</button>
+        <div class="form-card" style="margin-top:12px;">
+            <div class="form-row">
+                <span>Nazwa</span>
+                <input id="ev-title" type="text" placeholder="Tytuł wydarzenia">
+            </div>
+            <div class="form-row">
+                <span>Lokalizacja</span>
+                <input id="ev-loc" type="text" placeholder="Miejsce lub link">
+            </div>
+        </div>
 
-            <button class="key num" onclick="digit('1')">1</button>
-            <button class="key num" onclick="digit('2')">2</button>
-            <button class="key num" onclick="digit('3')">3</button>
-            <button class="key op" onclick="setOp('+')">+</button>
+        <div class="form-card">
+            <div class="form-row">
+                <span>Całodniowe</span>
+                <input id="ev-allday" type="checkbox" onchange="syncAllDayInputs()">
+            </div>
+            <div class="form-row">
+                <span>Data</span>
+                <input id="ev-date" type="date">
+            </div>
+            <div class="form-row" id="row-start">
+                <span>Początek</span>
+                <input id="ev-start" type="time">
+            </div>
+            <div class="form-row" id="row-end">
+                <span>Koniec</span>
+                <input id="ev-end" type="time">
+            </div>
+        </div>
 
-            <button class="key num zero" onclick="digit('0')">0</button>
-            <button class="key num" onclick="dot()">.</button>
-            <button class="key op" onclick="equals()">=</button>
+        <div class="form-card">
+            <div class="form-row">
+                <span>Kalendarz</span>
+                <select id="ev-cal" onchange="syncColorFromCal()"></select>
+            </div>
+            <div class="form-row">
+                <span>Kolor</span>
+                <select id="ev-color">
+                    <option value="#ff453a">Czerwony</option>
+                    <option value="#0a84ff">Niebieski</option>
+                    <option value="#30d158">Zielony</option>
+                    <option value="#ff9f0a">Pomarańczowy</option>
+                    <option value="#bf5af2">Fioletowy</option>
+                    <option value="#64d2ff">Błękitny</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <span>Powtarzanie</span>
+                <select id="ev-repeat">
+                    <option value="Nigdy">Nigdy</option>
+                    <option value="Codziennie">Codziennie</option>
+                    <option value="Co tydzień">Co tydzień</option>
+                    <option value="Co miesiąc">Co miesiąc</option>
+                    <option value="Co rok">Co rok</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <span>Przypomnienie</span>
+                <select id="ev-alert">
+                    <option value="0">W chwili zdarzenia</option>
+                    <option value="5">5 minut wcześniej</option>
+                    <option value="15">15 minut wcześniej</option>
+                    <option value="60">1 godzinę wcześniej</option>
+                    <option value="1440">1 dzień wcześniej</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <div class="form-row">
+                <textarea id="ev-notes" placeholder="Opis, notatki..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- ARKUSZ ZARZĄDZANIA KALENDARZAMI -->
+    <div id="calendars-sheet" class="sheet">
+        <div class="topbar">
+            <button class="btn-back" onclick="closeCalendarsSheet()">Gotowe</button>
+            <strong style="font-size:16px;">Kalendarze</strong>
+            <span style="width:56px;"></span>
+        </div>
+
+        <div id="cal-toggle-list" class="form-card" style="margin-top:12px;"></div>
+
+        <div class="sec-title">Nowy kalendarz</div>
+        <div class="form-card">
+            <div class="form-row">
+                <input id="new-cal-name" type="text" placeholder="Nazwa kalendarza" style="text-align:left;max-width:65%;">
+                <select id="new-cal-color">
+                    <option value="#0a84ff">Niebieski</option>
+                    <option value="#30d158">Zielony</option>
+                    <option value="#ff9f0a">Pomarańczowy</option>
+                    <option value="#bf5af2">Fioletowy</option>
+                    <option value="#ff453a">Czerwony</option>
+                </select>
+            </div>
+            <div class="form-row" style="justify-content:flex-end;">
+                <button class="mini-nav-btn" onclick="createCalendar()">Dodaj kalendarz</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-bar">
+        <button class="today-pill" onclick="goToday()">Dzisiaj</button>
+        <div class="nav-right-glass">
+            <button class="nav-pill-btn" onclick="openCalendarsSheet()">Kalendarze</button>
+            <button class="nav-pill-btn" onclick="setView('list')">Lista</button>
+            <button class="fab-add" onclick="openEventEditor(null, selectedDateStr)" aria-label="Dodaj wydarzenie">+</button>
         </div>
     </div>
 
     <script>
-        let cur = '0', prev = null, op = null, resetNext = false;
+        const STORAGE_KEY = 'zenos_calendar_v1';
+        const SETTINGS_KEY = 'zenos_settings_v1';
 
-        function update() {
-            document.getElementById('disp').textContent = cur;
+        const MONTHS_NOM = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
+        const MONTHS_GEN = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
+        const DAYS_FULL = ['niedziela', 'poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota'];
+
+        function toDateStr(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
         }
-        function digit(d) {
-            if (resetNext) { cur = d; resetNext = false; }
-            else cur = cur === '0' ? d : cur + d;
-            update();
+
+        function parseDateStr(str) {
+            const [y, m, d] = str.split('-').map(Number);
+            return new Date(y, m - 1, d);
         }
-        function dot() {
-            if (resetNext) { cur = '0.'; resetNext = false; }
-            else if (!cur.includes('.')) cur += '.';
-            update();
+
+        // Obliczenie Wielkanocy (algorytm Meeusa/Jonesa/Butchera) dla świąt ruchomych w Polsce
+        function getEasterDate(year) {
+            const a = year % 19;
+            const b = Math.floor(year / 100);
+            const c = year % 100;
+            const d = Math.floor(b / 4);
+            const e = b % 4;
+            const f = Math.floor((b + 8) / 25);
+            const g = Math.floor((b - f + 1) / 3);
+            const h = (19 * a + b - d - g + 15) % 30;
+            const i = Math.floor(c / 4);
+            const k = c % 4;
+            const l = (32 + 2 * e + 2 * i - h - k) % 7;
+            const m = Math.floor((a + 11 * h + 22 * l) / 451);
+            const month = Math.floor((h + l - 7 * m + 114) / 31);
+            const day = ((h + l - 7 * m + 114) % 31) + 1;
+            return new Date(year, month - 1, day);
         }
-        function clearAll() {
-            cur = '0'; prev = null; op = null; resetNext = false;
-            update();
+
+        function getPolishHolidaysForYear(year) {
+            const easter = getEasterDate(year);
+            const easterMon = new Date(year, easter.getMonth(), easter.getDate() + 1);
+            const corpusChristi = new Date(year, easter.getMonth(), easter.getDate() + 60);
+
+            const fixed = [
+                ['01-01', 'Nowy Rok'],
+                ['01-06', 'Święto Trzech Króli'],
+                ['05-01', 'Święto Pracy'],
+                ['05-03', 'Święto Konstytucji 3 Maja'],
+                ['08-15', 'Wniebowzięcie NMP / Święto Wojska Polskiego'],
+                ['11-01', 'Wszystkich Świętych'],
+                ['11-11', 'Narodowe Święto Niepodległości'],
+                ['12-25', 'Boże Narodzenie (pierwszy dzień)'],
+                ['12-26', 'Boże Narodzenie (drugi dzień)']
+            ].map(([md, title]) => ({
+                id: `hol-${year}-${md}`,
+                title,
+                date: `${year}-${md}`,
+                allDay: true,
+                color: '#ff453a',
+                calendarId: 'holidays',
+                kind: 'holiday'
+            }));
+
+            fixed.push(
+                { id: `hol-${year}-easter`, title: 'Wielkanoc (niedziela)', date: toDateStr(easter), allDay: true, color: '#ff453a', calendarId: 'holidays', kind: 'holiday' },
+                { id: `hol-${year}-easter-mon`, title: 'Poniedziałek Wielkanocny', date: toDateStr(easterMon), allDay: true, color: '#ff453a', calendarId: 'holidays', kind: 'holiday' },
+                { id: `hol-${year}-corpus`, title: 'Boże Ciało', date: toDateStr(corpusChristi), allDay: true, color: '#ff453a', calendarId: 'holidays', kind: 'holiday' }
+            );
+            return fixed.sort((a, b) => a.date.localeCompare(b.date));
         }
-        function toggleSign() {
-            cur = String(Number(cur) * -1);
-            update();
+
+        const todayObj = new Date();
+        const todayStr = toDateStr(todayObj);
+
+        const defaultState = {
+            view: 'month',
+            cursorYear: todayObj.getFullYear(),
+            cursorMonth: todayObj.getMonth(),
+            selectedDateStr: todayStr,
+            calendars: [
+                { id: 'personal', name: 'Osobisty', color: '#0a84ff', visible: true },
+                { id: 'work', name: 'Praca', color: '#30d158', visible: true },
+                { id: 'birthdays', name: 'Urodziny i rocznice', color: '#bf5af2', visible: true },
+                { id: 'holidays', name: 'Święta w Polsce', color: '#ff453a', visible: true }
+            ],
+            events: [
+                {
+                    id: 'ev-1',
+                    title: 'Przegląd projektu ZenOS',
+                    date: todayStr,
+                    startTime: '17:00',
+                    endTime: '18:00',
+                    allDay: false,
+                    location: 'Pomorzany, Szczecin',
+                    color: '#0a84ff',
+                    calendarId: 'work',
+                    repeat: 'Co tydzień',
+                    alertMin: 15,
+                    notes: 'Sprawdzenie widoku Dzień, Tydzień, Miesiąc i Lista.',
+                    kind: 'event',
+                    notifiedKey: ''
+                },
+                {
+                    id: 'ev-2',
+                    title: 'Rocznica startu systemu ZenOS',
+                    date: `${todayObj.getFullYear()}-12-10`,
+                    startTime: '00:00',
+                    endTime: '23:59',
+                    allDay: true,
+                    location: '',
+                    color: '#bf5af2',
+                    calendarId: 'birthdays',
+                    repeat: 'Co rok',
+                    alertMin: 1440,
+                    notes: 'Rocznica uruchomienia środowiska ZenOS.',
+                    kind: 'birthday',
+                    notifiedKey: ''
+                },
+                {
+                    id: 'ev-3',
+                    title: 'Urodziny Kasi',
+                    date: `${todayObj.getFullYear()}-12-18`,
+                    startTime: '00:00',
+                    endTime: '23:59',
+                    allDay: true,
+                    location: '',
+                    color: '#bf5af2',
+                    calendarId: 'birthdays',
+                    repeat: 'Co rok',
+                    alertMin: 1440,
+                    notes: 'Pamiętać o życzeniach.',
+                    kind: 'birthday',
+                    notifiedKey: ''
+                }
+            ]
+        };
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return structuredClone(defaultState);
+                const p = JSON.parse(raw);
+                return {
+                    ...structuredClone(defaultState),
+                    ...p,
+                    calendars: Array.isArray(p.calendars) && p.calendars.length ? p.calendars : defaultState.calendars,
+                    events: Array.isArray(p.events) ? p.events : defaultState.events
+                };
+            } catch {
+                return structuredClone(defaultState);
+            }
         }
-        function percent() {
-            cur = String(Number(cur) / 100);
-            update();
+
+        let state = loadState();
+        let selectedDateStr = state.selectedDateStr || todayStr;
+        let detailEventId = null;
+        let editingEventId = null;
+
+        function saveState(publishWidgets = true) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    view: state.view,
+                    cursorYear: state.cursorYear,
+                    cursorMonth: state.cursorMonth,
+                    selectedDateStr,
+                    calendars: state.calendars,
+                    events: state.events
+                }));
+            } catch {}
+            if (publishWidgets) {
+                try {
+                    parent.postMessage({
+                        type: 'CALENDAR_EVENTS_UPDATED',
+                        events: getCombinedEvents()
+                    }, '*');
+                } catch {}
+            }
         }
-        function setOp(nextOp) {
-            if (op && !resetNext) equals();
-            prev = Number(cur);
-            op = nextOp;
-            resetNext = true;
+
+        function syncWithZenOSTheme() {
+            try {
+                const raw = localStorage.getItem(SETTINGS_KEY);
+                if (raw) {
+                    const s = JSON.parse(raw);
+                    document.body.classList.toggle('theme-light', s.theme === 'light');
+                    document.body.classList.toggle('reduced-motion', Boolean(s.reduceMotion));
+                }
+            } catch {}
+            try {
+                const pBody = parent.document?.body;
+                if (pBody) {
+                    if (pBody.classList.contains('theme-light')) document.body.classList.add('theme-light');
+                    if (pBody.classList.contains('theme-dark')) document.body.classList.remove('theme-light');
+                }
+            } catch {}
         }
-        function equals() {
-            if (op === null || prev === null) return;
-            const b = Number(cur);
-            let res = b;
-            if (op === '+') res = prev + b;
-            if (op === '-') res = prev - b;
-            if (op === '*') res = prev * b;
-            if (op === '/') res = b === 0 ? 'Błąd' : prev / b;
-            cur = typeof res === 'number' ? String(Number(res.toFixed(8))) : res;
-            op = null; prev = null; resetNext = true;
-            update();
+
+        function getCombinedEvents() {
+            const hols = [
+                ...getPolishHolidaysForYear(state.cursorYear - 1),
+                ...getPolishHolidaysForYear(state.cursorYear),
+                ...getPolishHolidaysForYear(state.cursorYear + 1)
+            ];
+            const visibleCalIds = new Set(state.calendars.filter(c => c.visible).map(c => c.id));
+            const q = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
+
+            return [...state.events, ...hols].filter(ev => {
+                if (!visibleCalIds.has(ev.calendarId)) return false;
+                if (!q) return true;
+                const hay = `${ev.title || ''} ${ev.location || ''} ${ev.notes || ''}`.toLowerCase();
+                return hay.includes(q);
+            });
         }
+
+        function getCalendarName(id) {
+            return state.calendars.find(c => c.id === id)?.name || 'Kalendarz';
+        }
+
+        function daysUntil(dateStr) {
+            const a = parseDateStr(todayStr);
+            const b = parseDateStr(dateStr);
+            return Math.round((b - a) / 86400000);
+        }
+
+        function formatCountdown(d) {
+            if (d === 0) return 'Dzisiaj';
+            if (d === 1) return 'Za 1 dzień';
+            if (d > 1) return `Za ${d} dni`;
+            if (d === -1) return 'Wczoraj';
+            return `${Math.abs(d)} dni temu`;
+        }
+
+        function setView(v) {
+            state.view = v;
+            ['day', 'week', 'month', 'list'].forEach(id => {
+                document.getElementById(`vbtn-${id}`).classList.toggle('active', id === v);
+                document.getElementById(`view-${id}`).classList.toggle('active', id === v);
+            });
+            saveState(false);
+            renderAll();
+        }
+
+        function shiftPeriod(delta) {
+            if (state.view === 'week') {
+                const d = parseDateStr(selectedDateStr);
+                d.setDate(d.getDate() + delta * 7);
+                selectedDateStr = toDateStr(d);
+                state.cursorYear = d.getFullYear();
+                state.cursorMonth = d.getMonth();
+            } else if (state.view === 'day') {
+                const d = parseDateStr(selectedDateStr);
+                d.setDate(d.getDate() + delta);
+                selectedDateStr = toDateStr(d);
+                state.cursorYear = d.getFullYear();
+                state.cursorMonth = d.getMonth();
+            } else {
+                const d = new Date(state.cursorYear, state.cursorMonth + delta, 1);
+                state.cursorYear = d.getFullYear();
+                state.cursorMonth = d.getMonth();
+            }
+            saveState(false);
+            renderAll();
+        }
+
+        function goToday() {
+            const now = new Date();
+            state.cursorYear = now.getFullYear();
+            state.cursorMonth = now.getMonth();
+            selectedDateStr = toDateStr(now);
+            saveState(false);
+            renderAll();
+        }
+
+        function selectDay(dStr) {
+            selectedDateStr = dStr;
+            const d = parseDateStr(dStr);
+            state.cursorYear = d.getFullYear();
+            state.cursorMonth = d.getMonth();
+            saveState(false);
+            renderAll();
+        }
+
+        function toggleSearch() {
+            const bar = document.getElementById('search-bar');
+            const open = bar.classList.toggle('open');
+            const inp = document.getElementById('search-input');
+            if (open) inp.focus();
+            else {
+                inp.value = '';
+                renderAll();
+            }
+        }
+
+        function renderMonth(events) {
+            const grid = document.getElementById('month-grid');
+            const firstOfMonth = new Date(state.cursorYear, state.cursorMonth, 1);
+            const startOffset = (firstOfMonth.getDay() + 6) % 7; // poniedziałek = 0
+            const gridStart = new Date(state.cursorYear, state.cursorMonth, 1 - startOffset);
+
+            let html = '';
+            for (let i = 0; i < 42; i++) {
+                const d = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+                const ds = toDateStr(d);
+                const isOutside = d.getMonth() !== state.cursorMonth;
+                const isToday = ds === todayStr;
+                const isSel = ds === selectedDateStr;
+                const dayEvs = events.filter(e => e.date === ds);
+
+                const pills = dayEvs.slice(0, 2).map(e => `
+                    <div class="ev-pill" style="background:${e.color || '#0a84ff'};">${e.title}</div>
+                `).join('');
+                const extra = dayEvs.length > 2 ? `<div class="more-pill">+${dayEvs.length - 2}</div>` : '';
+
+                html += `
+                    <div class="day-cell ${isOutside ? 'outside' : ''} ${isToday ? 'today' : ''} ${isSel ? 'selected' : ''}" onclick="selectDay('${ds}')">
+                        <div class="day-num">${d.getDate()}</div>
+                        ${pills}
+                        ${extra}
+                    </div>
+                `;
+            }
+            grid.innerHTML = html;
+
+            const selDateObj = parseDateStr(selectedDateStr);
+            document.getElementById('selected-day-label').textContent =
+                `${selDateObj.getDate()} ${MONTHS_GEN[selDateObj.getMonth()]} ${selDateObj.getFullYear()} • ${DAYS_FULL[selDateObj.getDay()]}`;
+
+            const selEvs = events.filter(e => e.date === selectedDateStr);
+            const box = document.getElementById('selected-day-events');
+            if (!selEvs.length) {
+                box.innerHTML = `<div class="ev-row" style="cursor:default;"><span style="color:var(--muted);">Brak wydarzeń tego dnia</span></div>`;
+            } else {
+                box.innerHTML = selEvs.map(e => `
+                    <div class="ev-row" onclick="openDetail('${e.id}')">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span class="color-dot" style="background:${e.color};"></span>
+                            <div>
+                                <div style="font-weight:600;font-size:14.5px;">${e.title}</div>
+                                <div style="font-size:12px;color:var(--muted);">${e.allDay ? 'Cały dzień' : `${e.startTime || ''} – ${e.endTime || ''}`}${e.location ? ' • ' + e.location : ''}</div>
+                            </div>
+                        </div>
+                        <span style="color:var(--muted);">›</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function getWeekDates(baseDateStr) {
+            const d = parseDateStr(baseDateStr);
+            const diff = (d.getDay() + 6) % 7;
+            const mon = new Date(d.getFullYear(), d.getMonth(), d.getDate() - diff);
+            return Array.from({ length: 7 }, (_, idx) => new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + idx));
+        }
+
+        function renderDay(events) {
+            const wk = getWeekDates(selectedDateStr);
+            const labels = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'];
+            document.getElementById('day-week-strip').innerHTML = wk.map((d, i) => {
+                const ds = toDateStr(d);
+                return `
+                    <div class="ws-col ${ds === todayStr ? 'today' : ''} ${ds === selectedDateStr ? 'selected' : ''}" onclick="selectDay('${ds}')">
+                        <span class="ws-dow">${labels[i]}</span>
+                        <span class="ws-num">${d.getDate()}</span>
+                    </div>
+                `;
+            }).join('');
+
+            const cur = parseDateStr(selectedDateStr);
+            document.getElementById('day-full-date').textContent =
+                `${DAYS_FULL[cur.getDay()]}, ${cur.getDate()} ${MONTHS_GEN[cur.getMonth()]} ${cur.getFullYear()}`;
+
+            const dayEvs = events.filter(e => e.date === selectedDateStr);
+            const allDayEvs = dayEvs.filter(e => e.allDay);
+            const timedEvs = dayEvs.filter(e => !e.allDay);
+
+            document.getElementById('day-allday').innerHTML = allDayEvs.map(e => `
+                <div class="allday-chip" style="background:${e.color};" onclick="openDetail('${e.id}')">${e.title} (Cały dzień)</div>
+            `).join('');
+
+            let slotsHtml = '';
+            for (let h = 6; h <= 22; h++) {
+                const hh = `${String(h).padStart(2, '0')}:00`;
+                const slotEvs = timedEvs.filter(e => {
+                    const startH = parseInt((e.startTime || '09:00').split(':')[0], 10);
+                    return startH === h;
+                });
+                slotsHtml += `
+                    <div class="hour-slot" onclick="openEventEditor(null, '${selectedDateStr}', '${hh}')">
+                        <div class="hour-lbl">${hh}</div>
+                        <div class="hour-body">
+                            ${slotEvs.map(ev => `
+                                <div class="slot-event" style="background:${ev.color};" onclick="event.stopPropagation(); openDetail('${ev.id}')">
+                                    ${ev.title} (${ev.startTime || ''} – ${ev.endTime || ''})
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            document.getElementById('day-timeline').innerHTML = slotsHtml;
+        }
+
+        function renderWeek(events) {
+            const wk = getWeekDates(selectedDateStr);
+            const labels = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'];
+            document.getElementById('week-matrix').innerHTML = wk.map((d, i) => {
+                const ds = toDateStr(d);
+                const list = events.filter(e => e.date === ds);
+                return `
+                    <div class="wk-day-col" onclick="selectDay('${ds}'); setView('day');">
+                        <div class="wk-day-head">${labels[i]} ${d.getDate()}</div>
+                        ${list.map(e => `
+                            <div class="wk-ev" style="background:${e.color};" onclick="event.stopPropagation(); openDetail('${e.id}')">${e.title}</div>
+                        `).join('')}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderList(events) {
+            const upcoming = events
+                .filter(e => daysUntil(e.date) >= 0)
+                .sort((a, b) => a.date.localeCompare(b.date));
+
+            document.getElementById('upcoming-list').innerHTML = upcoming.length
+                ? upcoming.slice(0, 12).map(e => `
+                    <div class="ev-row" onclick="openDetail('${e.id}')">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span class="color-dot" style="background:${e.color};"></span>
+                            <div>
+                                <div style="font-weight:600;font-size:14px;">${e.title}</div>
+                                <div style="font-size:12px;color:var(--muted);">${e.date}${!e.allDay && e.startTime ? ' • ' + e.startTime : ''}</div>
+                            </div>
+                        </div>
+                        <span class="countdown-badge">${formatCountdown(daysUntil(e.date))}</span>
+                    </div>
+                `).join('')
+                : `<div class="ev-row" style="cursor:default;"><span style="color:var(--muted);">Brak nadchodzących wydarzeń</span></div>`;
+
+            const bdays = events
+                .filter(e => e.kind === 'birthday' || e.calendarId === 'birthdays')
+                .sort((a, b) => a.date.localeCompare(b.date));
+
+            document.getElementById('birthdays-list').innerHTML = bdays.map(e => `
+                <div class="ev-row" onclick="openDetail('${e.id}')">
+                    <div>
+                        <div style="font-weight:600;font-size:14px;">${e.title}</div>
+                        <div style="font-size:12px;color:var(--muted);">${e.date}</div>
+                    </div>
+                    <span class="countdown-badge">${formatCountdown(daysUntil(e.date))}</span>
+                </div>
+            `).join('');
+
+            const hols = getPolishHolidaysForYear(state.cursorYear);
+            document.getElementById('holidays-list').innerHTML = hols.map(h => `
+                <div class="ev-row" style="cursor:default;">
+                    <div>
+                        <div style="font-weight:600;font-size:14px;">${h.title}</div>
+                        <div style="font-size:12px;color:var(--muted);">${h.date} • Dzień ustawowo wolny</div>
+                    </div>
+                    <span class="countdown-badge">${formatCountdown(daysUntil(h.date))}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderAll() {
+            syncWithZenOSTheme();
+            document.getElementById('month-heading').textContent = `${MONTHS_NOM[state.cursorMonth]} ${state.cursorYear}`;
+            const events = getCombinedEvents();
+            renderMonth(events);
+            renderDay(events);
+            renderWeek(events);
+            renderList(events);
+        }
+
+        function openDetail(id) {
+            const ev = getCombinedEvents().find(x => x.id === id);
+            if (!ev) return;
+            detailEventId = ev.id;
+            const isCustom = state.events.some(x => x.id === id);
+
+            document.getElementById('det-title').textContent = ev.title;
+            document.getElementById('det-sub').textContent = ev.allDay
+                ? `${ev.date} • Cały dzień`
+                : `${ev.date} • ${ev.startTime || ''} – ${ev.endTime || ''}`;
+            document.getElementById('det-cal').textContent = getCalendarName(ev.calendarId);
+            document.getElementById('det-loc').textContent = ev.location || 'Brak';
+            document.getElementById('det-repeat').textContent = ev.repeat || 'Nigdy';
+            document.getElementById('det-alert').textContent = ev.alertMin ? `${ev.alertMin} min wcześniej` : 'W chwili zdarzenia';
+            document.getElementById('det-countdown').textContent = formatCountdown(daysUntil(ev.date));
+            document.getElementById('det-notes').textContent = ev.notes || 'Brak opisu.';
+
+            document.getElementById('detail-edit-btn').style.display = isCustom ? 'inline-block' : 'none';
+            document.getElementById('det-delete-btn').style.display = isCustom ? 'block' : 'none';
+            document.getElementById('detail-sheet').classList.add('open');
+        }
+
+        function closeDetailSheet() {
+            detailEventId = null;
+            document.getElementById('detail-sheet').classList.remove('open');
+        }
+
+        function editCurrentDetail() {
+            const id = detailEventId;
+            closeDetailSheet();
+            openEventEditor(id, selectedDateStr);
+        }
+
+        function deleteCurrentDetail() {
+            if (!detailEventId) return;
+            state.events = state.events.filter(x => x.id !== detailEventId);
+            saveState(true);
+            closeDetailSheet();
+            renderAll();
+        }
+
+        function openEventEditor(id = null, dateStr = todayStr, startDefault = '10:00') {
+            editingEventId = id;
+            const existing = id ? state.events.find(x => x.id === id) : null;
+            const calSel = document.getElementById('ev-cal');
+            calSel.innerHTML = state.calendars
+                .filter(c => c.id !== 'holidays')
+                .map(c => `<option value="${c.id}">${c.name}</option>`)
+                .join('');
+
+            document.getElementById('editor-heading').textContent = existing ? 'Edytuj wydarzenie' : 'Nowe wydarzenie';
+            document.getElementById('ev-title').value = existing ? existing.title : '';
+            document.getElementById('ev-loc').value = existing ? (existing.location || '') : '';
+            document.getElementById('ev-allday').checked = existing ? Boolean(existing.allDay) : false;
+            document.getElementById('ev-date').value = existing ? existing.date : dateStr;
+            document.getElementById('ev-start').value = existing ? (existing.startTime || startDefault) : startDefault;
+            document.getElementById('ev-end').value = existing ? (existing.endTime || '11:00') : '11:00';
+            calSel.value = existing ? existing.calendarId : 'personal';
+            document.getElementById('ev-color').value = existing ? existing.color : '#0a84ff';
+            document.getElementById('ev-repeat').value = existing ? (existing.repeat || 'Nigdy') : 'Nigdy';
+            document.getElementById('ev-alert').value = existing ? String(existing.alertMin ?? 15) : '15';
+            document.getElementById('ev-notes').value = existing ? (existing.notes || '') : '';
+
+            syncAllDayInputs();
+            document.getElementById('editor-sheet').classList.add('open');
+        }
+
+        function syncAllDayInputs() {
+            const allDay = document.getElementById('ev-allday').checked;
+            document.getElementById('row-start').style.display = allDay ? 'none' : 'flex';
+            document.getElementById('row-end').style.display = allDay ? 'none' : 'flex';
+        }
+
+        function syncColorFromCal() {
+            const calId = document.getElementById('ev-cal').value;
+            const found = state.calendars.find(c => c.id === calId);
+            if (found) document.getElementById('ev-color').value = found.color;
+        }
+
+        function closeEventEditor() {
+            editingEventId = null;
+            document.getElementById('editor-sheet').classList.remove('open');
+        }
+
+        function saveEventEditor() {
+            const title = document.getElementById('ev-title').value.trim();
+            if (!title) return;
+            const calId = document.getElementById('ev-cal').value;
+            const payload = {
+                id: editingEventId || `ev-${Date.now()}`,
+                title,
+                location: document.getElementById('ev-loc').value.trim(),
+                allDay: document.getElementById('ev-allday').checked,
+                date: document.getElementById('ev-date').value || todayStr,
+                startTime: document.getElementById('ev-start').value || '09:00',
+                endTime: document.getElementById('ev-end').value || '10:00',
+                calendarId: calId,
+                color: document.getElementById('ev-color').value,
+                repeat: document.getElementById('ev-repeat').value,
+                alertMin: Number(document.getElementById('ev-alert').value || 0),
+                notes: document.getElementById('ev-notes').value.trim(),
+                kind: calId === 'birthdays' ? 'birthday' : 'event',
+                notifiedKey: ''
+            };
+
+            if (editingEventId) {
+                const idx = state.events.findIndex(x => x.id === editingEventId);
+                if (idx !== -1) state.events[idx] = payload;
+            } else {
+                state.events.push(payload);
+            }
+
+            selectedDateStr = payload.date;
+            saveState(true);
+            closeEventEditor();
+            renderAll();
+        }
+
+        function openCalendarsSheet() {
+            renderCalendarToggleList();
+            document.getElementById('calendars-sheet').classList.add('open');
+        }
+
+        function closeCalendarsSheet() {
+            document.getElementById('calendars-sheet').classList.remove('open');
+            renderAll();
+        }
+
+        function renderCalendarToggleList() {
+            document.getElementById('cal-toggle-list').innerHTML = state.calendars.map((c, idx) => `
+                <div class="form-row">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span class="color-dot" style="background:${c.color};"></span>
+                        <span>${c.name}</span>
+                    </div>
+                    <input type="checkbox" ${c.visible ? 'checked' : ''} onchange="toggleCalVisible(${idx}, this.checked)">
+                </div>
+            `).join('');
+        }
+
+        function toggleCalVisible(idx, visible) {
+            state.calendars[idx].visible = Boolean(visible);
+            saveState(true);
+            renderAll();
+        }
+
+        function createCalendar() {
+            const nameInp = document.getElementById('new-cal-name');
+            const name = nameInp.value.trim();
+            if (!name) return;
+            state.calendars.push({
+                id: `cal-${Date.now()}`,
+                name,
+                color: document.getElementById('new-cal-color').value,
+                visible: true
+            });
+            nameInp.value = '';
+            saveState(true);
+            renderCalendarToggleList();
+        }
+
+        // Przypomnienia w powiadomieniach ZenOS oraz Web Notifications (gdy dozwolone)
+        function checkReminders() {
+            const now = new Date();
+            const nowMin = now.getHours() * 60 + now.getMinutes();
+            let changed = false;
+
+            for (const ev of state.events) {
+                if (ev.allDay || !ev.startTime) continue;
+                const [hh, mm] = ev.startTime.split(':').map(Number);
+                const triggerAtMin = hh * 60 + mm - Number(ev.alertMin || 0);
+                const stamp = `${todayStr}-${ev.id}-${triggerAtMin}`;
+                if (ev.date === todayStr && nowMin >= triggerAtMin && ev.notifiedKey !== stamp) {
+                    ev.notifiedKey = stamp;
+                    changed = true;
+                    try {
+                        parent.NotificationsManager?.push?.({
+                            app: 'Kalendarz',
+                            title: ev.title,
+                            body: `${ev.startTime}${ev.location ? ' • ' + ev.location : ''}`
+                        });
+                    } catch {}
+                    try {
+                        if ('Notification' in window && Notification.permission === 'granted') {
+                            new Notification(ev.title, { body: `Start: ${ev.startTime}` });
+                        }
+                    } catch {}
+                }
+            }
+            if (changed) saveState(false);
+        }
+
+        function goHome() {
+            try { parent.Kernel?.goHome?.(); } catch {}
+        }
+
+        setView(state.view);
+        saveState(true);
+        checkReminders();
+        setInterval(checkReminders, 30000);
     </script>
 </body>
 </html>
