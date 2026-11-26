@@ -14,7 +14,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
             display: flex;
             flex-direction: column;
-            padding: 46px 16px 84px;
+            padding: 46px 16px 76px;
             overflow-y: auto;
         }
         .topbar {
@@ -46,24 +46,81 @@
             align-items: center;
         }
         .ios-banner.show { display: flex; }
-        .add-alarm-box {
+
+        /* Arkusz dodawania alarmu w stylu iOS */
+        .add-alarm-sheet {
             display: none;
-            gap: 8px;
-            margin-bottom: 12px;
-            background: #141417;
-            padding: 10px;
-            border-radius: 16px;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 14px;
+            background: #1c1c1e;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            padding: 14px;
+            border-radius: 22px;
         }
-        .add-alarm-box.open { display: flex; }
-        .add-alarm-box input {
-            flex: 1;
+        .add-alarm-sheet.open { display: flex; }
+        .sheet-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .wheel-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            background: #121214;
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .wheel-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .wheel-col span {
+            font-size: 11px;
+            color: #9ca3af;
+            font-weight: 600;
+        }
+        .wheel-col select {
+            width: 100%;
             background: #2c2c2e;
-            border: none;
             color: #ffffff;
-            border-radius: 10px;
-            padding: 8px 10px;
+            border: none;
+            border-radius: 12px;
+            padding: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+        }
+        .alarm-opts {
+            background: #2c2c2e;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .opt-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 11px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             font-size: 14px;
         }
+        .opt-row:last-child { border-bottom: none; }
+        .opt-row input, .opt-row select {
+            background: transparent;
+            border: none;
+            color: #d1d5db;
+            font-size: 13.5px;
+            text-align: right;
+            outline: none;
+        }
+
         .tab-panel { display: none; flex-direction: column; gap: 12px; }
         .tab-panel.active { display: flex; }
         .world-big {
@@ -121,7 +178,7 @@
         }
         .bottom-nav {
             position: fixed;
-            bottom: 44px;
+            bottom: 24px;
             left: 14px;
             right: 14px;
             height: 54px;
@@ -159,10 +216,58 @@
         <button class="link-orange" style="font-size:12px;" onclick="hideBanner()">OK</button>
     </div>
 
-    <div id="add-alarm-box" class="add-alarm-box">
-        <input id="new-alarm-time" type="time" value="07:15">
-        <input id="new-alarm-label" type="text" placeholder="Etykieta">
-        <button class="link-orange" onclick="confirmAddAlarm()">Dodaj</button>
+    <div id="add-alarm-sheet" class="add-alarm-sheet">
+        <div class="sheet-head">
+            <button class="link-orange" onclick="closeAddAlarm()">Anuluj</button>
+            <span>Nowy alarm</span>
+            <button class="link-orange" onclick="confirmAddAlarm()">Zapisz</button>
+        </div>
+
+        <div class="wheel-row">
+            <div class="wheel-col">
+                <span>Godzina</span>
+                <select id="al-h"></select>
+            </div>
+            <div class="wheel-col">
+                <span>Minuta</span>
+                <select id="al-m"></select>
+            </div>
+            <div class="wheel-col">
+                <span>Pora</span>
+                <select id="al-p">
+                    <option value="24h">24h</option>
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="alarm-opts">
+            <div class="opt-row">
+                <span>Powtarzanie</span>
+                <select id="al-repeat">
+                    <option value="Dni powszednie">Dni powszednie</option>
+                    <option value="Codziennie">Codziennie</option>
+                    <option value="Jednorazowo">Jednorazowo</option>
+                </select>
+            </div>
+            <div class="opt-row">
+                <span>Etykieta</span>
+                <input id="al-label" type="text" value="Alarm">
+            </div>
+            <div class="opt-row">
+                <span>Dźwięk</span>
+                <select id="al-sound">
+                    <option value="Radial">Radial</option>
+                    <option value="Zen">Zen</option>
+                    <option value="Dzwonek">Dzwonek</option>
+                </select>
+            </div>
+            <div class="opt-row">
+                <span>Drzemka</span>
+                <input id="al-snooze" type="checkbox" class="switch-ios" checked>
+            </div>
+        </div>
     </div>
 
     <section id="panel-world" class="tab-panel active">
@@ -243,28 +348,43 @@
         updateWorldClocks();
         setInterval(updateWorldClocks, 1000);
 
+        const alH = document.getElementById('al-h');
+        const alM = document.getElementById('al-m');
+        for (let i = 0; i < 24; i++) alH.add(new Option(String(i).padStart(2, '0'), String(i).padStart(2, '0'), false, i === 6));
+        for (let i = 0; i < 60; i++) alM.add(new Option(String(i).padStart(2, '0'), String(i).padStart(2, '0'), false, i === 30));
+
         const alarms = [
-            { time: '07:00', label: 'Poranek', on: true },
-            { time: '08:30', label: 'Praca', on: false }
+            { time: '06:30', label: 'Poranek • Dni powszednie', sound: 'Radial', on: true },
+            { time: '08:30', label: 'Praca • Dni powszednie', sound: 'Zen', on: false }
         ];
         function renderAlarms() {
             document.getElementById('alarms-list').innerHTML = alarms.map((a, i) => `
                 <div class="row-item">
-                    <div><div class="alarm-time">${a.time}</div><div style="font-size:12.5px;color:#9ca3af;">${a.label}</div></div>
+                    <div>
+                        <div class="alarm-time">${a.time}</div>
+                        <div style="font-size:12.5px;color:#9ca3af;">${a.label} • ${a.sound}</div>
+                    </div>
                     <input type="checkbox" class="switch-ios" ${a.on ? 'checked' : ''} onchange="alarms[${i}].on = this.checked">
                 </div>
             `).join('');
         }
         function toggleAddAlarm() {
             switchTab('alarms');
-            document.getElementById('add-alarm-box').classList.toggle('open');
+            document.getElementById('add-alarm-sheet').classList.toggle('open');
+        }
+        function closeAddAlarm() {
+            document.getElementById('add-alarm-sheet').classList.remove('open');
         }
         function confirmAddAlarm() {
-            const t = document.getElementById('new-alarm-time').value || '07:00';
-            const lbl = document.getElementById('new-alarm-label').value.trim() || 'Alarm';
-            alarms.push({ time: t, label: lbl, on: true });
-            document.getElementById('new-alarm-label').value = '';
-            document.getElementById('add-alarm-box').classList.remove('open');
+            const hh = alH.value;
+            const mm = alM.value;
+            const period = document.getElementById('al-p').value;
+            const rep = document.getElementById('al-repeat').value;
+            const lbl = document.getElementById('al-label').value.trim() || 'Alarm';
+            const snd = document.getElementById('al-sound').value;
+            const timeLabel = period === '24h' ? `${hh}:${mm}` : `${hh}:${mm} ${period}`;
+            alarms.unshift({ time: timeLabel, label: `${lbl} • ${rep}`, sound: snd, on: true });
+            closeAddAlarm();
             renderAlarms();
         }
         renderAlarms();
