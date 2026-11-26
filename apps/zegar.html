@@ -5,257 +5,477 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Zegar — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        :root {
+            --bg: #000000;
+            --surface: rgba(28, 28, 30, 0.82);
+            --surface-2: rgba(44, 44, 46, 0.88);
+            --glass: rgba(28, 28, 30, 0.68);
+            --border: rgba(255, 255, 255, 0.14);
+            --text: #ffffff;
+            --muted: #8e8e93;
+            --accent: #ff9f0a;
+            --green: #30d158;
+            --red: #ff453a;
+            --sep: rgba(255, 255, 255, 0.12);
+        }
+        body.light {
+            --bg: #f2f2f7;
+            --surface: rgba(255, 255, 255, 0.86);
+            --surface-2: rgba(229, 229, 234, 0.92);
+            --glass: rgba(255, 255, 255, 0.76);
+            --border: rgba(0, 0, 0, 0.1);
+            --text: #000000;
+            --muted: #6e6e73;
+            --accent: #ff9500;
+            --green: #34c759;
+            --red: #ff3b30;
+            --sep: rgba(0, 0, 0, 0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body {
             width: 100%;
             height: 100%;
-            background: #050507;
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-            display: flex;
-            flex-direction: column;
-            padding: 46px 16px 76px;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
             overflow-y: auto;
+            padding: 44px 16px 96px;
+            transition: background 0.25s ease, color 0.25s ease;
         }
         .topbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            height: 36px;
+            margin-bottom: 4px;
         }
-        .link-orange {
-            background: none;
-            border: none;
-            color: #ff9f0a;
-            font-size: 15px;
+        .btn-txt {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--accent);
+            font-size: 14px;
             font-weight: 600;
+            padding: 6px 13px;
+            border-radius: 999px;
             cursor: pointer;
         }
-        .screen-title { font-size: 28px; font-weight: 800; margin-bottom: 12px; }
-        .ios-banner {
-            display: none;
-            background: rgba(255, 159, 10, 0.2);
-            border: 1px solid rgba(255, 159, 10, 0.55);
-            color: #ffd60a;
-            padding: 10px 14px;
-            border-radius: 16px;
+        .btn-icon-accent {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-size: 26px;
+            line-height: 1;
+            font-weight: 400;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+        h1.large-title {
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 12px;
+        }
+        .sec-label {
             font-size: 13px;
             font-weight: 600;
-            margin-bottom: 12px;
-            justify-content: space-between;
-            align-items: center;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin: 16px 4px 8px;
         }
-        .ios-banner.show { display: flex; }
+        .card-group {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Arkusz dodawania alarmu w stylu iOS */
-        .add-alarm-sheet {
+        /* Alert banner inside app */
+        .alert-banner {
             display: none;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 14px;
-            background: #1c1c1e;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            padding: 14px;
-            border-radius: 22px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: var(--surface-2);
+            border: 1px solid var(--accent);
+            border-radius: 18px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
         }
-        .add-alarm-sheet.open { display: flex; }
-        .sheet-head {
+        .alert-banner.show { display: flex; }
+        .alert-banner strong { font-size: 14px; display: block; }
+        .alert-banner span { font-size: 12px; color: var(--muted); }
+        .banner-actions { display: flex; gap: 8px; }
+        .btn-sm {
+            border: none;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-snooze { background: var(--accent); color: #000; }
+        .btn-dismiss { background: var(--red); color: #fff; }
+
+        /* World Clock */
+        .world-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 15px;
-            font-weight: 700;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--sep);
         }
-        .wheel-row {
+        .world-row:last-child { border-bottom: none; }
+        .world-sub { font-size: 13px; color: var(--muted); margin-bottom: 2px; }
+        .world-city { font-size: 22px; font-weight: 500; }
+        .world-time { font-size: 38px; font-weight: 300; font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+        .world-period { font-size: 18px; font-weight: 400; color: var(--muted); margin-left: 3px; }
+        .del-city-btn {
+            display: none;
+            background: var(--red);
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        body.editing-cities .del-city-btn { display: inline-block; }
+
+        /* Alarms */
+        .alarm-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--sep);
+            cursor: pointer;
+        }
+        .alarm-row:last-child { border-bottom: none; }
+        .alarm-row.off .alarm-big { color: var(--muted); }
+        .alarm-big { font-size: 42px; font-weight: 300; font-variant-numeric: tabular-nums; line-height: 1.05; }
+        .alarm-meta { font-size: 13px; color: var(--muted); margin-top: 3px; }
+        .ios-switch {
+            position: relative;
+            width: 50px;
+            height: 30px;
+            flex-shrink: 0;
+        }
+        .ios-switch input { opacity: 0; width: 0; height: 0; }
+        .ios-slider {
+            position: absolute;
+            inset: 0;
+            background: rgba(120, 120, 128, 0.36);
+            border-radius: 999px;
+            transition: 0.22s;
+            cursor: pointer;
+        }
+        .ios-slider:before {
+            content: "";
+            position: absolute;
+            width: 26px;
+            height: 26px;
+            left: 2px;
+            top: 2px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            transition: 0.22s;
+        }
+        .ios-switch input:checked + .ios-slider { background: var(--green); }
+        .ios-switch input:checked + .ios-slider:before { transform: translateX(20px); }
+
+        /* Sheet / Modal for Add/Edit Alarm & Add City */
+        .sheet {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 60;
+            background: var(--bg);
+            padding: 44px 16px 90px;
+            overflow-y: auto;
+        }
+        .sheet.open { display: block; animation: fadeIn 0.2s ease; }
+        .wheel-wrap {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 12px 8px;
+            margin: 12px 0 18px;
+        }
+        .wheel-col {
+            height: 150px;
+            overflow-y: auto;
+            scroll-snap-type: y mandatory;
+            scrollbar-width: none;
+            text-align: center;
+        }
+        .wheel-col::-webkit-scrollbar { display: none; }
+        .wheel-pad { height: 54px; }
+        .wheel-item {
+            height: 42px;
+            line-height: 42px;
+            scroll-snap-align: center;
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--muted);
+            cursor: pointer;
+            font-variant-numeric: tabular-nums;
+        }
+        .wheel-item.selected {
+            color: var(--text);
+            font-weight: 700;
+            background: var(--surface-2);
+            border-radius: 12px;
+        }
+        .opt-cell {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 13px 16px;
+            border-bottom: 1px solid var(--sep);
+            font-size: 15px;
+        }
+        .opt-cell:last-child { border-bottom: none; }
+        .opt-cell input[type="text"], .opt-cell select {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            font-size: 15px;
+            text-align: right;
+            outline: none;
+            max-width: 58%;
+        }
+
+        /* Stopwatch */
+        .sw-clock {
+            font-size: 56px;
+            font-weight: 200;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            margin: 28px 0 26px;
+            letter-spacing: -1px;
+        }
+        .circle-actions {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 12px 20px;
+        }
+        .c-btn {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.12s ease;
+        }
+        .c-btn:active { transform: scale(0.93); }
+        .c-neutral { background: var(--surface-2); color: var(--text); }
+        .c-start { background: rgba(48, 209, 88, 0.22); color: var(--green); }
+        .c-stop { background: rgba(255, 69, 58, 0.24); color: var(--red); }
+        .lap-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--sep);
+            font-size: 15px;
+            font-variant-numeric: tabular-nums;
+        }
+        .lap-row:last-child { border-bottom: none; }
+
+        /* Timer */
+        .timer-picker {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 8px;
-            background: #121214;
-            padding: 12px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 14px 10px;
+            margin-bottom: 16px;
         }
-        .wheel-col {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-        }
-        .wheel-col span {
-            font-size: 11px;
-            color: #9ca3af;
-            font-weight: 600;
-        }
-        .wheel-col select {
+        .tp-col label { display: block; text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+        .tp-col select {
             width: 100%;
-            background: #2c2c2e;
-            color: #ffffff;
-            border: none;
+            background: var(--surface-2);
+            color: var(--text);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 8px;
-            font-size: 18px;
+            padding: 10px 6px;
+            font-size: 20px;
             font-weight: 600;
             text-align: center;
-            cursor: pointer;
         }
-        .alarm-opts {
-            background: #2c2c2e;
-            border-radius: 16px;
-            overflow: hidden;
-        }
-        .opt-row {
+        .active-timer-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 16px;
+            margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 11px 14px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            font-size: 14px;
         }
-        .opt-row:last-child { border-bottom: none; }
-        .opt-row input, .opt-row select {
-            background: transparent;
-            border: none;
-            color: #d1d5db;
-            font-size: 13.5px;
-            text-align: right;
-            outline: none;
-        }
+        .at-time { font-size: 36px; font-weight: 300; font-variant-numeric: tabular-nums; }
+        .at-sub { font-size: 12px; color: var(--muted); }
+        .at-btns { display: flex; gap: 8px; }
 
-        .tab-panel { display: none; flex-direction: column; gap: 12px; }
-        .tab-panel.active { display: flex; }
-        .world-big {
-            font-size: 42px;
-            font-weight: 300;
-            font-variant-numeric: tabular-nums;
-            text-align: center;
-            padding: 10px 0;
-        }
-        .row-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 4px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-        }
-        .alarm-time { font-size: 34px; font-weight: 300; font-variant-numeric: tabular-nums; }
-        .switch-ios { width: 44px; height: 26px; accent-color: #30d158; cursor: pointer; }
-        .stopwatch-display {
-            font-size: 48px;
-            font-weight: 300;
-            text-align: center;
-            font-variant-numeric: tabular-nums;
-            padding: 16px 0;
-        }
-        .sw-controls { display: flex; justify-content: space-between; padding: 0 10px; }
-        .round-btn {
-            width: 66px;
-            height: 66px;
-            border-radius: 50%;
-            border: none;
-            font-size: 13.5px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .btn-gray { background: #2c2c2e; color: #ffffff; }
-        .btn-green { background: #143d22; color: #30d158; }
-        .btn-red { background: #471515; color: #ff453a; }
-        .picker-box {
-            background: #141417;
-            border-radius: 18px;
-            padding: 14px;
-            display: flex;
-            justify-content: space-around;
-            gap: 8px;
-        }
-        .picker-col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-        .picker-col select {
-            background: #2c2c2e;
-            color: #ffffff;
-            border: none;
-            border-radius: 10px;
-            padding: 7px 9px;
-            font-size: 15px;
-        }
-        .bottom-nav {
+        /* Floating iOS 26 style bottom bar */
+        .tabbar {
             position: fixed;
             bottom: 24px;
             left: 14px;
             right: 14px;
-            height: 54px;
-            border-radius: 28px;
-            background: rgba(28, 28, 32, 0.88);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.16);
+            height: 62px;
+            border-radius: 31px;
+            background: var(--glass);
+            backdrop-filter: blur(22px) saturate(180%);
+            -webkit-backdrop-filter: blur(22px) saturate(180%);
+            border: 1px solid var(--border);
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             align-items: center;
+            z-index: 40;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
         }
-        .nav-tab {
+        .tab-btn {
             background: none;
             border: none;
-            color: #9ca3af;
-            font-size: 10.5px;
-            font-weight: 600;
+            color: var(--muted);
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 2px;
+            gap: 3px;
+            font-size: 10.5px;
+            font-weight: 600;
             cursor: pointer;
+            padding: 6px 0;
         }
-        .nav-tab.active { color: #ff9f0a; }
+        .tab-btn span.ico { font-size: 19px; line-height: 1; }
+        .tab-btn.active { color: var(--accent); }
     </style>
 </head>
 <body>
     <div class="topbar">
-        <button class="link-orange" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
-        <button class="link-orange" onclick="toggleAddAlarm()">+</button>
+        <button id="top-left-btn" class="btn-txt" onclick="onTopLeft()">‹ Pulpit</button>
+        <button id="top-right-btn" class="btn-icon-accent" onclick="onTopRight()" aria-label="Dodaj">+</button>
     </div>
 
-    <div id="banner" class="ios-banner">
-        <span id="banner-txt">Minutnik zakończony</span>
-        <button class="link-orange" style="font-size:12px;" onclick="hideBanner()">OK</button>
-    </div>
-
-    <div id="add-alarm-sheet" class="add-alarm-sheet">
-        <div class="sheet-head">
-            <button class="link-orange" onclick="closeAddAlarm()">Anuluj</button>
-            <span>Nowy alarm</span>
-            <button class="link-orange" onclick="confirmAddAlarm()">Zapisz</button>
+    <div id="ring-banner" class="alert-banner">
+        <div>
+            <strong id="ring-title">Alarm</strong>
+            <span id="ring-sub">Dzwoni teraz</span>
         </div>
+        <div class="banner-actions">
+            <button id="btn-snooze" class="btn-sm btn-snooze" onclick="snoozeRing()">Drzemka</button>
+            <button class="btn-sm btn-dismiss" onclick="dismissRing()">Wyłącz</button>
+        </div>
+    </div>
 
-        <div class="wheel-row">
-            <div class="wheel-col">
-                <span>Godzina</span>
-                <select id="al-h"></select>
+    <!-- 1. ZEGAR ŚWIATOWY -->
+    <section id="page-world" class="page active">
+        <h1 class="large-title">Zegar światowy</h1>
+        <div id="world-list" class="card-group"></div>
+    </section>
+
+    <!-- 2. ALARM -->
+    <section id="page-alarm" class="page">
+        <h1 class="large-title">Alarmy</h1>
+        <div class="sec-label">Sen i budzenie</div>
+        <div class="card-group">
+            <div class="alarm-row" onclick="editAlarm(0)">
+                <div>
+                    <div id="wake-time" class="alarm-big">06:30</div>
+                    <div id="wake-meta" class="alarm-meta">Jutro rano • Radial</div>
+                </div>
+                <button class="btn-txt" style="color:var(--text);" onclick="event.stopPropagation(); editAlarm(0)">ZMIEŃ</button>
             </div>
-            <div class="wheel-col">
-                <span>Minuta</span>
-                <select id="al-m"></select>
+        </div>
+        <div class="sec-label">Pozostałe</div>
+        <div id="alarms-list" class="card-group"></div>
+    </section>
+
+    <!-- 3. STOPER -->
+    <section id="page-stopwatch" class="page">
+        <h1 class="large-title">Stoper</h1>
+        <div id="sw-display" class="sw-clock">00:00.00</div>
+        <div class="circle-actions">
+            <button id="sw-lap-btn" class="c-btn c-neutral" onclick="swLapOrReset()">Okrążenie</button>
+            <button id="sw-start-btn" class="c-btn c-start" onclick="swToggle()">Start</button>
+        </div>
+        <div id="sw-laps" class="card-group"></div>
+    </section>
+
+    <!-- 4. MINUTNIK -->
+    <section id="page-timer" class="page">
+        <h1 class="large-title">Minutnik</h1>
+        <div class="timer-picker">
+            <div class="tp-col"><label>Godz.</label><select id="tp-h"></select></div>
+            <div class="tp-col"><label>Min.</label><select id="tp-m"></select></div>
+            <div class="tp-col"><label>Sek.</label><select id="tp-s"></select></div>
+        </div>
+        <div class="card-group" style="margin-bottom:14px;">
+            <div class="opt-cell">
+                <span>Etykieta</span>
+                <input id="tp-label" type="text" value="Minutnik">
             </div>
-            <div class="wheel-col">
-                <span>Pora</span>
-                <select id="al-p">
-                    <option value="24h">24h</option>
-                    <option value="AM">AM</option>
-                    <option value="PM">PM</option>
+            <div class="opt-cell">
+                <span>Po zakończeniu</span>
+                <select id="tp-sound">
+                    <option value="Radial">Radial</option>
+                    <option value="Zen">Zen</option>
+                    <option value="Dzwonek">Dzwonek</option>
                 </select>
             </div>
         </div>
+        <div class="circle-actions" style="padding-bottom:10px;">
+            <button class="c-btn c-neutral" onclick="clearFinishedTimers()">Wyczyść</button>
+            <button class="c-btn c-start" onclick="addNewTimer()">Start</button>
+        </div>
+        <div class="sec-label">Aktywne i ostatnie minutniki</div>
+        <div id="timers-list"></div>
+    </section>
 
-        <div class="alarm-opts">
-            <div class="opt-row">
+    <!-- ARKUSZ DODAWANIA / EDYCJI ALARMU (WHEEL PICKER) -->
+    <div id="alarm-sheet" class="sheet">
+        <div class="topbar">
+            <button class="btn-txt" onclick="closeAlarmSheet()">Anuluj</button>
+            <strong id="sheet-alarm-title" style="font-size:17px;">Nowy alarm</strong>
+            <button class="btn-txt" onclick="saveAlarmSheet()">Zapisz</button>
+        </div>
+
+        <div class="wheel-wrap">
+            <div id="wheel-h" class="wheel-col"></div>
+            <div id="wheel-m" class="wheel-col"></div>
+            <div id="wheel-p" class="wheel-col"></div>
+        </div>
+
+        <div class="card-group">
+            <div class="opt-cell">
                 <span>Powtarzanie</span>
                 <select id="al-repeat">
+                    <option value="Nigdy">Nigdy</option>
                     <option value="Dni powszednie">Dni powszednie</option>
                     <option value="Codziennie">Codziennie</option>
-                    <option value="Jednorazowo">Jednorazowo</option>
+                    <option value="Weekendy">Weekendy</option>
                 </select>
             </div>
-            <div class="opt-row">
-                <span>Etykieta</span>
+            <div class="opt-cell">
+                <span>Nazwa</span>
                 <input id="al-label" type="text" value="Alarm">
             </div>
-            <div class="opt-row">
+            <div class="opt-cell">
                 <span>Dźwięk</span>
                 <select id="al-sound">
                     <option value="Radial">Radial</option>
@@ -263,211 +483,556 @@
                     <option value="Dzwonek">Dzwonek</option>
                 </select>
             </div>
-            <div class="opt-row">
+            <div class="opt-cell">
                 <span>Drzemka</span>
-                <input id="al-snooze" type="checkbox" class="switch-ios" checked>
+                <label class="ios-switch"><input id="al-snooze" type="checkbox" checked><span class="ios-slider"></span></label>
             </div>
         </div>
     </div>
 
-    <section id="panel-world" class="tab-panel active">
-        <h1 class="screen-title">Zegar światowy</h1>
-        <div id="local-big-clock" class="world-big">00:00:00</div>
-        <div class="row-item">
-            <div><div style="font-size:11.5px;color:#9ca3af;">Lokalnie</div><div style="font-size:18px;font-weight:600;">Warszawa</div></div>
-            <span id="city-waw" style="font-size:26px;font-weight:300;">--:--</span>
+    <!-- ARKUSZ DODAWANIA MIASTA -->
+    <div id="city-sheet" class="sheet">
+        <div class="topbar">
+            <button class="btn-txt" onclick="closeCitySheet()">Anuluj</button>
+            <strong style="font-size:17px;">Dodaj miasto</strong>
+            <span style="width:60px;"></span>
         </div>
-        <div class="row-item">
-            <div><div style="font-size:11.5px;color:#9ca3af;">Ameryka</div><div style="font-size:18px;font-weight:600;">Nowy Jork</div></div>
-            <span id="city-nyc" style="font-size:26px;font-weight:300;">--:--</span>
-        </div>
-        <div class="row-item">
-            <div><div style="font-size:11.5px;color:#9ca3af;">Azja</div><div style="font-size:18px;font-weight:600;">Tokio</div></div>
-            <span id="city-tyo" style="font-size:26px;font-weight:300;">--:--</span>
-        </div>
-    </section>
+        <div id="city-catalog" class="card-group" style="margin-top:12px;"></div>
+    </div>
 
-    <section id="panel-alarms" class="tab-panel">
-        <h1 class="screen-title">Alarmy</h1>
-        <div id="alarms-list"></div>
-    </section>
-
-    <section id="panel-stopwatch" class="tab-panel">
-        <h1 class="screen-title">Stoper</h1>
-        <div id="sw-time" class="stopwatch-display">00:00.00</div>
-        <div class="sw-controls">
-            <button class="round-btn btn-gray" onclick="lapOrReset()">Okrążenie</button>
-            <button id="sw-toggle" class="round-btn btn-green" onclick="toggleStopwatch()">Start</button>
-        </div>
-        <div id="laps-list" style="margin-top:10px;"></div>
-    </section>
-
-    <section id="panel-timers" class="tab-panel">
-        <h1 class="screen-title">Minutnik</h1>
-        <div class="picker-box">
-            <div class="picker-col"><span style="font-size:11px;color:#9ca3af;">Godz.</span><select id="t-h"></select></div>
-            <div class="picker-col"><span style="font-size:11px;color:#9ca3af;">Min.</span><select id="t-m"></select></div>
-            <div class="picker-col"><span style="font-size:11px;color:#9ca3af;">Sek.</span><select id="t-s"></select></div>
-        </div>
-        <div id="timer-display" class="stopwatch-display" style="padding:8px 0;font-size:40px;">05:00</div>
-        <div class="sw-controls">
-            <button class="round-btn btn-gray" onclick="resetTimer()">Anuluj</button>
-            <button id="t-start-btn" class="round-btn btn-green" onclick="toggleTimer()">Start</button>
-        </div>
-    </section>
-
-    <nav class="bottom-nav">
-        <button id="tab-world" class="nav-tab active" onclick="switchTab('world')"><span>🌐</span><span>Świat</span></button>
-        <button id="tab-alarms" class="nav-tab" onclick="switchTab('alarms')"><span>⏰</span><span>Alarmy</span></button>
-        <button id="tab-stopwatch" class="nav-tab" onclick="switchTab('stopwatch')"><span>⏱️</span><span>Stoper</span></button>
-        <button id="tab-timers" class="nav-tab" onclick="switchTab('timers')"><span>⏳</span><span>Minutnik</span></button>
+    <nav class="tabbar">
+        <button id="nav-world" class="tab-btn active" onclick="setTab('world')"><span class="ico">🌐</span><span>Świat</span></button>
+        <button id="nav-alarm" class="tab-btn" onclick="setTab('alarm')"><span class="ico">⏰</span><span>Alarm</span></button>
+        <button id="nav-stopwatch" class="tab-btn" onclick="setTab('stopwatch')"><span class="ico">⏱️</span><span>Stoper</span></button>
+        <button id="nav-timer" class="tab-btn" onclick="setTab('timer')"><span class="ico">⏳</span><span>Minutnik</span></button>
     </nav>
 
     <script>
-        function showBanner(msg) {
-            document.getElementById('banner-txt').textContent = msg;
-            document.getElementById('banner').classList.add('show');
-        }
-        function hideBanner() {
-            document.getElementById('banner').classList.remove('show');
-        }
-        function switchTab(name) {
-            ['world', 'alarms', 'stopwatch', 'timers'].forEach(t => {
-                document.getElementById(`panel-${t}`).classList.toggle('active', t === name);
-                document.getElementById(`tab-${t}`).classList.toggle('active', t === name);
-            });
-        }
-        function updateWorldClocks() {
-            const now = new Date();
-            document.getElementById('local-big-clock').textContent = now.toTimeString().slice(0, 8);
-            const fmt = (tz) => new Intl.DateTimeFormat('pl-PL', { hour: '2-digit', minute: '2-digit', timeZone: tz }).format(now);
-            document.getElementById('city-waw').textContent = fmt('Europe/Warsaw');
-            document.getElementById('city-nyc').textContent = fmt('America/New_York');
-            document.getElementById('city-tyo').textContent = fmt('Asia/Tokyo');
-        }
-        updateWorldClocks();
-        setInterval(updateWorldClocks, 1000);
-
-        const alH = document.getElementById('al-h');
-        const alM = document.getElementById('al-m');
-        for (let i = 0; i < 24; i++) alH.add(new Option(String(i).padStart(2, '0'), String(i).padStart(2, '0'), false, i === 6));
-        for (let i = 0; i < 60; i++) alM.add(new Option(String(i).padStart(2, '0'), String(i).padStart(2, '0'), false, i === 30));
-
-        const alarms = [
-            { time: '06:30', label: 'Poranek • Dni powszednie', sound: 'Radial', on: true },
-            { time: '08:30', label: 'Praca • Dni powszednie', sound: 'Zen', on: false }
+        const STORAGE_KEY = 'zenos_clock_v1';
+        const CITY_CATALOG = [
+            { name: 'Warszawa', tz: 'Europe/Warsaw' },
+            { name: 'Szczecin', tz: 'Europe/Warsaw' },
+            { name: 'Londyn', tz: 'Europe/London' },
+            { name: 'Nowy Jork', tz: 'America/New_York' },
+            { name: 'Cupertino', tz: 'America/Los_Angeles' },
+            { name: 'Dubaj', tz: 'Asia/Dubai' },
+            { name: 'Tokio', tz: 'Asia/Tokyo' },
+            { name: 'Sydney', tz: 'Australia/Sydney' }
         ];
-        function renderAlarms() {
-            document.getElementById('alarms-list').innerHTML = alarms.map((a, i) => `
-                <div class="row-item">
-                    <div>
-                        <div class="alarm-time">${a.time}</div>
-                        <div style="font-size:12.5px;color:#9ca3af;">${a.label} • ${a.sound}</div>
+
+        const defaultState = {
+            theme: 'dark',
+            tab: 'world',
+            cities: [
+                { name: 'Warszawa', tz: 'Europe/Warsaw' },
+                { name: 'Londyn', tz: 'Europe/London' },
+                { name: 'Nowy Jork', tz: 'America/New_York' },
+                { name: 'Tokio', tz: 'Asia/Tokyo' }
+            ],
+            alarms: [
+                { id: 1, hour: 6, minute: 30, period: '24h', repeat: 'Dni powszednie', label: 'Poranek', sound: 'Radial', snooze: true, enabled: true, lastTriggered: '' },
+                { id: 2, hour: 8, minute: 15, period: '24h', repeat: 'Nigdy', label: 'Spotkanie', sound: 'Zen', snooze: true, enabled: false, lastTriggered: '' }
+            ],
+            timers: []
+        };
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return structuredClone(defaultState);
+                const parsed = JSON.parse(raw);
+                return {
+                    ...structuredClone(defaultState),
+                    ...parsed,
+                    cities: Array.isArray(parsed.cities) && parsed.cities.length ? parsed.cities : defaultState.cities,
+                    alarms: Array.isArray(parsed.alarms) && parsed.alarms.length ? parsed.alarms : defaultState.alarms,
+                    timers: Array.isArray(parsed.timers) ? parsed.timers : []
+                };
+            } catch {
+                return structuredClone(defaultState);
+            }
+        }
+
+        let state = loadState();
+        let editingCities = false;
+        let editingAlarmIndex = null;
+        let wheelHour = 7, wheelMin = 0, wheelPeriod = '24h';
+        let activeRingItem = null;
+        let audioCtx = null;
+
+        function saveState() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+        }
+
+        function syncSystemTheme() {
+            try {
+                const bodyCls = parent.document?.body?.className || '';
+                const isLight = bodyCls.includes('theme-light') || state.theme === 'light';
+                document.body.classList.toggle('light', isLight);
+            } catch {
+                document.body.classList.toggle('light', state.theme === 'light');
+            }
+        }
+
+        function playTone(kind = 'Radial') {
+            try {
+                audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = kind === 'Zen' ? 'sine' : 'triangle';
+                osc.frequency.value = kind === 'Dzwonek' ? 880 : 660;
+                gain.gain.value = 0.08;
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                setTimeout(() => { osc.stop(); }, 450);
+            } catch {}
+        }
+
+        function setTab(tab) {
+            state.tab = tab;
+            saveState();
+            editingCities = false;
+            document.body.classList.remove('editing-cities');
+            ['world', 'alarm', 'stopwatch', 'timer'].forEach(t => {
+                document.getElementById(`page-${t}`).classList.toggle('active', t === tab);
+                document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
+            });
+            updateTopButtons();
+            if (tab === 'world') renderWorld();
+            if (tab === 'alarm') renderAlarms();
+            if (tab === 'timer') renderTimers();
+        }
+
+        function updateTopButtons() {
+            const left = document.getElementById('top-left-btn');
+            const right = document.getElementById('top-right-btn');
+            if (state.tab === 'world') {
+                left.textContent = editingCities ? 'Gotowe' : 'Edytuj';
+                right.style.display = 'inline-block';
+            } else if (state.tab === 'alarm') {
+                left.textContent = '‹ Pulpit';
+                right.style.display = 'inline-block';
+            } else {
+                left.textContent = '‹ Pulpit';
+                right.style.display = 'none';
+            }
+        }
+
+        function onTopLeft() {
+            if (state.tab === 'world') {
+                editingCities = !editingCities;
+                document.body.classList.toggle('editing-cities', editingCities);
+                updateTopButtons();
+                return;
+            }
+            parent.Kernel?.goHome?.();
+        }
+
+        function onTopRight() {
+            if (state.tab === 'world') openCitySheet();
+            if (state.tab === 'alarm') editAlarm(null);
+        }
+
+        /* --- WORLD CLOCK --- */
+        function getDiffLabel(tz, now) {
+            const localOffset = -now.getTimezoneOffset();
+            const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'shortOffset' }).formatToParts(now);
+            const raw = parts.find(p => p.type === 'timeZoneName')?.value || 'GMT+0';
+            const match = raw.match(/GMT([+-]\d+(?::\d+)?)/);
+            let targetMin = 0;
+            if (match) {
+                const [h, m = '0'] = match[1].split(':');
+                targetMin = parseInt(h, 10) * 60 + (parseInt(h, 10) < 0 ? -parseInt(m, 10) : parseInt(m, 10));
+            }
+            const diffH = Math.round((targetMin - localOffset) / 60);
+            const sign = diffH >= 0 ? `+${diffH}` : `${diffH}`;
+            return `Dzisiaj, ${sign} godz.`;
+        }
+
+        function renderWorld() {
+            const now = new Date();
+            const list = document.getElementById('world-list');
+            list.innerHTML = state.cities.map((c, idx) => {
+                const timeStr = new Intl.DateTimeFormat('pl-PL', {
+                    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: c.tz
+                }).format(now);
+                return `
+                    <div class="world-row">
+                        <div>
+                            <div class="world-sub">${getDiffLabel(c.tz, now)}</div>
+                            <div class="world-city">${c.name}</div>
+                        </div>
+                        <div style="display:flex;align-items:center;">
+                            <button class="del-city-btn" onclick="removeCity(${idx})">Usuń</button>
+                            <span class="world-time">${timeStr}</span>
+                        </div>
                     </div>
-                    <input type="checkbox" class="switch-ios" ${a.on ? 'checked' : ''} onchange="alarms[${i}].on = this.checked">
+                `;
+            }).join('');
+        }
+
+        function removeCity(idx) {
+            if (state.cities.length <= 1) return;
+            state.cities.splice(idx, 1);
+            saveState();
+            renderWorld();
+        }
+
+        function openCitySheet() {
+            const cat = document.getElementById('city-catalog');
+            cat.innerHTML = CITY_CATALOG.map(c => `
+                <div class="opt-cell" style="cursor:pointer;" onclick="addCity('${c.name}', '${c.tz}')">
+                    <strong>${c.name}</strong>
+                    <span style="color:var(--accent);font-weight:600;">Dodaj</span>
                 </div>
             `).join('');
+            document.getElementById('city-sheet').classList.add('open');
         }
-        function toggleAddAlarm() {
-            switchTab('alarms');
-            document.getElementById('add-alarm-sheet').classList.toggle('open');
+
+        function closeCitySheet() {
+            document.getElementById('city-sheet').classList.remove('open');
         }
-        function closeAddAlarm() {
-            document.getElementById('add-alarm-sheet').classList.remove('open');
+
+        function addCity(name, tz) {
+            state.cities.push({ name, tz });
+            saveState();
+            closeCitySheet();
+            renderWorld();
         }
-        function confirmAddAlarm() {
-            const hh = alH.value;
-            const mm = alM.value;
-            const period = document.getElementById('al-p').value;
-            const rep = document.getElementById('al-repeat').value;
-            const lbl = document.getElementById('al-label').value.trim() || 'Alarm';
-            const snd = document.getElementById('al-sound').value;
-            const timeLabel = period === '24h' ? `${hh}:${mm}` : `${hh}:${mm} ${period}`;
-            alarms.unshift({ time: timeLabel, label: `${lbl} • ${rep}`, sound: snd, on: true });
-            closeAddAlarm();
+
+        /* --- ALARMS & WHEEL PICKER --- */
+        function fmtAlarmTime(a) {
+            const hh = String(a.hour).padStart(2, '0');
+            const mm = String(a.minute).padStart(2, '0');
+            return a.period && a.period !== '24h' ? `${hh}:${mm} ${a.period}` : `${hh}:${mm}`;
+        }
+
+        function renderAlarms() {
+            const wake = state.alarms[0];
+            if (wake) {
+                document.getElementById('wake-time').textContent = fmtAlarmTime(wake);
+                document.getElementById('wake-meta').textContent = `${wake.repeat} • ${wake.sound}`;
+            }
+            const rest = state.alarms.slice(1);
+            document.getElementById('alarms-list').innerHTML = rest.map((a, i) => {
+                const realIdx = i + 1;
+                return `
+                    <div class="alarm-row ${a.enabled ? '' : 'off'}" onclick="editAlarm(${realIdx})">
+                        <div>
+                            <div class="alarm-big">${fmtAlarmTime(a)}</div>
+                            <div class="alarm-meta">${a.label}${a.repeat !== 'Nigdy' ? ' • ' + a.repeat : ''}</div>
+                        </div>
+                        <label class="ios-switch" onclick="event.stopPropagation()">
+                            <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAlarm(${realIdx}, this.checked)">
+                            <span class="ios-slider"></span>
+                        </label>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleAlarm(idx, on) {
+            state.alarms[idx].enabled = on;
+            saveState();
             renderAlarms();
         }
-        renderAlarms();
 
-        let swRunning = false, swElapsed = 0, swTimer = null, swStart = 0, laps = [];
-        function fmtSw(ms) {
-            const mins = Math.floor(ms / 60000);
-            const secs = Math.floor((ms % 60000) / 1000);
-            const cs = Math.floor((ms % 1000) / 10);
-            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+        function buildWheel(elId, values, currentVal, onPick) {
+            const col = document.getElementById(elId);
+            col.innerHTML = `<div class="wheel-pad"></div>` + values.map(v => {
+                const label = typeof v === 'number' ? String(v).padStart(2, '0') : v;
+                const sel = v === currentVal ? 'selected' : '';
+                return `<div class="wheel-item ${sel}" data-val="${v}" onclick="pickWheel('${elId}', '${v}')">${label}</div>`;
+            }).join('') + `<div class="wheel-pad"></div>`;
+
+            col.onscroll = () => {
+                const idx = Math.round(col.scrollTop / 42);
+                const chosen = values[Math.max(0, Math.min(values.length - 1, idx))];
+                if (chosen !== undefined && chosen !== onPick()) {
+                    onPick(chosen, false);
+                    highlightWheel(elId, chosen);
+                }
+            };
+            const initIdx = Math.max(0, values.indexOf(currentVal));
+            col.scrollTop = initIdx * 42;
         }
-        function toggleStopwatch() {
-            const btn = document.getElementById('sw-toggle');
+
+        function highlightWheel(elId, val) {
+            document.querySelectorAll(`#${elId} .wheel-item`).forEach(item => {
+                item.classList.toggle('selected', String(item.dataset.val) === String(val));
+            });
+        }
+
+        window.pickWheel = function(elId, rawVal) {
+            if (elId === 'wheel-h') {
+                wheelHour = parseInt(rawVal, 10);
+                highlightWheel(elId, wheelHour);
+            } else if (elId === 'wheel-m') {
+                wheelMin = parseInt(rawVal, 10);
+                highlightWheel(elId, wheelMin);
+            } else if (elId === 'wheel-p') {
+                wheelPeriod = rawVal;
+                highlightWheel(elId, wheelPeriod);
+            }
+        };
+
+        function editAlarm(idx) {
+            editingAlarmIndex = idx;
+            const existing = idx !== null ? state.alarms[idx] : null;
+            wheelHour = existing ? existing.hour : 7;
+            wheelMin = existing ? existing.minute : 0;
+            wheelPeriod = existing ? (existing.period || '24h') : '24h';
+
+            document.getElementById('sheet-alarm-title').textContent = existing ? 'Edytuj alarm' : 'Nowy alarm';
+            document.getElementById('al-repeat').value = existing ? existing.repeat : 'Nigdy';
+            document.getElementById('al-label').value = existing ? existing.label : 'Alarm';
+            document.getElementById('al-sound').value = existing ? existing.sound : 'Radial';
+            document.getElementById('al-snooze').checked = existing ? Boolean(existing.snooze) : true;
+
+            const hours = Array.from({ length: 24 }, (_, n) => n);
+            const mins = Array.from({ length: 60 }, (_, n) => n);
+            buildWheel('wheel-h', hours, wheelHour, (v) => { if (typeof v === 'number') wheelHour = v; return wheelHour; });
+            buildWheel('wheel-m', mins, wheelMin, (v) => { if (typeof v === 'number') wheelMin = v; return wheelMin; });
+            buildWheel('wheel-p', ['24h', 'AM', 'PM'], wheelPeriod, (v) => { if (typeof v === 'string') wheelPeriod = v; return wheelPeriod; });
+
+            document.getElementById('alarm-sheet').classList.add('open');
+        }
+
+        function closeAlarmSheet() {
+            document.getElementById('alarm-sheet').classList.remove('open');
+        }
+
+        function saveAlarmSheet() {
+            const payload = {
+                id: editingAlarmIndex !== null ? state.alarms[editingAlarmIndex].id : Date.now(),
+                hour: wheelHour,
+                minute: wheelMin,
+                period: wheelPeriod,
+                repeat: document.getElementById('al-repeat').value,
+                label: document.getElementById('al-label').value.trim() || 'Alarm',
+                sound: document.getElementById('al-sound').value,
+                snooze: document.getElementById('al-snooze').checked,
+                enabled: true,
+                lastTriggered: ''
+            };
+            if (editingAlarmIndex !== null) state.alarms[editingAlarmIndex] = payload;
+            else state.alarms.push(payload);
+            saveState();
+            closeAlarmSheet();
+            renderAlarms();
+        }
+
+        /* --- STOPWATCH --- */
+        let swRunning = false, swAccum = 0, swStart = 0, swRaf = null, swLaps = [];
+        function fmtSw(ms) {
+            const totalCs = Math.floor(ms / 10);
+            const cs = totalCs % 100;
+            const totalSec = Math.floor(totalCs / 100);
+            const sec = totalSec % 60;
+            const min = Math.floor(totalSec / 60);
+            return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+        }
+        function swTick() {
+            const cur = swAccum + (performance.now() - swStart);
+            document.getElementById('sw-display').textContent = fmtSw(cur);
+            if (swRunning) swRaf = requestAnimationFrame(swTick);
+        }
+        function swToggle() {
+            const btn = document.getElementById('sw-start-btn');
+            const lapBtn = document.getElementById('sw-lap-btn');
             if (!swRunning) {
                 swRunning = true;
-                swStart = performance.now() - swElapsed;
+                swStart = performance.now();
                 btn.textContent = 'Stop';
-                btn.className = 'round-btn btn-red';
-                swTimer = setInterval(() => {
-                    swElapsed = performance.now() - swStart;
-                    document.getElementById('sw-time').textContent = fmtSw(swElapsed);
-                }, 30);
+                btn.className = 'c-btn c-stop';
+                lapBtn.textContent = 'Okrążenie';
+                swTick();
             } else {
                 swRunning = false;
-                clearInterval(swTimer);
+                cancelAnimationFrame(swRaf);
+                swAccum += performance.now() - swStart;
+                document.getElementById('sw-display').textContent = fmtSw(swAccum);
                 btn.textContent = 'Start';
-                btn.className = 'round-btn btn-green';
+                btn.className = 'c-btn c-start';
+                lapBtn.textContent = 'Reset';
             }
         }
-        function lapOrReset() {
+        function swLapOrReset() {
             if (swRunning) {
-                laps.unshift(fmtSw(swElapsed));
-                document.getElementById('laps-list').innerHTML = laps.map((l, i) => `<div class="row-item"><span>Okrążenie ${laps.length - i}</span><span>${l}</span></div>`).join('');
+                const cur = swAccum + (performance.now() - swStart);
+                swLaps.unshift({ idx: swLaps.length + 1, time: fmtSw(cur) });
+                document.getElementById('sw-laps').innerHTML = swLaps.map(l => `
+                    <div class="lap-row"><span>Okrążenie ${l.idx}</span><strong>${l.time}</strong></div>
+                `).join('');
             } else {
-                swElapsed = 0; laps = [];
-                document.getElementById('sw-time').textContent = '00:00.00';
-                document.getElementById('laps-list').innerHTML = '';
+                swAccum = 0; swLaps = [];
+                document.getElementById('sw-display').textContent = '00:00.00';
+                document.getElementById('sw-laps').innerHTML = '';
+                document.getElementById('sw-lap-btn').textContent = 'Okrążenie';
             }
         }
 
-        const selH = document.getElementById('t-h'), selM = document.getElementById('t-m'), selS = document.getElementById('t-s');
-        for (let i = 0; i < 24; i++) selH.add(new Option(i, i));
-        for (let i = 0; i < 60; i++) {
-            selM.add(new Option(i, i, false, i === 5));
-            selS.add(new Option(i, i));
+        /* --- TIMERS (MULTIPLE + PERSISTENT) --- */
+        const tpH = document.getElementById('tp-h'), tpM = document.getElementById('tp-m'), tpS = document.getElementById('tp-s');
+        for (let i = 0; i < 24; i++) tpH.add(new Option(`${i} godz.`, i));
+        for (let i = 0; i < 60; i++) tpM.add(new Option(`${i} min`, i, false, i === 5));
+        for (let i = 0; i < 60; i++) tpS.add(new Option(`${i} sek`, i));
+
+        function addNewTimer() {
+            const totalMs = (parseInt(tpH.value, 10) * 3600 + parseInt(tpM.value, 10) * 60 + parseInt(tpS.value, 10)) * 1000;
+            if (totalMs <= 0) return;
+            state.timers.unshift({
+                id: Date.now(),
+                label: document.getElementById('tp-label').value.trim() || 'Minutnik',
+                sound: document.getElementById('tp-sound').value,
+                durationMs: totalMs,
+                remainingMs: totalMs,
+                endAt: Date.now() + totalMs,
+                running: true,
+                done: false
+            });
+            saveState();
+            renderTimers();
         }
-        let remSec = 300, tInterval = null, tRunning = false;
-        function syncPickerToSec() {
-            remSec = Number(selH.value) * 3600 + Number(selM.value) * 60 + Number(selS.value);
-            renderTimer();
-        }
-        selH.onchange = selM.onchange = selS.onchange = syncPickerToSec;
-        function renderTimer() {
-            const m = Math.floor(remSec / 60);
-            const s = remSec % 60;
-            document.getElementById('timer-display').textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-        }
-        function toggleTimer() {
-            const btn = document.getElementById('t-start-btn');
-            if (!tRunning) {
-                if (remSec <= 0) syncPickerToSec();
-                tRunning = true;
-                btn.textContent = 'Pauza';
-                btn.className = 'round-btn btn-gray';
-                tInterval = setInterval(() => {
-                    if (remSec > 0) { remSec--; renderTimer(); }
-                    else { resetTimer(); showBanner('Minutnik zakończył odliczanie'); }
-                }, 1000);
+
+        function toggleTimerItem(id) {
+            const t = state.timers.find(x => x.id === id);
+            if (!t) return;
+            if (t.running) {
+                t.remainingMs = Math.max(0, t.endAt - Date.now());
+                t.running = false;
             } else {
-                tRunning = false;
-                clearInterval(tInterval);
-                btn.textContent = 'Start';
-                btn.className = 'round-btn btn-green';
+                const base = t.remainingMs > 0 ? t.remainingMs : t.durationMs;
+                t.remainingMs = base;
+                t.endAt = Date.now() + base;
+                t.running = true;
+                t.done = false;
             }
+            saveState();
+            renderTimers();
         }
-        function resetTimer() {
-            tRunning = false;
-            clearInterval(tInterval);
-            document.getElementById('t-start-btn').textContent = 'Start';
-            document.getElementById('t-start-btn').className = 'round-btn btn-green';
-            syncPickerToSec();
+
+        function resetTimerItem(id) {
+            const t = state.timers.find(x => x.id === id);
+            if (!t) return;
+            t.running = false;
+            t.done = false;
+            t.remainingMs = t.durationMs;
+            t.endAt = Date.now() + t.durationMs;
+            saveState();
+            renderTimers();
         }
-        renderTimer();
+
+        function clearFinishedTimers() {
+            state.timers = state.timers.filter(t => t.running || (!t.done && t.remainingMs > 0));
+            saveState();
+            renderTimers();
+        }
+
+        function fmtRem(ms) {
+            const sec = Math.ceil(Math.max(0, ms) / 1000);
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+            return h > 0
+                ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+                : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function renderTimers() {
+            const box = document.getElementById('timers-list');
+            if (!state.timers.length) {
+                box.innerHTML = `<div class="card-group"><div class="opt-cell"><span style="color:var(--muted);">Brak aktywnych minutników</span></div></div>`;
+                return;
+            }
+            box.innerHTML = state.timers.map(t => {
+                const rem = t.running ? Math.max(0, t.endAt - Date.now()) : t.remainingMs;
+                return `
+                    <div class="active-timer-box">
+                        <div>
+                            <div class="at-time">${t.done ? '00:00' : fmtRem(rem)}</div>
+                            <div class="at-sub">${t.label} • ${t.sound}${t.done ? ' • Zakończono' : ''}</div>
+                        </div>
+                        <div class="at-btns">
+                            <button class="btn-txt" style="color:var(--text);" onclick="resetTimerItem(${t.id})">Reset</button>
+                            <button class="btn-txt" onclick="toggleTimerItem(${t.id})">${t.running ? 'Pauza' : 'Start'}</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /* --- BACKGROUND / TICK ENGINE --- */
+        function triggerRing(title, sub, sound, snoozeable, alarmObj) {
+            activeRingItem = { title, sub, sound, alarmObj };
+            document.getElementById('ring-title').textContent = title;
+            document.getElementById('ring-sub').textContent = sub;
+            document.getElementById('btn-snooze').style.display = snoozeable ? 'inline-block' : 'none';
+            document.getElementById('ring-banner').classList.add('show');
+            playTone(sound);
+        }
+
+        function dismissRing() {
+            document.getElementById('ring-banner').classList.remove('show');
+            activeRingItem = null;
+        }
+
+        function snoozeRing() {
+            if (!activeRingItem) return;
+            const snoozeMs = 9 * 60 * 1000;
+            state.timers.unshift({
+                id: Date.now(),
+                label: `${activeRingItem.title} (Drzemka)`,
+                sound: activeRingItem.sound,
+                durationMs: snoozeMs,
+                remainingMs: snoozeMs,
+                endAt: Date.now() + snoozeMs,
+                running: true,
+                done: false
+            });
+            saveState();
+            dismissRing();
+        }
+
+        function tickSystem() {
+            syncSystemTheme();
+            const now = new Date();
+            if (state.tab === 'world') renderWorld();
+
+            // Check alarms
+            const stamp = `${now.toDateString()}-${now.getHours()}:${now.getMinutes()}`;
+            for (const a of state.alarms) {
+                if (a.enabled && a.hour === now.getHours() && a.minute === now.getMinutes() && a.lastTriggered !== stamp) {
+                    a.lastTriggered = stamp;
+                    if (a.repeat === 'Nigdy') a.enabled = false;
+                    saveState();
+                    renderAlarms();
+                    triggerRing(`Alarm: ${a.label}`, `${fmtAlarmTime(a)} • ${a.sound}`, a.sound, a.snooze, a);
+                }
+            }
+
+            // Check running timers
+            let timersChanged = false;
+            for (const t of state.timers) {
+                if (t.running && Date.now() >= t.endAt) {
+                    t.running = false;
+                    t.remainingMs = 0;
+                    t.done = true;
+                    timersChanged = true;
+                    triggerRing(`Minutnik: ${t.label}`, `Czas minął • ${t.sound}`, t.sound, false, null);
+                }
+            }
+            if (timersChanged) saveState();
+            if (state.tab === 'timer') renderTimers();
+        }
+
+        setTab(state.tab);
+        renderWorld();
+        renderAlarms();
+        renderTimers();
+        tickSystem();
+        setInterval(tickSystem, 1000);
     </script>
 </body>
 </html>
