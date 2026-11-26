@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Theme — ZenOS</title>
+    <style>
+        :root {
+            --bg: #05070d;
+            --surface: rgba(24, 26, 33, 0.84);
+            --surface-2: rgba(40, 43, 54, 0.92);
+            --glass: rgba(28, 31, 40, 0.72);
+            --border: rgba(255, 255, 255, 0.14);
+            --text: #ffffff;
+            --muted: #8e8e93;
+            --accent: #0a84ff;
+            --accent-2: #5e5ce6;
+            --green: #30d158;
+            --sep: rgba(255, 255, 255, 0.12);
+            --blur-px: 18px;
+            --dock-alpha: 0.34;
+            --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+            --motion-time: 0.2s;
+        }
+
+        body.theme-light {
+            --bg: #f2f2f7;
+            --surface: rgba(255, 255, 255, 0.88);
+            --surface-2: rgba(229, 229, 234, 0.95);
+            --glass: rgba(255, 255, 255, 0.78);
+            --border: rgba(0, 0, 0, 0.11);
+            --text: #000000;
+            --muted: #6e6e73;
+            --sep: rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-family);
+            overflow-y: auto;
+            padding: 44px 16px 88px;
+            transition: background var(--motion-time) ease, color var(--motion-time) ease;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 36px;
+            margin-bottom: 6px;
+        }
+
+        .pill-btn {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--accent);
+            font-size: 13.5px;
+            font-weight: 600;
+            padding: 6px 13px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: transform var(--motion-time) ease;
+        }
+
+        .pill-btn:active {
+            transform: scale(0.95);
+        }
+
+        .pill-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+
+        h1.big-title {
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 12px;
+        }
+
+        .sec-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin: 16px 4px 8px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(var(--blur-px)) saturate(170%);
+            -webkit-backdrop-filter: blur(var(--blur-px)) saturate(170%);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        /* Podwójny podgląd Lock Screen + Home Screen (jak na przykładzie iOS 26) */
+        .dual-preview {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .mini-phone {
+            position: relative;
+            aspect-ratio: 9 / 19.5;
+            border-radius: 22px;
+            overflow: hidden;
+            border: 1.5px solid var(--border);
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 12px 8px 8px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
+        }
+
+        .mini-caption {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .mini-ls-date {
+            font-size: 8.5px;
+            font-weight: 600;
+            text-align: center;
+            color: #ffffff;
+            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+        }
+
+        .mini-ls-clock {
+            font-size: 26px;
+            font-weight: 700;
+            line-height: 0.95;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.78);
+            -webkit-text-stroke: 0.7px rgba(255, 255, 255, 0.85);
+            margin-top: 2px;
+        }
+
+        .mini-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-top: 4px;
+        }
+
+        .mini-app-icon {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+        }
+
+        .mini-dock {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            padding: 5px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, var(--dock-alpha));
+            backdrop-filter: blur(calc(var(--blur-px) * 0.7));
+            border: 1px solid rgba(255, 255, 255, 0.22);
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* Zakładki / sekcje nawigacji w aplikacji Theme */
+        .seg-tabs {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 4px;
+            margin-bottom: 12px;
+        }
+
+        .seg-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .seg-tab {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            padding: 7px 13px;
+            border-radius: 999px;
+            font-size: 12.5px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .seg-tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+
+        .panel {
+            display: none;
+            animation: panelIn var(--motion-time) ease;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes panelIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Siatka motywów i tapet (wzór 2 kolumny jak na zdjęciu) */
+        .two-col {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .theme-tile {
+            position: relative;
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform var(--motion-time) ease, border-color var(--motion-time) ease;
+        }
+
+        .theme-tile.active {
+            border-color: var(--accent);
+        }
+
+        .theme-tile:active {
+            transform: scale(0.97);
+        }
+
+        .tile-thumb {
+            height: 118px;
+            background-size: cover;
+            background-position: center;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .tile-body {
+            padding: 9px 11px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tile-name {
+            font-size: 13.5px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fav-btn {
+            background: none;
+            border: none;
+            font-size: 15px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .chip-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .chip {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 11px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .chip.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--sep);
+            gap: 10px;
+        }
+
+        .control-row:last-child {
+            border-bottom: none;
+        }
+
+        .control-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .control-sub {
+            font-size: 11.5px;
+            color: var(--muted);
+        }
+
+        input[type="range"] {
+            width: 135px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        input[type="color"] {
+            width: 34px;
+            height: 34px;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
+        input[type="text"], textarea, select {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 8px 10px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .color-swatches {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            cursor: pointer;
+        }
+
+        .swatch.active {
+            border-color: #ffffff;
+            transform: scale(1.12);
+            box-shadow: 0 0 0 2px var(--accent);
+        }
+
+        .apply-sticky {
+            position: fixed;
+            left: 16px;
+            right: 16px;
+            bottom: 16px;
+            z-index: 25;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 22px;
+            background: var(--glass);
+            backdrop-filter: blur(22px) saturate(180%);
+            -webkit-backdrop-filter: blur(22px) saturate(180%);
+            border: 1px solid var(--border);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+        }
+
+        .toast {
+            position: fixed;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: 999px;
+            font-size: 12.5px;
+            font-weight: 600;
+            z-index: 50;
+            display: none;
+        }
+
+        .toast.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="toast" class="toast"></div>
+
+    <div class="topbar">
+        <button class="pill-btn" onclick="goHome()">‹ Pulpit</button>
+        <div style="display:flex;gap:6px;">
+            <button class="pill-btn" onclick="switchPanel('themes')">Moje motywy</button>
+            <button class="pill-btn primary" onclick="applyCurrentTheme()">Zastosuj motyw</button>
+        </div>
+    </div>
+
+    <h1 class="big-title">Theme</h1>
+
+    <div class="seg-tabs" id="panel-tabs">
+        <button class="seg-tab active" data-panel="overview" onclick="switchPanel('overview')">Przegląd</button>
+        <button class="seg-tab" data-panel="themes" onclick="switchPanel('themes')">Motywy</button>
+        <button class="seg-tab" data-panel="wallpapers" onclick="switchPanel('wallpapers')">Tapety</button>
+        <button class="seg-tab" data-panel="icons" onclick="switchPanel('icons')">Ikony</button>
+        <button class="seg-tab" data-panel="colors" onclick="switchPanel('colors')">Kolory</button>
+        <button class="seg-tab" data-panel="fonts" onclick="switchPanel('fonts')">Czcionki</button>
+        <button class="seg-tab" data-panel="system" onclick="switchPanel('system')">System</button>
+    </div>
+
+    <!-- 1. EKRAN GŁÓWNY / PODGLĄD NA ŻYWO -->
+    <section id="panel-overview" class="panel active">
+        <div class="glass-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div>
+                    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700;">Aktywny podgląd</div>
+                    <div id="active-theme-label" style="font-size:17px;font-weight:700;">Liquid Glass Sky</div>
+                </div>
+                <button class="pill-btn primary" onclick="switchPanel('system')">Personalizuj</button>
+            </div>
+
+            <div class="dual-preview">
+                <div>
+                    <div id="prev-ls" class="mini-phone">
+                        <div>
+                            <div id="prev-ls-date" class="mini-ls-date">Czwartek, 26 lis</div>
+                            <div id="prev-ls-clock" class="mini-ls-clock">16:22</div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:11px;padding:0 4px;">
+                            <span>🔦</span><span>📷</span>
+                        </div>
+                    </div>
+                    <div class="mini-caption">Lock Screen</div>
+                </div>
+
+                <div>
+                    <div id="prev-hs" class="mini-phone">
+                        <div id="prev-hs-grid" class="mini-grid"></div>
+                        <div id="prev-hs-dock" class="mini-dock"></div>
+                    </div>
+                    <div class="mini-caption">Home Screen</div>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <button class="pill-btn" onclick="switchPanel('wallpapers')">Tapety</button>
+                <button class="pill-btn" onclick="switchPanel('icons')">Ikony</button>
+                <button class="pill-btn" onclick="switchPanel('colors')">Kolory</button>
+                <button class="pill-btn" onclick="switchPanel('fonts')">Czcionki</button>
+            </div>
+        </div>
+
+        <div class="sec-head"><span>Polecane motywy</span><span style="cursor:pointer;color:var(--accent);" onclick="switchPanel('themes')">Wszystkie ›</span></div>
+        <div id="featured-themes" class="two-col"></div>
+
+        <div class="sec-head"><span>Kategorie tapet</span></div>
+        <div id="overview-wp-cats" class="chip-row"></div>
+
+        <div class="sec-head"><span>Ostatnio używane</span></div>
+        <div id="recent-themes" class="chip-row"></div>
+    </section>
+
+    <!-- 2. MOTYWY (GOTOWE, WŁASNE, ULUBIONE, IMPORT / EKSPORT) -->
+    <section id="panel-themes" class="panel">
+        <div class="card">
+            <div class="sec-head" style="margin-top:0;">Utwórz własny motyw</div>
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+                <input id="custom-theme-name" type="text" placeholder="Nazwa motywu..." style="flex:1;">
+                <button class="pill-btn primary" onclick="saveCustomTheme()">Zapisz</button>
+            </div>
+            <div class="action-bar">
+                <button class="pill-btn" onclick="exportThemeJson()">Eksportuj JSON</button>
+                <label class="pill-btn" style="cursor:pointer;">
+                    Importuj JSON
+                    <input type="file" accept=".json,application/json" style="display:none;" onchange="importThemeJson(event)">
+                </label>
+            </div>
+        </div>
+
+        <div class="sec-head"><span>Zestawy i moje motywy</span></div>
+        <div id="all-themes-grid" class="two-col"></div>
+    </section>
+
+    <!-- 3. TAPETY -->
+    <section id="panel-wallpapers" class="panel">
+        <div class="card">
+            <div class="control-row" style="padding-top:0;">
+                <div>
+                    <div class="control-label">Cel tapety</div>
+                    <div class="control-sub">Wybierz, czy tapeta trafi na Lock Screen czy Home Screen</div>
+                </div>
+                <select id="wp-target" onchange="wpTarget = this.value">
+                    <option value="both">Oba ekrany</option>
+                    <option value="lock">Lock Screen</option>
+                    <option value="home">Home Screen</option>
+                </select>
+            </div>
+            <div class="control-row" style="padding-bottom:0;">
+                <div class="control-label">Własne zdjęcie z urządzenia</div>
+                <label class="pill-btn primary" style="cursor:pointer;">
+                    Wybierz plik
+                    <input type="file" accept="image/*" style="display:none;" onchange="handleCustomWallpaperFile(event)">
+                </label>
+            </div>
+        </div>
+
+        <div id="wp-category-chips" class="chip-row"></div>
+        <div id="wallpapers-grid" class="two-col"></div>
+    </section>
+
+    <!-- 4. IKONY -->
+    <section id="panel-icons" class="panel">
+        <div class="card">
+            <div class="sec-head" style="margin-top:0;">Styl i wariant ikon (iOS 26)</div>
+            <div class="chip-row" id="icon-style-chips">
+                <button class="chip" data-istyle="default" onclick="setIconStyle('default')">Default</button>
+                <button class="chip" data-istyle="dark" onclick="setIconStyle('dark')">Dark</button>
+                <button class="chip" data-istyle="clear" onclick="setIconStyle('clear')">Clear</button>
+                <button class="chip" data-istyle="tinted" onclick="setIconStyle('tinted')">Tinted</button>
+            </div>
+            <div class="control-row">
+                <div>
+                    <div class="control-label">Zaokrąglenie rogów</div>
+                    <div class="control-sub">Od minimalistycznego po pełne zaokrąglenie</div>
+                </div>
+                <input id="icon-radius-range" type="range" min="6" max="28" value="16" oninput="setIconRadius(this.value)">
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="sec-head" style="margin-top:0;">Własna ikona aplikacji</div>
+            <div class="control-row">
+                <select id="custom-icon-app">
+                    <option value="zegar">Zegar</option>
+                    <option value="ustawienia">Ustawienia</option>
+                    <option value="kalkulator">Kalkulator</option>
+                    <option value="notatki">Notatki</option>
+                    <option value="kalendarz">Kalendarz</option>
+                </select>
+                <label class="pill-btn" style="cursor:pointer;">
+                    Wgraj obraz
+                    <input type="file" accept="image/*" style="display:none;" onchange="handleCustomAppIcon(event)">
+                </label>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. KOLORY -->
+    <section id="panel-colors" class="panel">
+        <div class="card">
+            <div class="sec-head" style="margin-top:0;">Kolor akcentu i przycisków</div>
+            <div class="color-swatches" id="accent-swatches" style="margin-bottom:12px;"></div>
+            <div class="control-row">
+                <div class="control-label">Własny kolor główny</div>
+                <input id="custom-accent-picker" type="color" value="#0a84ff" oninput="setCustomAccent(this.value)">
+            </div>
+            <div class="control-row">
+                <div class="control-label">Kolor akcentu Tinted</div>
+                <input id="custom-tint-picker" type="color" value="#5e5ce6" oninput="setCustomTint(this.value)">
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. CZCIONKI -->
+    <section id="panel-fonts" class="panel">
+        <div class="card">
+            <div class="sec-head" style="margin-top:0;">Styl typografii systemu</div>
+            <div class="chip-row" id="font-chips">
+                <button class="chip" data-fkey="sans" onclick="setFontKey('sans')">System (SF)</button>
+                <button class="chip" data-fkey="rounded" onclick="setFontKey('rounded')">Zaokrąglona</button>
+                <button class="chip" data-fkey="serif" onclick="setFontKey('serif')">Klasyczna</button>
+                <button class="chip" data-fkey="mono" onclick="setFontKey('mono')">Techniczna</button>
+            </div>
+            <div id="font-sample" style="padding:12px;border-radius:14px;background:var(--surface-2);font-size:16px;">
+                ZenOS 26 — Liquid Glass &amp; Personalizacja
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. PERSONALIZACJA SYSTEMU -->
+    <section id="panel-system" class="panel">
+        <div class="card">
+            <div class="sec-head" style="margin-top:0;">Wygląd i efekty Liquid Glass</div>
+
+            <div class="control-row">
+                <div>
+                    <div class="control-label">Tryb jasny / ciemny</div>
+                    <div class="control-sub">Współdzielone z aplikacją Ustawienia</div>
+                </div>
+                <button class="pill-btn" id="btn-mode-toggle" onclick="toggleLightDark()">Ciemny</button>
+            </div>
+
+            <div class="control-row">
+                <div>
+                    <div class="control-label">Przezroczystość Docka</div>
+                    <div class="control-sub" id="lbl-dock">34%</div>
+                </div>
+                <input id="rng-dock" type="range" min="10" max="85" value="34" oninput="setDockAlpha(this.value)">
+            </div>
+
+            <div class="control-row">
+                <div>
+                    <div class="control-label">Siła rozmycia Liquid Glass</div>
+                    <div class="control-sub" id="lbl-blur">18px</div>
+                </div>
+                <input id="rng-blur" type="range" min="0" max="32" value="18" oninput="setBlurPx(this.value)">
+            </div>
+
+            <div class="control-row">
+                <div>
+                    <div class="control-label">Animacje systemowe</div>
+                    <div class="control-sub">Płynne przejścia (wyłącz przy 2 GB RAM dla oszczędności)</div>
+                </div>
+                <input id="chk-motion" type="checkbox" checked onchange="setMotionEnabled(this.checked)" style="width:20px;height:20px;accent-color:var(--accent);">
+            </div>
+        </div>
+    </section>
+
+    <div class="apply-sticky">
+        <div>
+            <div style="font-size:11px;color:var(--muted);">Wybrany motyw</div>
+            <div id="sticky-name" style="font-size:14px;font-weight:700;">Liquid Glass Sky</div>
+        </div>
+        <button class="pill-btn primary" onclick="applyCurrentTheme()">Zastosuj motyw</button>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'zenos_theme_center_v1';
+        const SETTINGS_KEY = 'zenos_settings_v1';
+        const LOCK_KEY = 'zenos_lockscreens_v1';
+
+        const WALLPAPERS = [
+            { id: 'wp-sky', name: 'Błękitne niebo', cat: 'Aesthetic', css: 'radial-gradient(circle at 65% 22%, #38bdf8 0%, #2563eb 42%, #0f172a 85%)' },
+            { id: 'wp-nebula', name: 'Fioletowa głębia', cat: 'Dark', css: 'radial-gradient(circle at 35% 25%, #8b5cf6 0%, #312e81 48%, #070912 92%)' },
+            { id: 'wp-emerald', name: 'Szmaragdowy poranek', cat: 'Nature', css: 'radial-gradient(circle at 70% 20%, #34d399 0%, #0f766e 48%, #061014 92%)' },
+            { id: 'wp-sunset', name: 'Zachód nad zatoką', cat: 'Nature', css: 'linear-gradient(160deg, #f97316 0%, #db2777 48%, #1e1b4b 100%)' },
+            { id: 'wp-pastel', name: 'Pastelowy świt', cat: 'Pastel', css: 'linear-gradient(155deg, #fbcfe8 0%, #c4b5fd 52%, #93c5fd 100%)' },
+            { id: 'wp-obsidian', name: 'Czarny mat', cat: 'Dark', css: 'linear-gradient(180deg, #18181b 0%, #050507 100%)' }
+        ];
+
+        const BUILTIN_THEMES = [
+            {
+                id: 'th-sky',
+                name: 'Liquid Glass Sky',
+                featured: true,
+                themeMode: 'dark',
+                accent: '#0a84ff',
+                tint: '#38bdf8',
+                iconStyle: 'default',
+                iconRadius: 16,
+                fontKey: 'sans',
+                dockAlpha: 0.34,
+                blurPx: 18,
+                motionEnabled: true,
+                lockWallpaper: WALLPAPERS[0].css,
+                homeWallpaper: WALLPAPERS[0].css,
+                lockImage: '',
+                homeImage: ''
+            },
+            {
+                id: 'th-violet',
+                name: 'Midnight Glass',
+                featured: true,
+                themeMode: 'dark',
+                accent: '#5e5ce6',
+                tint: '#a78bfa',
+                iconStyle: 'dark',
+                iconRadius: 18,
+                fontKey: 'rounded',
+                dockAlpha: 0.3,
+                blurPx: 20,
+                motionEnabled: true,
+                lockWallpaper: WALLPAPERS[1].css,
+                homeWallpaper: WALLPAPERS[1].css,
+                lockImage: '',
+                homeImage: ''
+            },
+            {
+                id: 'th-clear',
+                name: 'Clear Minimal',
+                featured: true,
+                themeMode: 'dark',
+                accent: '#32ade6',
+                tint: '#67e8f9',
+                iconStyle: 'clear',
+                iconRadius: 14,
+                fontKey: 'sans',
+                dockAlpha: 0.22,
+                blurPx: 16,
+                motionEnabled: true,
+                lockWallpaper: WALLPAPERS[2].css,
+                homeWallpaper: WALLPAPERS[2].css,
+                lockImage: '',
+                homeImage: ''
+            },
+            {
+                id: 'th-pastel',
+                name: 'Pastel Breeze',
+                featured: false,
+                themeMode: 'light',
+                accent: '#007aff',
+                tint: '#f472b6',
+                iconStyle: 'tinted',
+                iconRadius: 20,
+                fontKey: 'rounded',
+                dockAlpha: 0.45,
+                blurPx: 16,
+                motionEnabled: true,
+                lockWallpaper: WALLPAPERS[4].css,
+                homeWallpaper: WALLPAPERS[4].css,
+                lockImage: '',
+                homeImage: ''
+            }
+        ];
+
+        const SWATCHES = ['#0a84ff', '#30d158', '#ff9f0a', '#ff375f', '#bf5af2', '#64d2ff'];
+        const DEMO_APPS = [
+            { id: 'zegar', ico: '⏰', bg: '#ff9f0a' },
+            { id: 'ustawienia', ico: '⚙️', bg: '#636366' },
+            { id: 'kalkulator', ico: '🧮', bg: '#30d158' },
+            { id: 'notatki', ico: '📝', bg: '#ffd60a' }
+        ];
+
+        function loadState() {
+            let sharedMode = 'dark';
+            try {
+                const sRaw = localStorage.getItem(SETTINGS_KEY);
+                if (sRaw) {
+                    const s = JSON.parse(sRaw);
+                    if (s.theme === 'light' || s.theme === 'dark') sharedMode = s.theme;
+                }
+            } catch {}
+
+            const base = {
+                activeThemeId: 'th-sky',
+                current: { ...BUILTIN_THEMES[0], themeMode: sharedMode },
+                customThemes: [],
+                favorites: ['th-sky', 'wp-sky'],
+                recentIds: ['th-sky', 'th-violet'],
+                customIcons: {},
+                customWallpapers: []
+            };
+
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return base;
+                const p = JSON.parse(raw);
+                return {
+                    ...base,
+                    ...p,
+                    current: { ...base.current, ...(p.current || {}), themeMode: sharedMode },
+                    customThemes: Array.isArray(p.customThemes) ? p.customThemes : [],
+                    favorites: Array.isArray(p.favorites) ? p.favorites : base.favorites,
+                    recentIds: Array.isArray(p.recentIds) ? p.recentIds : base.recentIds,
+                    customIcons: p.customIcons || {},
+                    customWallpapers: Array.isArray(p.customWallpapers) ? p.customWallpapers : []
+                };
+            } catch {
+                return base;
+            }
+        }
+
+        let state = loadState();
+        let wpCategory = 'Wszystkie';
+        let wpTarget = 'both';
+
+        function allThemes() {
+            return [...BUILTIN_THEMES, ...state.customThemes];
+        }
+
+        function allWallpapers() {
+            return [...WALLPAPERS, ...state.customWallpapers];
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch {}
+        }
+
+        function showToast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+        }
+
+        function switchPanel(name) {
+            document.querySelectorAll('.seg-tab').forEach(t => t.classList.toggle('active', t.dataset.panel === name));
+            document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${name}`));
+            renderAll();
+        }
+
+        function applyVisualVars() {
+            const c = state.current;
+            const fonts = {
+                sans: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif',
+                rounded: '"SF Pro Rounded", ui-rounded, -apple-system, system-ui, sans-serif',
+                serif: 'Georgia, "Times New Roman", serif',
+                mono: 'ui-monospace, SFMono-Regular, Menlo, monospace'
+            };
+
+            document.body.classList.toggle('theme-light', c.themeMode === 'light');
+            document.documentElement.style.setProperty('--accent', c.accent || '#0a84ff');
+            document.documentElement.style.setProperty('--accent-2', c.tint || '#5e5ce6');
+            document.documentElement.style.setProperty('--blur-px', `${c.blurPx ?? 18}px`);
+            document.documentElement.style.setProperty('--dock-alpha', String(c.dockAlpha ?? 0.34));
+            document.documentElement.style.setProperty('--font-family', fonts[c.fontKey] || fonts.sans);
+            document.documentElement.style.setProperty('--motion-time', c.motionEnabled === false ? '0s' : '0.2s');
+        }
+
+        function renderPreviews() {
+            const c = state.current;
+            const now = new Date();
+            document.getElementById('prev-ls-clock').textContent = now.toTimeString().slice(0, 5);
+            document.getElementById('prev-ls-date').textContent = now.toLocaleDateString('pl-PL', { weekday: 'short', day: 'numeric', month: 'short' });
+
+            const lsEl = document.getElementById('prev-ls');
+            const hsEl = document.getElementById('prev-hs');
+            lsEl.style.backgroundImage = c.lockImage ? `url("${c.lockImage}")` : c.lockWallpaper;
+            hsEl.style.backgroundImage = c.homeImage ? `url("${c.homeImage}")` : c.homeWallpaper;
+
+            document.getElementById('active-theme-label').textContent = c.name || 'Własny motyw';
+            document.getElementById('sticky-name').textContent = c.name || 'Własny motyw';
+
+            const renderIconTile = (app) => {
+                const customImg = state.customIcons[app.id];
+                let bg = app.bg;
+                let border = '1px solid rgba(255,255,255,0.22)';
+                let color = '#ffffff';
+
+                if (c.iconStyle === 'dark') {
+                    bg = '#1c1c1e';
+                } else if (c.iconStyle === 'clear') {
+                    bg = 'rgba(255,255,255,0.2)';
+                    border = '1px solid rgba(255,255,255,0.45)';
+                } else if (c.iconStyle === 'tinted') {
+                    bg = c.tint || c.accent;
+                }
+
+                const styleAttr = customImg
+                    ? `background-image:url("${customImg}");background-size:cover;border-radius:${c.iconRadius}px;border:${border};`
+                    : `background:${bg};color:${color};border-radius:${c.iconRadius}px;border:${border};`;
+
+                return `<div class="mini-app-icon" style="${styleAttr}">${customImg ? '' : app.ico}</div>`;
+            };
+
+            const gridApps = [...DEMO_APPS, ...DEMO_APPS];
+            document.getElementById('prev-hs-grid').innerHTML = gridApps.map(renderIconTile).join('');
+            document.getElementById('prev-hs-dock').innerHTML = DEMO_APPS.map(renderIconTile).join('');
+        }
+
+        function renderThemesSection() {
+            const themes = allThemes();
+            const isFav = (id) => state.favorites.includes(id);
+
+            const tileHtml = (t) => {
+                const bg = t.homeImage ? `url("${t.homeImage}")` : t.homeWallpaper;
+                return `
+                    <div class="theme-tile ${state.activeThemeId === t.id ? 'active' : ''}" onclick="selectTheme('${t.id}')">
+                        <div class="tile-thumb" style="background-image:${bg};">
+                            <span style="font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.6);">${t.iconStyle.toUpperCase()}</span>
+                        </div>
+                        <div class="tile-body">
+                            <span class="tile-name">${t.name}</span>
+                            <button class="fav-btn" onclick="event.stopPropagation(); toggleFav('${t.id}')" aria-label="Ulubione">${isFav(t.id) ? '★' : '☆'}</button>
+                        </div>
+                    </div>
+                `;
+            };
+
+            document.getElementById('featured-themes').innerHTML = themes.filter(t => t.featured).map(tileHtml).join('');
+            document.getElementById('all-themes-grid').innerHTML = themes.map(tileHtml).join('');
+
+            const recents = state.recentIds
+                .map(id => themes.find(t => t.id === id))
+                .filter(Boolean);
+            document.getElementById('recent-themes').innerHTML = recents.map(r => `
+                <button class="chip ${state.activeThemeId === r.id ? 'active' : ''}" onclick="selectTheme('${r.id}')">${r.name}</button>
+            `).join('');
+        }
+
+        function renderWallpapersSection() {
+            const cats = ['Wszystkie', 'Aesthetic', 'Dark', 'Nature', 'Pastel', 'Własne'];
+            document.getElementById('wp-category-chips').innerHTML = cats.map(cat => `
+                <button class="chip ${wpCategory === cat ? 'active' : ''}" onclick="setWpCat('${cat}')">${cat}</button>
+            `).join('');
+            document.getElementById('overview-wp-cats').innerHTML = cats.slice(1).map(cat => `
+                <button class="chip" onclick="setWpCat('${cat}'); switchPanel('wallpapers');">${cat}</button>
+            `).join('');
+
+            const list = allWallpapers().filter(w => wpCategory === 'Wszystkie' || w.cat === wpCategory);
+            document.getElementById('wallpapers-grid').innerHTML = list.map(w => {
+                const bg = w.image ? `url("${w.image}")` : w.css;
+                const fav = state.favorites.includes(w.id);
+                return `
+                    <div class="theme-tile" onclick="previewWallpaper('${w.id}')">
+                        <div class="tile-thumb" style="background-image:${bg};"></div>
+                        <div class="tile-body">
+                            <span class="tile-name">${w.name}</span>
+                            <button class="fav-btn" onclick="event.stopPropagation(); toggleFav('${w.id}')">${fav ? '★' : '☆'}</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderControlsState() {
+            const c = state.current;
+            document.querySelectorAll('[data-istyle]').forEach(b => b.classList.toggle('active', b.dataset.istyle === c.iconStyle));
+            document.getElementById('icon-radius-range').value = c.iconRadius ?? 16;
+
+            document.getElementById('accent-swatches').innerHTML = SWATCHES.map(col => `
+                <button class="swatch ${c.accent?.toLowerCase() === col ? 'active' : ''}" style="background:${col};" onclick="setCustomAccent('${col}')"></button>
+            `).join('');
+            document.getElementById('custom-accent-picker').value = c.accent || '#0a84ff';
+            document.getElementById('custom-tint-picker').value = c.tint || '#5e5ce6';
+
+            document.querySelectorAll('[data-fkey]').forEach(b => b.classList.toggle('active', b.dataset.fkey === c.fontKey));
+            document.getElementById('btn-mode-toggle').textContent = c.themeMode === 'light' ? 'Jasny' : 'Ciemny';
+            document.getElementById('rng-dock').value = Math.round((c.dockAlpha ?? 0.34) * 100);
+            document.getElementById('lbl-dock').textContent = `${Math.round((c.dockAlpha ?? 0.34) * 100)}%`;
+            document.getElementById('rng-blur').value = c.blurPx ?? 18;
+            document.getElementById('lbl-blur').textContent = `${c.blurPx ?? 18}px`;
+            document.getElementById('chk-motion').checked = c.motionEnabled !== false;
+        }
+
+        function renderAll() {
+            applyVisualVars();
+            renderPreviews();
+            renderThemesSection();
+            renderWallpapersSection();
+            renderControlsState();
+        }
+
+        function selectTheme(id) {
+            const found = allThemes().find(t => t.id === id);
+            if (!found) return;
+            state.activeThemeId = found.id;
+            state.current = { ...found };
+            state.recentIds = [found.id, ...state.recentIds.filter(x => x !== found.id)].slice(0, 6);
+            saveState();
+            renderAll();
+        }
+
+        function toggleFav(id) {
+            if (state.favorites.includes(id)) {
+                state.favorites = state.favorites.filter(x => x !== id);
+            } else {
+                state.favorites.push(id);
+            }
+            saveState();
+            renderAll();
+        }
+
+        function saveCustomTheme() {
+            const nameInput = document.getElementById('custom-theme-name');
+            const name = nameInput.value.trim() || `Mój motyw ${state.customThemes.length + 1}`;
+            const item = {
+                ...state.current,
+                id: `custom-${Date.now()}`,
+                name,
+                featured: false
+            };
+            state.customThemes.unshift(item);
+            state.activeThemeId = item.id;
+            state.current = { ...item };
+            nameInput.value = '';
+            saveState();
+            renderAll();
+            showToast('Zapisano motyw');
+        }
+
+        function exportThemeJson() {
+            const blob = new Blob([JSON.stringify(state.current, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${(state.current.name || 'zenos-theme').toLowerCase().replace(/\s+/g, '-')}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Wyeksportowano JSON');
+        }
+
+        function importThemeJson(ev) {
+            const file = ev.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const parsed = JSON.parse(String(reader.result || '{}'));
+                    const imported = {
+                        ...state.current,
+                        ...parsed,
+                        id: `imp-${Date.now()}`,
+                        name: parsed.name || 'Zaimportowany motyw'
+                    };
+                    state.customThemes.unshift(imported);
+                    state.current = imported;
+                    state.activeThemeId = imported.id;
+                    saveState();
+                    renderAll();
+                    showToast('Zaimportowano motyw');
+                } catch {
+                    showToast('Niepoprawny plik JSON');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function setWpCat(cat) {
+            wpCategory = cat;
+            renderWallpapersSection();
+        }
+
+        function previewWallpaper(id) {
+            const w = allWallpapers().find(x => x.id === id);
+            if (!w) return;
+            if (wpTarget === 'lock' || wpTarget === 'both') {
+                state.current.lockWallpaper = w.css || state.current.lockWallpaper;
+                state.current.lockImage = w.image || '';
+            }
+            if (wpTarget === 'home' || wpTarget === 'both') {
+                state.current.homeWallpaper = w.css || state.current.homeWallpaper;
+                state.current.homeImage = w.image || '';
+            }
+            saveState();
+            renderPreviews();
+        }
+
+        function handleCustomWallpaperFile(ev) {
+            const file = ev.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = String(reader.result || '');
+                const wp = { id: `wp-${Date.now()}`, name: 'Własne zdjęcie', cat: 'Własne', image: dataUrl };
+                state.customWallpapers.unshift(wp);
+                if (wpTarget === 'lock' || wpTarget === 'both') state.current.lockImage = dataUrl;
+                if (wpTarget === 'home' || wpTarget === 'both') state.current.homeImage = dataUrl;
+                saveState();
+                renderAll();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setIconStyle(style) {
+            state.current.iconStyle = style;
+            saveState();
+            renderAll();
+        }
+
+        function setIconRadius(val) {
+            state.current.iconRadius = Number(val);
+            saveState();
+            renderPreviews();
+        }
+
+        function handleCustomAppIcon(ev) {
+            const file = ev.target.files?.[0];
+            const appId = document.getElementById('custom-icon-app').value;
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                state.customIcons[appId] = String(reader.result || '');
+                saveState();
+                renderPreviews();
+                showToast('Zaktualizowano ikonę');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setCustomAccent(val) {
+            state.current.accent = val;
+            saveState();
+            renderAll();
+        }
+
+        function setCustomTint(val) {
+            state.current.tint = val;
+            saveState();
+            renderAll();
+        }
+
+        function setFontKey(key) {
+            state.current.fontKey = key;
+            saveState();
+            renderAll();
+        }
+
+        function toggleLightDark() {
+            state.current.themeMode = state.current.themeMode === 'light' ? 'dark' : 'light';
+            saveState();
+            renderAll();
+        }
+
+        function setDockAlpha(val) {
+            state.current.dockAlpha = Number(val) / 100;
+            document.getElementById('lbl-dock').textContent = `${val}%`;
+            saveState();
+            renderPreviews();
+        }
+
+        function setBlurPx(val) {
+            state.current.blurPx = Number(val);
+            document.getElementById('lbl-blur').textContent = `${val}px`;
+            saveState();
+            applyVisualVars();
+        }
+
+        function setMotionEnabled(enabled) {
+            state.current.motionEnabled = Boolean(enabled);
+            saveState();
+            applyVisualVars();
+        }
+
+        /* Zastosowanie motywu w całym ZenOS + współdzielenie z Ustawieniami i Lock Screen */
+        function applyCurrentTheme() {
+            const c = state.current;
+            saveState();
+
+            // 1. Współdzielenie z aplikacją Ustawienia
+            try {
+                const rawS = localStorage.getItem(SETTINGS_KEY);
+                const prevS = rawS ? JSON.parse(rawS) : {};
+                const nextS = { ...prevS, theme: c.themeMode };
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(nextS));
+            } catch {}
+
+            // 2. Aktualizacja tapety Lock Screen w localStorage
+            try {
+                const rawL = localStorage.getItem(LOCK_KEY);
+                if (rawL) {
+                    const parsedL = JSON.parse(rawL);
+                    if (Array.isArray(parsedL.screens)) {
+                        parsedL.screens = parsedL.screens.map((sc, i) => i === 0 ? {
+                            ...sc,
+                            wallpaperCss: c.lockWallpaper,
+                            wallpaperImage: c.lockImage || ''
+                        } : sc);
+                        localStorage.setItem(LOCK_KEY, JSON.stringify(parsedL));
+                    }
+                }
+            } catch {}
+
+            // 3. Bezpośrednia synchronizacja z powłoką nadrzędną ZenOS
+            try {
+                if (parent && parent.document && parent.document.body) {
+                    parent.document.body.classList.toggle('theme-light', c.themeMode === 'light');
+                    parent.document.body.classList.toggle('theme-dark', c.themeMode !== 'light');
+                    const wpEl = parent.document.getElementById('wallpaper-layer');
+                    if (wpEl) {
+                        wpEl.style.backgroundImage = c.homeImage ? `url("${c.homeImage}")` : c.homeWallpaper;
+                    }
+                }
+                parent.postMessage({
+                    type: 'SETTINGS_SYNC',
+                    settings: { theme: c.themeMode }
+                }, '*');
+                parent.postMessage({
+                    type: 'THEME_APPLIED',
+                    theme: c,
+                    customIcons: state.customIcons
+                }, '*');
+            } catch {}
+
+            showToast('Zastosowano motyw w ZenOS');
+        }
+
+        function goHome() {
+            try {
+                parent.Kernel?.goHome?.();
+            } catch {}
+        }
+
+        renderAll();
+    </script>
+</body>
+</html>
