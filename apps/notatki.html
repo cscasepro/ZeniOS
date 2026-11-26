@@ -2,111 +2,250 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notatki</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Notatki — ZenOS</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             min-height: 100vh;
-            background: #090d16;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
-            padding: 16px;
+            background: #f2f2f7;
+            color: #111827;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+            padding: 48px 18px 86px;
+        }
+        .gold { color: #eab308; }
+        .topbar {
             display: flex;
-            flex-direction: column;
-            gap: 12px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
         }
-        h1 { font-size: 20px; }
-        input, textarea {
+        .link-gold {
+            background: none;
+            border: none;
+            color: #d97706;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        h1 { font-size: 32px; font-weight: 800; margin-bottom: 10px; }
+        .search-input {
             width: 100%;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: rgba(15, 23, 42, 0.9);
-            color: #f8fafc;
-            padding: 10px 12px;
-            font-family: inherit;
-            font-size: 13px;
-        }
-        textarea { min-height: 76px; resize: vertical; }
-        button {
             padding: 10px 14px;
             border-radius: 12px;
             border: none;
-            background: #38bdf8;
-            color: #090d16;
+            background: #e5e5ea;
+            font-size: 15px;
+            margin-bottom: 16px;
+            outline: none;
+        }
+        .sec-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 12px 0 8px;
+        }
+        .note-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        }
+        .pin-badge {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: #f59e0b;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .bottom-bar {
+            position: fixed;
+            bottom: 48px;
+            left: 0;
+            right: 0;
+            height: 48px;
+            padding: 0 20px;
+            background: rgba(242, 242, 247, 0.92);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .new-btn {
+            background: #f59e0b;
+            color: #ffffff;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 999px;
             font-size: 13px;
             font-weight: 700;
             cursor: pointer;
         }
-        .list {
-            display: flex;
+        .editor-modal {
+            position: fixed;
+            inset: 0;
+            background: #ffffff;
+            z-index: 30;
+            display: none;
             flex-direction: column;
+            padding: 48px 18px 66px;
+            gap: 12px;
+        }
+        .editor-modal.open { display: flex; }
+        .fmt-bar {
+            display: flex;
             gap: 8px;
+            flex-wrap: wrap;
         }
-        .note {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 14px;
-            padding: 10px 12px;
+        .fmt-btn {
+            padding: 6px 11px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
         }
-        .note-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
-        .note-body { font-size: 12px; color: #cbd5e1; }
+        .ed-title {
+            font-size: 22px;
+            font-weight: 700;
+            border: none;
+            outline: none;
+        }
+        .ed-body {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            line-height: 1.5;
+            resize: none;
+            font-family: inherit;
+        }
     </style>
 </head>
 <body>
+    <div class="topbar">
+        <button class="link-gold" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
+        <button class="link-gold" onclick="openEditor()">+ Nowa</button>
+    </div>
     <h1>Notatki</h1>
-    <input id="title" type="text" placeholder="Tytuł notatki...">
-    <textarea id="body" placeholder="Treść notatki..."></textarea>
-    <button onclick="addNote()">Zapisz notatkę</button>
-    <div id="list" class="list"></div>
+    <input id="q" class="search-input" type="text" placeholder="Szukaj w notatkach" oninput="renderNotes()">
+
+    <div id="pinned-sec"></div>
+    <div id="recent-sec"></div>
+
+    <div class="bottom-bar">
+        <span style="width:60px;"></span>
+        <span id="notes-count" style="font-size:12px;color:#6b7280;">0 notatek</span>
+        <button class="new-btn" onclick="openEditor()">✎ Nowa notatka</button>
+    </div>
+
+    <div id="editor" class="editor-modal">
+        <div class="topbar">
+            <button class="link-gold" onclick="saveAndClose()">‹ Notatki</button>
+            <div style="display:flex;gap:12px;">
+                <button id="pin-toggle" class="link-gold" onclick="togglePinCurrent()">📌 Przypnij</button>
+                <button class="link-gold" onclick="saveAndClose()">Gotowe</button>
+            </div>
+        </div>
+        <div class="fmt-bar">
+            <button class="fmt-btn" onclick="insertTag('**Pogrubienie**')">B</button>
+            <button class="fmt-btn" onclick="insertTag('_Kursywa_')">I</button>
+            <button class="fmt-btn" onclick="insertTag('\n☑ Zadanie do wykonania')">☑ Checklista</button>
+        </div>
+        <input id="ed-title" class="ed-title" type="text" placeholder="Tytuł notatki">
+        <textarea id="ed-body" class="ed-body" placeholder="Zacznij pisać..."></textarea>
+    </div>
 
     <script>
-        function getNotes() {
-            const p = window.parent;
-            return (p && p.StorageManager && p.StorageManager.get('notes', [])) || [];
+        let notes = parent.StorageManager?.get('zen_notes', null) || [
+            { id: 1, title: 'Lista zakupów', body: '☑ Mleko\n☑ Kawa\n☑ Owoce', pinned: true, date: 'Dzisiaj' },
+            { id: 2, title: 'Pomysły ZenOS', body: 'Efekt Liquid Glass i płynne przejścia kart.', pinned: false, date: 'Wczoraj' }
+        ];
+        let activeId = null;
+        let currentPinned = false;
+
+        function persist() {
+            parent.StorageManager?.set('zen_notes', notes);
         }
 
-        function saveNotes(list) {
-            const p = window.parent;
-            if (p && p.StorageManager) {
-                p.StorageManager.set('notes', list);
+        function renderNotes() {
+            const q = document.getElementById('q').value.trim().toLowerCase();
+            const filtered = notes.filter(n => !q || n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q));
+            const pinned = filtered.filter(n => n.pinned);
+            const others = filtered.filter(n => !n.pinned);
+
+            document.getElementById('notes-count').textContent = `${notes.length} notatek`;
+
+            document.getElementById('pinned-sec').innerHTML = pinned.length
+                ? `<div class="sec-title">Przypięte</div>` + pinned.map(cardHtml).join('')
+                : '';
+            document.getElementById('recent-sec').innerHTML = `<div class="sec-title">Ostatnie</div>` + others.map(cardHtml).join('');
+        }
+
+        function cardHtml(n) {
+            return `
+                <div class="note-card" onclick="openEditor(${n.id})">
+                    <div style="display:flex;align-items:center;gap:12px;overflow:hidden;">
+                        ${n.pinned ? '<div class="pin-badge">📌</div>' : ''}
+                        <div style="overflow:hidden;">
+                            <div style="font-weight:700;font-size:15px;">${n.title || 'Bez tytułu'}</div>
+                            <div style="font-size:13px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.date} • ${n.body.replace(/\n/g, ' ')}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openEditor(id = null) {
+            activeId = id;
+            const found = notes.find(n => n.id === id);
+            document.getElementById('ed-title').value = found ? found.title : '';
+            document.getElementById('ed-body').value = found ? found.body : '';
+            currentPinned = found ? found.pinned : false;
+            document.getElementById('pin-toggle').textContent = currentPinned ? '📌 Przypięta' : '📌 Przypnij';
+            document.getElementById('editor').classList.add('open');
+        }
+
+        function togglePinCurrent() {
+            currentPinned = !currentPinned;
+            document.getElementById('pin-toggle').textContent = currentPinned ? '📌 Przypięta' : '📌 Przypnij';
+        }
+
+        function insertTag(snippet) {
+            const area = document.getElementById('ed-body');
+            area.value += snippet;
+            area.focus();
+        }
+
+        function saveAndClose() {
+            const title = document.getElementById('ed-title').value.trim();
+            const body = document.getElementById('ed-body').value.trim();
+            if (title || body) {
+                if (activeId) {
+                    const idx = notes.findIndex(n => n.id === activeId);
+                    if (idx !== -1) notes[idx] = { ...notes[idx], title: title || 'Bez tytułu', body, pinned: currentPinned, date: 'Dzisiaj' };
+                } else {
+                    notes.unshift({ id: Date.now(), title: title || 'Bez tytułu', body, pinned: currentPinned, date: 'Dzisiaj' });
+                }
+                persist();
             }
-            if (p && p.Widgets) {
-                p.Widgets.syncData();
-            }
+            document.getElementById('editor').classList.remove('open');
+            renderNotes();
         }
 
-        function addNote() {
-            const title = document.getElementById('title').value.trim();
-            const text = document.getElementById('body').value.trim();
-            if (!title && !text) return;
-
-            const notes = getNotes();
-            notes.unshift({ id: Date.now(), title: title || 'Bez tytułu', text });
-            saveNotes(notes.slice(0, 30));
-
-            document.getElementById('title').value = '';
-            document.getElementById('body').value = '';
-            render();
-        }
-
-        function render() {
-            const notes = getNotes();
-            const box = document.getElementById('list');
-            box.innerHTML = '';
-            notes.forEach(n => {
-                const el = document.createElement('div');
-                el.className = 'note';
-                el.innerHTML = `<div class="note-title">${esc(n.title)}</div><div class="note-body">${esc(n.text)}</div>`;
-                box.appendChild(el);
-            });
-        }
-
-        function esc(s) {
-            return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-        }
-
-        render();
+        renderNotes();
     </script>
 </body>
 </html>
