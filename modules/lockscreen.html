@@ -3,154 +3,1080 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ekran blokady</title>
+    <title>Ekran blokady — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body {
+        :root {
+            --ls-clock-size: clamp(82px, 21vw, 134px);
+            --ls-clock-weight: 700;
+            --ls-clock-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+            --ls-clock-color: rgba(255, 255, 255, 0.72);
+            --ls-clock-stroke: rgba(255, 255, 255, 0.75);
+            --ls-glass-bg: rgba(255, 255, 255, 0.16);
+            --ls-glass-border: rgba(255, 255, 255, 0.32);
+            --ls-text: #ffffff;
+            --ls-muted: rgba(255, 255, 255, 0.78);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
             width: 100%;
             height: 100%;
-            background: linear-gradient(165deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 14, 26, 0.94) 55%, rgba(5, 7, 14, 0.98) 100%);
-            backdrop-filter: blur(22px);
-            -webkit-backdrop-filter: blur(22px);
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 68px 20px 38px;
             overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+            color: var(--ls-text);
+            background: #060913;
         }
-        .clock-header {
-            text-align: center;
+
+        .ls-root {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease;
+        }
+
+        .ls-root.unlocking {
+            transform: translateY(-100%);
+            opacity: 0.25;
+        }
+
+        /* Pełnoekranowa tapeta + opcjonalna warstwa Depth Effect (pierwszy plan przed zegarem) */
+        .ls-wallpaper-bg {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            z-index: 1;
+            transition: background-image 0.25s ease, filter 0.25s ease, transform 0.25s ease;
+        }
+
+        .ls-wallpaper-fg {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            z-index: 3;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .ls-wallpaper-fg.depth-active {
+            opacity: 1;
+        }
+
+        .ls-scrim {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0.22) 0%,
+                rgba(0, 0, 0, 0.08) 45%,
+                rgba(0, 0, 0, 0.34) 100%
+            );
+            pointer-events: none;
+        }
+
+        /* Górna część: data i duży zegar na środku */
+        .ls-top {
+            position: relative;
+            z-index: 2;
+            padding: 58px 18px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 2px;
+            text-align: center;
+            animation: enterClock 0.45s cubic-bezier(0.22, 1, 0.36, 1);
         }
-        .date-line {
+
+        @keyframes enterClock {
+            from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .ls-date-row {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             font-size: 16px;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.92);
+            color: var(--ls-text);
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+            margin-bottom: 4px;
         }
-        .big-clock {
-            font-size: 74px;
-            font-weight: 700;
-            line-height: 1;
-            letter-spacing: -1px;
+
+        .ls-clock {
+            font-family: var(--ls-clock-font);
+            font-size: var(--ls-clock-size);
+            font-weight: var(--ls-clock-weight);
+            line-height: 0.94;
+            letter-spacing: -2px;
             font-variant-numeric: tabular-nums;
+            color: var(--ls-clock-color);
+            cursor: ns-resize;
+            touch-action: none;
+            transition: font-size 0.16s ease, color 0.2s ease, font-family 0.2s ease;
         }
-        .status-pills {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-            flex-wrap: wrap;
-            justify-content: center;
+
+        .ls-clock.style-glass {
+            color: var(--ls-clock-color);
+            -webkit-text-stroke: 1.25px var(--ls-clock-stroke);
+            text-shadow:
+                0 8px 28px rgba(0, 0, 0, 0.35),
+                0 0 18px rgba(255, 255, 255, 0.14);
         }
-        .pill-glass {
-            background: rgba(255, 255, 255, 0.14);
-            border: 1px solid rgba(255, 255, 255, 0.26);
-            backdrop-filter: blur(18px);
-            padding: 5px 12px;
-            border-radius: 999px;
+
+        .ls-clock.style-solid {
+            color: var(--ls-clock-stroke);
+            -webkit-text-stroke: 0;
+            text-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .ls-clock.style-outline {
+            color: transparent;
+            -webkit-text-stroke: 2px var(--ls-clock-stroke);
+            text-shadow: 0 4px 18px rgba(0, 0, 0, 0.32);
+        }
+
+        /* Widżety pod zegarem */
+        .ls-widgets-under {
+            position: relative;
+            z-index: 4;
+            margin-top: 14px;
+            width: 100%;
+            max-width: 380px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .ls-widget {
+            background: var(--ls-glass-bg);
+            backdrop-filter: blur(18px) saturate(170%);
+            -webkit-backdrop-filter: blur(18px) saturate(170%);
+            border: 1px solid var(--ls-glass-border);
+            border-radius: 20px;
+            padding: 11px 13px;
+            text-align: left;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+            cursor: pointer;
+            transition: transform 0.14s ease, background 0.2s ease;
+        }
+
+        .ls-widget:active {
+            transform: scale(0.96);
+        }
+
+        .w-head {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--ls-muted);
+            margin-bottom: 3px;
+        }
+
+        .w-main {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.15;
+        }
+
+        .w-sub {
             font-size: 12px;
-            font-weight: 600;
+            color: var(--ls-muted);
+            margin-top: 2px;
         }
-        .bottom-area {
+
+        /* Powiadomienia */
+        .ls-notifications {
+            position: relative;
+            z-index: 4;
+            width: 100%;
+            max-width: 380px;
+            margin: 14px auto 0;
+            padding: 0 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 220px;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+
+        .ls-notifications::-webkit-scrollbar {
+            display: none;
+        }
+
+        .ls-notif-card {
+            background: var(--ls-glass-bg);
+            backdrop-filter: blur(20px) saturate(175%);
+            -webkit-backdrop-filter: blur(20px) saturate(175%);
+            border: 1px solid var(--ls-glass-border);
+            border-radius: 18px;
+            padding: 10px 13px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+            animation: notifPop 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+            cursor: pointer;
+        }
+
+        @keyframes notifPop {
+            from { opacity: 0; transform: translateY(10px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .ls-notif-top {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--ls-muted);
+            margin-bottom: 2px;
+        }
+
+        .ls-notif-title {
+            font-size: 13.5px;
+            font-weight: 700;
+        }
+
+        .ls-notif-body {
+            font-size: 12.5px;
+            color: var(--ls-muted);
+            margin-top: 1px;
+        }
+
+        /* Dolna sekcja: widżety dolne, dwa okrągłe skróty i Home Indicator */
+        .ls-bottom {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 5;
+            padding: 0 24px 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: 14px;
         }
-        .quick-actions {
+
+        .ls-widgets-bottom {
             width: 100%;
-            max-width: 320px;
+            max-width: 360px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .ls-shortcuts {
+            width: 100%;
+            max-width: 340px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 12px;
         }
-        .circle-btn {
-            width: 50px;
-            height: 50px;
+
+        .ls-circle-btn {
+            width: 52px;
+            height: 52px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.16);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(18px);
+            background: var(--ls-glass-bg);
+            backdrop-filter: blur(18px) saturate(175%);
+            -webkit-backdrop-filter: blur(18px) saturate(175%);
+            border: 1px solid var(--ls-glass-border);
             color: #ffffff;
-            font-size: 20px;
+            font-size: 21px;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+            cursor: pointer;
+            transition: transform 0.14s ease, background 0.2s ease;
+        }
+
+        .ls-circle-btn:active {
+            transform: scale(0.9);
+        }
+
+        .ls-circle-btn.active-torch {
+            background: rgba(255, 255, 255, 0.9);
+            color: #0b0f19;
+        }
+
+        .ls-swipe-hint {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ls-muted);
+            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
             cursor: pointer;
         }
-        .unlock-pill {
+
+        .ls-home-bar-btn {
             width: 100%;
-            max-width: 310px;
-            padding: 12px 18px;
+            display: flex;
+            justify-content: center;
+            padding: 4px 0 2px;
+            background: none;
+            border: none;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .ls-home-indicator {
+            width: 132px;
+            height: 5px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.16);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(18px);
-            color: #ffffff;
-            font-size: 14px;
-            font-weight: 600;
-            text-align: center;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Kropki wielu ekranów blokady */
+        .ls-page-dots {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(0, 0, 0, 0.28);
+            backdrop-filter: blur(10px);
+            padding: 5px 10px;
+            border-radius: 999px;
+        }
+
+        .ls-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.42);
             cursor: pointer;
+        }
+
+        .ls-dot.active {
+            background: #ffffff;
+            transform: scale(1.25);
+        }
+
+        /* Panel edytora Lock Screen (otwierany przytrzymaniem) */
+        .ls-editor {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 30;
+            flex-direction: column;
+            justify-content: flex-end;
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        .ls-editor.open {
+            display: flex;
+        }
+
+        .ls-editor-top {
+            position: absolute;
+            top: 46px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ed-pill {
+            background: rgba(24, 24, 28, 0.78);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            color: #ffffff;
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .ed-drawer {
+            background: rgba(22, 22, 26, 0.88);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-top-left-radius: 28px;
+            border-top-right-radius: 28px;
+            padding: 16px 16px 34px;
+            max-height: 62vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .ed-sec-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: rgba(255, 255, 255, 0.68);
+            margin-bottom: 6px;
+        }
+
+        .ed-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .ed-chip {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .ed-chip.active {
+            background: #0a84ff;
+            border-color: #0a84ff;
+        }
+
+        .color-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.45);
+            cursor: pointer;
+        }
+
+        .color-dot.active {
+            border-color: #ffffff;
+            transform: scale(1.15);
+            box-shadow: 0 0 0 2px #0a84ff;
+        }
+
+        .widget-chip-manage {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 14px;
+            padding: 6px 10px;
+            font-size: 12.5px;
+        }
+
+        .widget-chip-manage button {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0 3px;
+        }
+
+        @media (max-width: 720px) {
+            .ls-clock {
+                letter-spacing: -1.5px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="clock-header">
-        <div id="ls-date" class="date-line">Czwartek, 26 listopada</div>
-        <div id="ls-clock" class="big-clock">15:58</div>
-        <div class="status-pills">
-            <span id="ls-bat" class="pill-glass">🔋 100%</span>
-            <span class="pill-glass">⚡ TOP-1</span>
-        </div>
-    </div>
+    <div id="ls-root" class="ls-root">
+        <div id="ls-bg" class="ls-wallpaper-bg"></div>
+        <div class="ls-scrim"></div>
+        <div id="ls-fg" class="ls-wallpaper-fg"></div>
 
-    <div class="bottom-area">
-        <div class="quick-actions">
-            <button class="circle-btn" onclick="toggleTorch()" aria-label="Latarka">🔦</button>
-            <button class="circle-btn" onclick="openCamera()" aria-label="Aparat">📷</button>
-        </div>
+        <header class="ls-top">
+            <div id="ls-date" class="ls-date-row">Czwartek, 26 listopada</div>
+            <div id="ls-clock" class="ls-clock style-glass" title="Przeciągnij w pionie, aby zmienić rozmiar">16:19</div>
+            <div id="ls-widgets-under" class="ls-widgets-under"></div>
+        </header>
 
-        <button class="unlock-pill" onclick="unlock()">Przesuń w górę lub kliknij, aby odblokować</button>
+        <div id="ls-notifications" class="ls-notifications"></div>
+
+        <footer class="ls-bottom">
+            <div id="ls-widgets-bottom" class="ls-widgets-bottom"></div>
+
+            <div class="ls-shortcuts">
+                <button id="sc-left" class="ls-circle-btn" onclick="triggerShortcut('left')" aria-label="Lewy skrót">🔦</button>
+
+                <div class="ls-page-dots" id="ls-dots"></div>
+
+                <button id="sc-right" class="ls-circle-btn" onclick="triggerShortcut('right')" aria-label="Prawy skrót">📷</button>
+            </div>
+
+            <div class="ls-swipe-hint" onclick="unlockDevice()">Przesuń w górę, aby odblokować</div>
+
+            <button id="ls-home-zone" class="ls-home-bar-btn" aria-label="Przesuń w górę, aby odblokować">
+                <span class="ls-home-indicator"></span>
+            </button>
+        </footer>
+
+        <!-- Edytor Lock Screen -->
+        <div id="ls-editor" class="ls-editor">
+            <div class="ls-editor-top">
+                <button class="ed-pill" onclick="closeEditor()">Anuluj</button>
+                <div style="display:flex;gap:8px;">
+                    <button class="ed-pill" onclick="createNewScreen()">+ Nowy ekran</button>
+                    <button class="ed-pill" style="background:#0a84ff;border-color:#0a84ff;" onclick="closeEditor()">Gotowe</button>
+                </div>
+            </div>
+
+            <div class="ed-drawer" onclick="event.stopPropagation()">
+                <div>
+                    <div class="ed-sec-title">Ekrany blokady</div>
+                    <div id="ed-screens-list" class="ed-row"></div>
+                </div>
+
+                <div>
+                    <div class="ed-sec-title">Tapeta i Depth Effect</div>
+                    <div class="ed-row">
+                        <label class="ed-chip" style="cursor:pointer;">
+                            Własne zdjęcie
+                            <input type="file" accept="image/*" style="display:none;" onchange="handleCustomWallpaper(event)">
+                        </label>
+                        <button id="btn-depth" class="ed-chip" onclick="toggleDepthEffect()">Depth Effect: WYŁ.</button>
+                        <label id="fg-upload-wrap" class="ed-chip" style="display:none;cursor:pointer;">
+                            Warstwa obiektu (PNG)
+                            <input type="file" accept="image/*" style="display:none;" onchange="handleDepthForeground(event)">
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="ed-sec-title">Styl, czcionka i rozmiar zegara</div>
+                    <div class="ed-row" style="margin-bottom:8px;">
+                        <button class="ed-chip" data-style="glass" onclick="setClockStyle('glass')">Liquid Glass</button>
+                        <button class="ed-chip" data-style="solid" onclick="setClockStyle('solid')">Pełny</button>
+                        <button class="ed-chip" data-style="outline" onclick="setClockStyle('outline')">Kontur</button>
+                    </div>
+                    <div class="ed-row" style="margin-bottom:8px;">
+                        <button class="ed-chip" data-font="sans" onclick="setClockFont('sans')">Smukły</button>
+                        <button class="ed-chip" data-font="rounded" onclick="setClockFont('rounded')">Zaokrąglony</button>
+                        <button class="ed-chip" data-font="serif" onclick="setClockFont('serif')">Klasyczny</button>
+                        <button class="ed-chip" data-font="mono" onclick="setClockFont('mono')">Cyfrowy</button>
+                    </div>
+                    <div class="ed-row">
+                        <span style="font-size:12px;color:var(--ls-muted);">Rozmiar:</span>
+                        <input id="ed-size-range" type="range" min="68" max="156" value="106" oninput="setClockSize(this.value)" style="flex:1;accent-color:#0a84ff;">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="ed-sec-title">Kolor zegara</div>
+                    <div id="ed-colors" class="ed-row"></div>
+                </div>
+
+                <div>
+                    <div class="ed-sec-title">Widżety (pod zegarem i na dole)</div>
+                    <div class="ed-row" style="margin-bottom:8px;">
+                        <button class="ed-chip" onclick="addWidget('weather', 'under')">+ Pogoda</button>
+                        <button class="ed-chip" onclick="addWidget('battery', 'under')">+ Bateria</button>
+                        <button class="ed-chip" onclick="addWidget('calendar', 'under')">+ Kalendarz</button>
+                        <button class="ed-chip" onclick="addWidget('alarm', 'bottom')">+ Alarm</button>
+                        <button class="ed-chip" onclick="addWidget('clock', 'bottom')">+ Zegar</button>
+                    </div>
+                    <div id="ed-active-widgets" class="ed-row"></div>
+                </div>
+
+                <div>
+                    <div class="ed-sec-title">Dolne skróty</div>
+                    <div class="ed-row">
+                        <span style="font-size:12px;">Lewy:</span>
+                        <select id="sel-sc-left" class="ed-chip" onchange="setShortcut('left', this.value)">
+                            <option value="torch">🔦 Latarka</option>
+                            <option value="camera">📷 Aparat</option>
+                            <option value="clock">⏰ Zegar</option>
+                            <option value="calculator">🧮 Kalkulator</option>
+                            <option value="notes">📝 Notatki</option>
+                        </select>
+                        <span style="font-size:12px;">Prawy:</span>
+                        <select id="sel-sc-right" class="ed-chip" onchange="setShortcut('right', this.value)">
+                            <option value="camera">📷 Aparat</option>
+                            <option value="torch">🔦 Latarka</option>
+                            <option value="clock">⏰ Zegar</option>
+                            <option value="calculator">🧮 Kalkulator</option>
+                            <option value="notes">📝 Notatki</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        let torchOn = false;
+        const STORAGE_KEY = 'zenos_lockscreens_v1';
+        const COLORS = [
+            { color: 'rgba(255,255,255,0.72)', stroke: 'rgba(255,255,255,0.78)' },
+            { color: 'rgba(186,230,253,0.76)', stroke: 'rgba(224,242,254,0.88)' },
+            { color: 'rgba(253,224,71,0.78)', stroke: 'rgba(254,240,138,0.9)' },
+            { color: 'rgba(249,168,212,0.78)', stroke: 'rgba(251,207,232,0.9)' },
+            { color: 'rgba(196,181,253,0.78)', stroke: 'rgba(221,214,254,0.9)' },
+            { color: 'rgba(134,239,172,0.78)', stroke: 'rgba(187,247,208,0.9)' }
+        ];
+        const FONTS = {
+            sans: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
+            rounded: '"SF Pro Rounded", ui-rounded, -apple-system, system-ui, sans-serif',
+            serif: 'Georgia, "Times New Roman", serif',
+            mono: 'ui-monospace, SFMono-Regular, Menlo, monospace'
+        };
+        const SHORTCUT_META = {
+            torch: { icon: '🔦', app: null },
+            camera: { icon: '📷', app: 'aparat' },
+            clock: { icon: '⏰', app: 'zegar' },
+            calculator: { icon: '🧮', app: 'kalkulator' },
+            notes: { icon: '📝', app: 'notatki' }
+        };
 
-        function applyTelemetry(t) {
-            if (!t) return;
-            if (t.time) document.getElementById('ls-clock').textContent = t.time;
-            if (t.dateLabel) document.getElementById('ls-date').textContent = t.dateLabel;
-            if (typeof t.level === 'number') {
-                document.getElementById('ls-bat').textContent = `${t.charging ? '⚡' : '🔋'} ${t.level}%`;
+        const defaultScreens = [
+            {
+                id: 'ls-1',
+                name: 'Ekran 1',
+                wallpaperCss: 'radial-gradient(circle at 65% 22%, #38bdf8 0%, #2563eb 38%, #0f172a 78%, #050811 100%)',
+                wallpaperImage: '',
+                depthEnabled: false,
+                foregroundImage: '',
+                clockStyle: 'glass',
+                clockFont: 'sans',
+                clockSize: 108,
+                colorIndex: 0,
+                shortcuts: { left: 'torch', right: 'camera' },
+                widgets: [
+                    { id: 'w1', type: 'weather', slot: 'under' },
+                    { id: 'w2', type: 'battery', slot: 'under' },
+                    { id: 'w3', type: 'calendar', slot: 'bottom' }
+                ]
+            },
+            {
+                id: 'ls-2',
+                name: 'Ekran 2',
+                wallpaperCss: 'radial-gradient(circle at 30% 20%, #7c3aed 0%, #312e81 45%, #090d16 90%)',
+                wallpaperImage: '',
+                depthEnabled: false,
+                foregroundImage: '',
+                clockStyle: 'glass',
+                clockFont: 'rounded',
+                clockSize: 118,
+                colorIndex: 4,
+                shortcuts: { left: 'torch', right: 'camera' },
+                widgets: [
+                    { id: 'w4', type: 'alarm', slot: 'bottom' },
+                    { id: 'w5', type: 'clock', slot: 'bottom' }
+                ]
+            }
+        ];
+
+        function loadStore() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return { activeId: 'ls-1', screens: defaultScreens };
+                const parsed = JSON.parse(raw);
+                if (!Array.isArray(parsed.screens) || !parsed.screens.length) {
+                    return { activeId: 'ls-1', screens: defaultScreens };
+                }
+                return parsed;
+            } catch {
+                return { activeId: 'ls-1', screens: defaultScreens };
             }
         }
 
-        function unlock() {
-            parent.postMessage({ type: 'UNLOCK_DEVICE' }, '*');
+        let store = loadStore();
+        let telemetry = { level: 100, charging: false, time: '16:19', dateLabel: 'Czwartek, 26 listopada' };
+        let notifications = [];
+        let torchState = false;
+        let editorOpen = false;
+
+        function getActiveScreen() {
+            return store.screens.find(s => s.id === store.activeId) || store.screens[0];
         }
 
-        function toggleTorch() {
-            torchOn = !torchOn;
-            parent.postMessage({ type: 'TORCH_STATE', active: torchOn, intensity: 90 }, '*');
+        function saveStore(syncParent = true) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+            } catch {}
+            if (syncParent) {
+                const scr = getActiveScreen();
+                try {
+                    parent.postMessage({
+                        type: 'LOCKSCREEN_UPDATED',
+                        screen: {
+                            id: scr.id,
+                            wallpaperCss: scr.wallpaperCss,
+                            wallpaperImage: scr.wallpaperImage,
+                            widgets: scr.widgets
+                        }
+                    }, '*');
+                } catch {}
+            }
         }
 
-        function openCamera() {
-            parent.postMessage({ type: 'OPEN_APP', appId: 'aparat' }, '*');
+        function updateClockAndDate() {
+            const now = new Date();
+            const days = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+            const months = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
+            const hhmm = now.toTimeString().slice(0, 5);
+            document.getElementById('ls-clock').textContent = hhmm;
+            document.getElementById('ls-date').textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
         }
 
-        window.addEventListener('message', (e) => {
-            if (!e.data) return;
-            if (e.data.type === 'TELEMETRY_UPDATED') applyTelemetry(e.data.telemetry);
+        function renderWidgets() {
+            const scr = getActiveScreen();
+            const underBox = document.getElementById('ls-widgets-under');
+            const bottomBox = document.getElementById('ls-widgets-bottom');
+            const now = new Date();
+
+            const buildCard = (w) => {
+                if (w.type === 'weather') {
+                    return `<div class="ls-widget" onclick="openApp('zegar')"><div class="w-head">Pogoda</div><div class="w-main">14°</div><div class="w-sub">Częściowe zachmurzenie</div></div>`;
+                }
+                if (w.type === 'battery') {
+                    return `<div class="ls-widget" onclick="openApp('ustawienia')"><div class="w-head">Bateria</div><div class="w-main">${telemetry.level}%</div><div class="w-sub">${telemetry.charging ? 'Ładowanie' : 'Na baterii'}</div></div>`;
+                }
+                if (w.type === 'calendar') {
+                    return `<div class="ls-widget" onclick="openApp('kalendarz')"><div class="w-head">Kalendarz</div><div class="w-main">${now.getDate()} ${now.toLocaleDateString('pl-PL', { month: 'short' })}</div><div class="w-sub">${now.toLocaleDateString('pl-PL', { weekday: 'long' })}</div></div>`;
+                }
+                if (w.type === 'alarm') {
+                    return `<div class="ls-widget" onclick="openApp('zegar')"><div class="w-head">Alarm</div><div class="w-main">06:30</div><div class="w-sub">Dni powszednie</div></div>`;
+                }
+                return `<div class="ls-widget" onclick="openApp('zegar')"><div class="w-head">Zegar</div><div class="w-main">${now.toTimeString().slice(0, 5)}</div><div class="w-sub">Czas lokalny</div></div>`;
+            };
+
+            underBox.innerHTML = scr.widgets.filter(w => w.slot === 'under').map(buildCard).join('');
+            bottomBox.innerHTML = scr.widgets.filter(w => w.slot === 'bottom').map(buildCard).join('');
+        }
+
+        function renderNotifications() {
+            const box = document.getElementById('ls-notifications');
+            if (!notifications.length) {
+                box.innerHTML = '';
+                return;
+            }
+            box.innerHTML = notifications.slice(0, 4).map(n => `
+                <div class="ls-notif-card" onclick="unlockDevice()">
+                    <div class="ls-notif-top"><span>${n.app || 'ZenOS'}</span><span>${n.time || 'teraz'}</span></div>
+                    <div class="ls-notif-title">${n.title || 'Powiadomienie'}</div>
+                    ${n.body ? `<div class="ls-notif-body">${n.body}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function renderScreen() {
+            const scr = getActiveScreen();
+            const bg = document.getElementById('ls-bg');
+            const fg = document.getElementById('ls-fg');
+            const clockEl = document.getElementById('ls-clock');
+            const col = COLORS[scr.colorIndex % COLORS.length] || COLORS[0];
+
+            if (scr.wallpaperImage) {
+                bg.style.backgroundImage = `url("${scr.wallpaperImage}")`;
+            } else {
+                bg.style.backgroundImage = scr.wallpaperCss || defaultScreens[0].wallpaperCss;
+            }
+
+            if (scr.depthEnabled && scr.foregroundImage) {
+                fg.style.backgroundImage = `url("${scr.foregroundImage}")`;
+                fg.classList.add('depth-active');
+            } else if (scr.depthEnabled) {
+                // Subtelna warstwa głębi oparta o ten sam obraz lub gradient gdy brak osobnego PNG
+                fg.style.backgroundImage = scr.wallpaperImage ? `url("${scr.wallpaperImage}")` : 'none';
+                fg.classList.toggle('depth-active', Boolean(scr.wallpaperImage));
+            } else {
+                fg.classList.remove('depth-active');
+            }
+
+            clockEl.className = `ls-clock style-${scr.clockStyle || 'glass'}`;
+            clockEl.style.setProperty('--ls-clock-size', `${scr.clockSize || 108}px`);
+            clockEl.style.setProperty('--ls-clock-font', FONTS[scr.clockFont] || FONTS.sans);
+            clockEl.style.setProperty('--ls-clock-color', col.color);
+            clockEl.style.setProperty('--ls-clock-stroke', col.stroke);
+
+            const leftMeta = SHORTCUT_META[scr.shortcuts?.left] || SHORTCUT_META.torch;
+            const rightMeta = SHORTCUT_META[scr.shortcuts?.right] || SHORTCUT_META.camera;
+            const leftBtn = document.getElementById('sc-left');
+            const rightBtn = document.getElementById('sc-right');
+            leftBtn.textContent = leftMeta.icon;
+            rightBtn.textContent = rightMeta.icon;
+            leftBtn.classList.toggle('active-torch', scr.shortcuts?.left === 'torch' && torchState);
+            rightBtn.classList.toggle('active-torch', scr.shortcuts?.right === 'torch' && torchState);
+
+            const dots = document.getElementById('ls-dots');
+            dots.innerHTML = store.screens.map(s => `
+                <button class="ls-dot ${s.id === scr.id ? 'active' : ''}" onclick="switchScreen('${s.id}')" aria-label="${s.name}"></button>
+            `).join('');
+
+            renderWidgets();
+            if (editorOpen) renderEditorControls();
+        }
+
+        function switchScreen(id) {
+            store.activeId = id;
+            saveStore(true);
+            renderScreen();
+        }
+
+        function createNewScreen() {
+            const idx = store.screens.length + 1;
+            const palettes = [
+                'radial-gradient(circle at 70% 25%, #f97316 0%, #be185d 45%, #1e1b4b 90%)',
+                'radial-gradient(circle at 30% 30%, #10b981 0%, #0f766e 48%, #090d16 92%)',
+                'radial-gradient(circle at 60% 20%, #60a5fa 0%, #1d4ed8 46%, #060913 90%)'
+            ];
+            const newScr = {
+                ...structuredClone(defaultScreens[0]),
+                id: `ls-${Date.now()}`,
+                name: `Ekran ${idx}`,
+                wallpaperCss: palettes[(idx - 1) % palettes.length],
+                wallpaperImage: '',
+                foregroundImage: ''
+            };
+            store.screens.push(newScr);
+            store.activeId = newScr.id;
+            saveStore(true);
+            renderScreen();
+        }
+
+        function triggerShortcut(side) {
+            const scr = getActiveScreen();
+            const key = scr.shortcuts?.[side] || (side === 'left' ? 'torch' : 'camera');
+            if (key === 'torch') {
+                torchState = !torchState;
+                renderScreen();
+                try {
+                    parent.postMessage({ type: 'TORCH_STATE', active: torchState, intensity: 90 }, '*');
+                } catch {}
+                return;
+            }
+            const meta = SHORTCUT_META[key];
+            if (meta?.app) openApp(meta.app);
+        }
+
+        function openApp(appId) {
+            try {
+                parent.postMessage({ type: 'OPEN_APP', appId }, '*');
+            } catch {}
+        }
+
+        function unlockDevice() {
+            const root = document.getElementById('ls-root');
+            root.classList.add('unlocking');
+            setTimeout(() => {
+                try {
+                    parent.postMessage({ type: 'UNLOCK_DEVICE' }, '*');
+                } catch {}
+                root.classList.remove('unlocking');
+            }, 220);
+        }
+
+        /* --- EDYTOR --- */
+        function openEditor() {
+            editorOpen = true;
+            document.getElementById('ls-editor').classList.add('open');
+            renderEditorControls();
+        }
+
+        function closeEditor() {
+            editorOpen = false;
+            document.getElementById('ls-editor').classList.remove('open');
+        }
+
+        function renderEditorControls() {
+            const scr = getActiveScreen();
+            document.getElementById('ed-screens-list').innerHTML = store.screens.map(s => `
+                <button class="ed-chip ${s.id === scr.id ? 'active' : ''}" onclick="switchScreen('${s.id}')">${s.name}</button>
+            `).join('');
+
+            const depthBtn = document.getElementById('btn-depth');
+            depthBtn.textContent = `Depth Effect: ${scr.depthEnabled ? 'WŁ.' : 'WYŁ.'}`;
+            depthBtn.classList.toggle('active', Boolean(scr.depthEnabled));
+            document.getElementById('fg-upload-wrap').style.display = scr.depthEnabled ? 'inline-flex' : 'none';
+
+            document.querySelectorAll('[data-style]').forEach(b => {
+                b.classList.toggle('active', b.dataset.style === scr.clockStyle);
+            });
+            document.querySelectorAll('[data-font]').forEach(b => {
+                b.classList.toggle('active', b.dataset.font === scr.clockFont);
+            });
+            document.getElementById('ed-size-range').value = scr.clockSize || 108;
+
+            document.getElementById('ed-colors').innerHTML = COLORS.map((c, idx) => `
+                <button class="color-dot ${(scr.colorIndex || 0) === idx ? 'active' : ''}" style="background:${c.stroke};" onclick="setClockColor(${idx})"></button>
+            `).join('');
+
+            document.getElementById('ed-active-widgets').innerHTML = scr.widgets.map((w, idx) => `
+                <div class="widget-chip-manage">
+                    <span>${w.type} (${w.slot === 'under' ? 'góra' : 'dół'})</span>
+                    <button onclick="moveWidget(${idx}, -1)" title="W lewo/górę">‹</button>
+                    <button onclick="moveWidget(${idx}, 1)" title="W prawo/dół">›</button>
+                    <button onclick="removeWidget(${idx})" title="Usuń">✕</button>
+                </div>
+            `).join('');
+
+            document.getElementById('sel-sc-left').value = scr.shortcuts?.left || 'torch';
+            document.getElementById('sel-sc-right').value = scr.shortcuts?.right || 'camera';
+        }
+
+        function handleCustomWallpaper(ev) {
+            const file = ev.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                const scr = getActiveScreen();
+                scr.wallpaperImage = String(reader.result || '');
+                saveStore(true);
+                renderScreen();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleDepthForeground(ev) {
+            const file = ev.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                const scr = getActiveScreen();
+                scr.foregroundImage = String(reader.result || '');
+                saveStore(true);
+                renderScreen();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function toggleDepthEffect() {
+            const scr = getActiveScreen();
+            scr.depthEnabled = !scr.depthEnabled;
+            saveStore(true);
+            renderScreen();
+        }
+
+        function setClockStyle(style) {
+            getActiveScreen().clockStyle = style;
+            saveStore(false);
+            renderScreen();
+        }
+
+        function setClockFont(font) {
+            getActiveScreen().clockFont = font;
+            saveStore(false);
+            renderScreen();
+        }
+
+        function setClockSize(val) {
+            getActiveScreen().clockSize = Number(val);
+            saveStore(false);
+            renderScreen();
+        }
+
+        function setClockColor(idx) {
+            getActiveScreen().colorIndex = idx;
+            saveStore(false);
+            renderScreen();
+        }
+
+        function addWidget(type, slot) {
+            const scr = getActiveScreen();
+            if (scr.widgets.length >= 6) return;
+            scr.widgets.push({ id: `w-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`, type, slot });
+            saveStore(true);
+            renderScreen();
+        }
+
+        function removeWidget(idx) {
+            const scr = getActiveScreen();
+            scr.widgets.splice(idx, 1);
+            saveStore(true);
+            renderScreen();
+        }
+
+        function moveWidget(idx, dir) {
+            const scr = getActiveScreen();
+            const target = idx + dir;
+            if (target < 0 || target >= scr.widgets.length) return;
+            const [item] = scr.widgets.splice(idx, 1);
+            scr.widgets.splice(target, 0, item);
+            saveStore(true);
+            renderScreen();
+        }
+
+        function setShortcut(side, val) {
+            const scr = getActiveScreen();
+            scr.shortcuts = scr.shortcuts || { left: 'torch', right: 'camera' };
+            scr.shortcuts[side] = val;
+            saveStore(false);
+            renderScreen();
+        }
+
+        /* --- GESTY: PRZYTRZYMANIE DO EDYCJI, PRZECIĄGANIE ZEGARA, PRZESUNIĘCIE OD DOŁU --- */
+        let pressTimer = null;
+        document.getElementById('ls-root').addEventListener('pointerdown', (e) => {
+            if (editorOpen) return;
+            if (e.target.closest('button, .ls-widget, .ls-notif-card, .ls-home-bar-btn, .ls-clock')) return;
+            pressTimer = setTimeout(() => openEditor(), 520);
+        });
+        ['pointerup', 'pointercancel', 'pointermove'].forEach(evName => {
+            document.getElementById('ls-root').addEventListener(evName, () => clearTimeout(pressTimer));
         });
 
-        if (parent.DeviceTelemetry) {
-            applyTelemetry(parent.DeviceTelemetry.getSnapshot());
-        }
+        // Przeciąganie zegara w pionie zmienia jego rozmiar
+        let clockDragStartY = null;
+        let clockStartSize = 108;
+        const clockEl = document.getElementById('ls-clock');
+        clockEl.addEventListener('pointerdown', (e) => {
+            clockDragStartY = e.clientY;
+            clockStartSize = getActiveScreen().clockSize || 108;
+            clockEl.setPointerCapture(e.pointerId);
+        });
+        clockEl.addEventListener('pointermove', (e) => {
+            if (clockDragStartY === null) return;
+            const delta = clockDragStartY - e.clientY;
+            const next = Math.max(68, Math.min(156, Math.round(clockStartSize + delta * 0.45)));
+            setClockSize(next);
+        });
+        clockEl.addEventListener('pointerup', () => {
+            if (clockDragStartY !== null) {
+                clockDragStartY = null;
+                saveStore(false);
+            }
+        });
+
+        // Gest przesunięcia od dołu (Home Indicator) otwiera ekran główny
+        let homeStartY = null;
+        const homeZone = document.getElementById('ls-home-zone');
+        homeZone.addEventListener('pointerdown', (e) => {
+            homeStartY = e.clientY;
+            homeZone.setPointerCapture(e.pointerId);
+        });
+        homeZone.addEventListener('pointerup', (e) => {
+            if (homeStartY === null) return;
+            const dy = homeStartY - e.clientY;
+            homeStartY = null;
+            if (dy > 28) unlockDevice();
+        });
+
+        window.addEventListener('message', (e) => {
+            const data = e.data;
+            if (!data || !data.type) return;
+            if (data.type === 'TELEMETRY_UPDATED' && data.telemetry) {
+                telemetry = { ...telemetry, ...data.telemetry };
+                renderWidgets();
+            } else if (data.type === 'NOTIFICATIONS_UPDATED' && Array.isArray(data.items)) {
+                notifications = data.items;
+                renderNotifications();
+            } else if (data.type === 'TORCH_SYNC' && typeof data.active === 'boolean') {
+                torchState = data.active;
+                renderScreen();
+            }
+        });
+
+        updateClockAndDate();
+        renderScreen();
+        renderNotifications();
+        setInterval(updateClockAndDate, 1000);
     </script>
 </body>
 </html>
