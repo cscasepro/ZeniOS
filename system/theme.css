@@ -1,29 +1,29 @@
 :root {
-    --bg-wallpaper: linear-gradient(155deg, #0b132b 0%, #1c2541 48%, #3a506b 100%);
+    --bg-wallpaper: radial-gradient(circle at 70% 25%, #2563eb 0%, #1d4ed8 34%, #0f172a 75%, #060913 100%);
     --wallpaper-image: none;
     --accent-color: #0a84ff;
     --text-primary: #ffffff;
-    --text-muted: #98989f;
-    --glass-bg: rgba(28, 28, 30, 0.72);
-    --glass-border: rgba(255, 255, 255, 0.16);
-    --blur-strength: 20px;
-    --device-radius: 42px;
-    --app-icon-radius: 15px;
-    --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+    --text-muted: rgba(255, 255, 255, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.36);
+    --glass-shadow: 0 14px 34px rgba(0, 0, 0, 0.28), inset 0 1px 1px rgba(255, 255, 255, 0.58), inset 0 -1px 2px rgba(255, 255, 255, 0.14);
+    --blur-strength: 26px;
+    --app-icon-radius: 22%;
+    --ease-spring: cubic-bezier(0.22, 1.18, 0.36, 1);
+    --ease-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
+    --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
 }
 
 body.light-ui {
     --text-primary: #0f172a;
-    --text-muted: #475569;
-    --glass-bg: rgba(255, 255, 255, 0.72);
-    --glass-border: rgba(15, 23, 42, 0.12);
+    --text-muted: rgba(15, 23, 42, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.65);
 }
 
 body.battery-saver-mode {
-    --blur-strength: 2px;
+    --blur-strength: 3px;
 }
 body.battery-saver-mode * {
-    transition-duration: 0.05s !important;
+    transition-duration: 0.06s !important;
 }
 
 * {
@@ -31,34 +31,52 @@ body.battery-saver-mode * {
     margin: 0;
     padding: 0;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
-body {
-    background: #000000;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
     font-family: var(--font-main);
     color: var(--text-primary);
+    background: #05070c;
 }
 
-#device-frame {
-    width: 393px;
-    height: 820px;
-    max-width: 100vw;
-    max-height: 100vh;
+/* Pełnoekranowa tapeta (bez ramki telefonu) */
+#wallpaper-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
     background-image: var(--wallpaper-image), var(--bg-wallpaper);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    border-radius: var(--device-radius);
-    border: 4px solid #2c2c2e;
+    transition: background-image 0.45s var(--ease-smooth), filter 0.4s var(--ease-smooth), transform 0.4s var(--ease-smooth);
+}
+
+#wallpaper-layer.blurred {
+    filter: blur(16px) brightness(0.84);
+    transform: scale(1.04);
+}
+
+/* Powierzchnia Liquid Glass */
+.liquid-glass {
     position: relative;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 52%, rgba(255, 255, 255, 0.16) 100%);
+    backdrop-filter: blur(var(--blur-strength)) saturate(185%);
+    -webkit-backdrop-filter: blur(var(--blur-strength)) saturate(185%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9);
+}
+
+.liquid-glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.06) 38%, transparent 66%);
+    pointer-events: none;
 }
 
 .priority-top {
@@ -67,192 +85,233 @@ body {
 }
 
 .boot-overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
     width: 100%;
     height: 100%;
     border: none;
-    z-index: 100;
+    z-index: 900;
 }
 
-/* Pasek statusu + Dynamic Island */
+/* Zwykły pasek statusu (bez wyspy / Dynamic Island) */
 #status-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     height: 44px;
-    padding: 0 16px;
+    padding: 0 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
-    z-index: 25;
+    z-index: 600;
+    pointer-events: none;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
 }
 
-#dynamic-island {
-    background: #000000;
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 999px;
-    height: 26px;
-    padding: 0 12px;
+.status-left, .status-right {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
-}
-
-#island-dot {
-    color: #30d158;
-    font-size: 8px;
-}
-
-.status-icons {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 11px;
 }
 
 #perf-badge, #battery-badge {
-    background: rgba(0, 0, 0, 0.35);
-    backdrop-filter: blur(8px);
-    padding: 2px 6px;
-    border-radius: 8px;
+    font-size: 11px;
+    background: rgba(0, 0, 0, 0.34);
+    backdrop-filter: blur(10px);
+    color: #ffffff;
+    padding: 2px 7px;
+    border-radius: 999px;
 }
 
-/* Pulpit */
+/* Pulpit z obsługą stron */
 #desktop {
-    flex: 1;
-    padding: 6px 16px 10px;
+    position: fixed;
+    inset: 0;
+    padding: 50px 18px 58px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    overflow: hidden;
-    z-index: 10;
+    z-index: 100;
+    transition: transform 0.4s var(--ease-smooth), opacity 0.35s var(--ease-smooth);
 }
 
-.desktop-scroll {
+#desktop.scaled-back {
+    transform: scale(0.95);
+    opacity: 0.72;
+}
+
+.pages-viewport {
     flex: 1;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.pages-track {
+    display: flex;
+    width: 200%;
+    height: 100%;
+    transition: transform 0.46s var(--ease-spring);
+}
+
+.pages-track.page-2 {
+    transform: translateX(-50%);
+}
+
+.home-page {
+    width: 50%;
+    height: 100%;
     overflow-y: auto;
+    scrollbar-width: none;
     display: flex;
     flex-direction: column;
     gap: 14px;
-    padding-bottom: 10px;
+    padding: 2px;
+}
+
+.home-page::-webkit-scrollbar {
+    display: none;
 }
 
 .widgets-box {
     width: 100%;
-    height: 116px;
+    height: 120px;
     border: none;
     background: transparent;
     flex-shrink: 0;
 }
 
-#app-grid {
+.app-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 14px 10px;
+    gap: 16px 12px;
+    justify-items: center;
 }
 
 .app-icon {
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     cursor: pointer;
-    transition: transform 0.14s ease;
-}
-
-.app-icon:active {
-    transform: scale(0.92);
 }
 
 .app-icon-box {
-    width: 58px;
-    height: 58px;
+    width: 64px;
+    height: 64px;
     border-radius: var(--app-icon-radius);
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
     margin-bottom: 5px;
-    transition: transform 0.15s ease, filter 0.2s ease, background 0.2s ease;
+    transition: transform 0.25s var(--ease-spring), filter 0.2s ease, background 0.2s ease;
+}
+
+.app-icon:active .app-icon-box {
+    transform: scale(0.87);
 }
 
 .app-icon-box img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: inherit;
     display: block;
 }
 
 .app-icon-fallback {
-    font-size: 24px;
+    font-size: 26px;
 }
 
 .app-label {
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 500;
     text-align: center;
     color: var(--text-primary);
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.75);
-    max-width: 74px;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.65);
+    max-width: 78px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* Przycisk Szukaj + Dock jak w iPhone */
-.bottom-cluster {
+/* Kropki stron + Szukaj + nieruchomy kapsułowy Dock */
+.dock-zone {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
     flex-shrink: 0;
 }
 
-.iphone-search-pill {
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    background: rgba(30, 30, 34, 0.58);
-    backdrop-filter: blur(var(--blur-strength));
+.page-dots {
+    display: flex;
+    gap: 7px;
+}
+
+.dot-btn {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.38);
+    cursor: pointer;
+    transition: transform 0.25s var(--ease-spring), background 0.2s ease;
+}
+
+.dot-btn.active {
+    background: #ffffff;
+    transform: scale(1.25);
+}
+
+.search-capsule {
+    border: none;
     color: #ffffff;
-    font-size: 12px;
-    font-weight: 600;
     padding: 6px 14px;
     border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     cursor: pointer;
+    transition: transform 0.2s var(--ease-spring);
 }
 
-.iphone-dock {
+.search-capsule:active {
+    transform: scale(0.95);
+}
+
+.dock-capsule {
     width: 100%;
+    max-width: 480px;
+    border-radius: 34px;
+    padding: 11px 16px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    padding: 10px 12px;
-    border-radius: 26px;
-    background: rgba(255, 255, 255, 0.16);
-    backdrop-filter: blur(22px);
-    border: 1px solid rgba(255, 255, 255, 0.22);
+    gap: 10px;
+    align-items: center;
+    justify-items: center;
 }
 
-.iphone-dock .app-icon-box {
-    width: 54px;
-    height: 54px;
+.dock-capsule .app-icon-box {
+    width: 58px;
+    height: 58px;
     margin-bottom: 0;
 }
 
-.iphone-dock .app-label {
+.dock-capsule .app-label {
     display: none;
 }
 
 /* Kontener aplikacji */
 #app-container {
-    position: absolute;
-    top: 44px;
-    bottom: 52px;
-    left: 0;
-    right: 0;
-    z-index: 25;
+    position: fixed;
+    inset: 0;
+    z-index: 300;
     pointer-events: none;
 }
 
@@ -260,45 +319,54 @@ body {
     width: 100%;
     height: 100%;
     border: none;
-    background: #000000;
-    position: absolute;
+    background: #090d16;
+    position: fixed;
     inset: 0;
     display: none;
     pointer-events: auto;
+    opacity: 0;
+    transform: scale(0.92) translateY(18px);
+    transition: transform 0.4s var(--ease-spring), opacity 0.25s var(--ease-smooth);
 }
 
 .app-frame.active {
     display: block;
+    opacity: 1;
+    transform: scale(1) translateY(0);
 }
 
-/* Nakładki systemowe */
+/* Moduły systemowe */
 .system-overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
     width: 100%;
     height: 100%;
     border: none;
-    z-index: 40;
+    z-index: 450;
 }
 
 #lockscreen-frame {
-    z-index: 75;
+    z-index: 750;
 }
 
 .hidden {
     display: none !important;
 }
 
-/* Dolny pasek nawigacji */
+/* Dolny pasek systemowy */
 #nav-bar {
-    height: 52px;
-    background: rgba(10, 10, 12, 0.72);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 48px;
+    background: rgba(8, 10, 16, 0.58);
     backdrop-filter: blur(var(--blur-strength));
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
     display: flex;
     justify-content: space-around;
     align-items: center;
-    z-index: 85;
+    z-index: 820;
 }
 
 #nav-bar button {
@@ -307,19 +375,18 @@ body {
     color: #ffffff;
     font-size: 16px;
     cursor: pointer;
-    padding: 6px 10px;
+    padding: 6px 12px;
     border-radius: 10px;
 }
 
 #recents-view {
-    position: absolute;
+    position: fixed;
     top: 44px;
-    bottom: 52px;
-    left: 0;
-    right: 0;
-    background: rgba(10, 10, 14, 0.96);
-    backdrop-filter: blur(var(--blur-strength));
-    z-index: 35;
+    bottom: 48px;
+    left: 14px;
+    right: 14px;
+    border-radius: 26px;
+    z-index: 500;
     padding: 18px;
     display: flex;
     flex-direction: column;
@@ -328,10 +395,10 @@ body {
 }
 
 .recent-item {
-    background: #1c1c1e;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     padding: 12px 14px;
-    border-radius: 14px;
+    border-radius: 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -341,10 +408,33 @@ body {
 .btn-close-all {
     margin-top: auto;
     padding: 12px;
-    border-radius: 14px;
+    border-radius: 16px;
     border: none;
     background: #ff453a;
     color: #ffffff;
     font-weight: 700;
     cursor: pointer;
-        }
+}
+
+#brightness-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 780;
+    background: #000000;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#torch-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 840;
+    background: #ffffff;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+#torch-veil.active {
+    opacity: 0.92;
+}
