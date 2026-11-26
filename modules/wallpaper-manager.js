@@ -59,7 +59,6 @@ const WallpaperManager = (() => {
         document.documentElement.style.setProperty('--zenos-wallpaper', `url("${url}")`);
         document.body.style.background = bgValue;
 
-        // Jeśli w ZenOS jest osobna warstwa tła pulpitu, zaktualizuj ją również
         const layer = document.querySelector('#wallpaper-layer, .wallpaper-layer, [data-wallpaper-layer]');
         if (layer) {
             layer.style.background = `url("${url}") center / cover no-repeat`;
@@ -111,10 +110,6 @@ const WallpaperManager = (() => {
 
     function getWallpapers() {
         return DEFAULT_WALLPAPERS.slice();
-    }
-
-    function getCurrent() {
-        return { ...current };
     }
 
     function openQuickPicker() {
@@ -204,7 +199,6 @@ const WallpaperManager = (() => {
         };
 
         target.addEventListener('pointerdown', (e) => {
-            // Nie uruchamiaj przy kliknięciu w ikonę aplikacji, widżet, przycisk ani link
             if (e.target.closest('button, a, input, .app-icon, .widget, .dock, .modal, .sheet')) return;
             startX = e.clientX;
             startY = e.clientY;
@@ -235,14 +229,5 @@ const WallpaperManager = (() => {
         bindLongPress(options.longPressTarget || document.body, options.longPressMs || 550);
     }
 
-    return {
-        init,
-        setWallpaper,
-        setCustomWallpaper,
-        getWallpapers,
-        getCurrent,
-        openQuickPicker,
-        bindLongPress,
-        resolveImageUrl
-    };
+    return { init, setWallpaper, setCustomWallpaper, getWallpapers, openQuickPicker, bindLongPress };
 })();
