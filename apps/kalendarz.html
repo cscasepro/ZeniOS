@@ -2,129 +2,243 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalendarz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kalendarz — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
             min-height: 100vh;
-            background: #090d16;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
-            padding: 16px;
+            background: #ffffff;
+            color: #111827;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            padding-bottom: 72px;
         }
-        h1 { font-size: 20px; }
-        .row {
-            display: flex;
-            gap: 8px;
-        }
-        input {
-            flex: 1;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: rgba(15, 23, 42, 0.9);
-            color: #f8fafc;
-            padding: 10px 12px;
-            font-family: inherit;
-            font-size: 13px;
-        }
-        button {
-            padding: 10px 14px;
-            border-radius: 12px;
-            border: none;
-            background: #38bdf8;
-            color: #090d16;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-        .list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .ev {
-            background: rgba(30, 41, 59, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 14px;
-            padding: 10px 12px;
+        .red-accent { color: #ff3b30; }
+        .topbar {
+            padding: 48px 16px 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .ev-title { font-size: 13px; font-weight: 700; }
-        .ev-date { font-size: 11px; color: #94a3b8; }
-        .del {
-            background: rgba(239, 68, 68, 0.2);
-            color: #fca5a5;
-            padding: 5px 8px;
+        .top-link {
+            background: none;
+            border: none;
+            color: #ff3b30;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .top-actions {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+        .month-title {
+            padding: 4px 18px 10px;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.6px;
+        }
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
             font-size: 11px;
+            font-weight: 700;
+            color: #8e8e93;
+            padding: 6px 8px;
+            border-bottom: 1px solid #e5e5ea;
+        }
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            padding: 6px 8px 14px;
+            gap: 4px;
+        }
+        .day-cell {
+            min-height: 62px;
+            padding-top: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            border-radius: 12px;
+        }
+        .day-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .day-cell.selected .day-num {
+            background: #ff3b30;
+            color: #ffffff;
+            font-weight: 700;
+        }
+        .event-bars {
+            width: 82%;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .ev-bar {
+            height: 4px;
+            border-radius: 999px;
+        }
+        .ev-plus {
+            font-size: 10px;
+            color: #8e8e93;
+            text-align: center;
+        }
+        .events-panel {
+            margin: 6px 16px;
+            padding: 14px;
+            border-radius: 18px;
+            background: #f5f5f7;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .ev-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13.5px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        .ev-row:last-child { border-bottom: none; }
+        .bottom-tabs {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: rgba(249, 249, 251, 0.92);
+            backdrop-filter: blur(18px);
+            border-top: 1px solid #e5e5ea;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            font-size: 12px;
+            color: #ff3b30;
+            font-weight: 600;
+        }
+        .bottom-tabs button {
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <h1>Kalendarz</h1>
-    <div class="row">
-        <input id="ev-date" type="date">
-        <input id="ev-title" type="text" placeholder="Wydarzenie...">
+    <div class="topbar">
+        <button class="top-link" onclick="parent.Kernel?.goHome()">‹ Wróć</button>
+        <div class="top-actions">
+            <button class="top-link" onclick="addQuickEvent()" title="Dodaj wydarzenie">+</button>
+        </div>
     </div>
-    <button onclick="addEvent()">Dodaj wydarzenie</button>
-    <div id="list" class="list"></div>
+
+    <div id="month-heading" class="month-title">Listopad</div>
+    <div class="weekdays">
+        <span>N</span><span>P</span><span>W</span><span>Ś</span><span>C</span><span>P</span><span>S</span>
+    </div>
+    <div id="days-grid" class="days-grid"></div>
+
+    <div class="events-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong id="selected-label" style="font-size:14px;">Wydarzenia • 26</strong>
+            <button class="top-link" style="font-size:13px;" onclick="addQuickEvent()">+ Dodaj</button>
+        </div>
+        <div id="events-list"></div>
+    </div>
+
+    <div class="bottom-tabs">
+        <button onclick="selectDay(new Date().getDate())">Dzisiaj</button>
+        <button onclick="addQuickEvent()">Przypomnienia</button>
+        <button onclick="parent.Kernel?.goHome()">Pulpit</button>
+    </div>
 
     <script>
-        document.getElementById('ev-date').value = new Date().toISOString().slice(0, 10);
+        const now = new Date();
+        const monthNames = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
+        let selectedDay = now.getDate();
 
-        function getEvents() {
-            const p = window.parent;
-            return (p && p.StorageManager && p.StorageManager.get('calendar_events', [])) || [];
-        }
+        const dayEvents = {
+            [selectedDay]: [
+                { title: 'Przegląd interfejsu ZenOS', color: '#0a84ff' },
+                { title: 'Aktualizacja pakietu aplikacji', color: '#30d158' }
+            ]
+        };
 
-        function saveEvents(list) {
-            const p = window.parent;
-            if (p && p.StorageManager) {
-                p.StorageManager.set('calendar_events', list);
+        function renderCalendar() {
+            document.getElementById('month-heading').textContent = monthNames[now.getMonth()];
+            const grid = document.getElementById('days-grid');
+            grid.innerHTML = '';
+
+            const firstWeekday = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+            for (let i = 0; i < firstWeekday; i++) {
+                grid.appendChild(document.createElement('div'));
             }
+
+            const palette = ['#38bdf8', '#f87171', '#4ade80', '#facc15', '#c084fc'];
+            for (let d = 1; d <= daysInMonth; d++) {
+                const cell = document.createElement('div');
+                cell.className = `day-cell ${d === selectedDay ? 'selected' : ''}`;
+                cell.onclick = () => selectDay(d);
+
+                const evs = dayEvents[d] || [];
+                const barsHtml = evs.slice(0, 2).map(ev => `<div class="ev-bar" style="background:${ev.color};"></div>`).join('');
+                const extraHtml = evs.length > 2 ? `<div class="ev-plus">+${evs.length - 2}</div>` : '';
+
+                cell.innerHTML = `<div class="day-num">${d}</div><div class="event-bars">${barsHtml}${extraHtml}</div>`;
+                grid.appendChild(cell);
+            }
+
+            renderDayEvents();
         }
 
-        function addEvent() {
-            const date = document.getElementById('ev-date').value;
-            const title = document.getElementById('ev-title').value.trim();
-            if (!title) return;
-
-            const events = getEvents();
-            events.unshift({ id: Date.now(), date, title });
-            saveEvents(events.slice(0, 50));
-
-            document.getElementById('ev-title').value = '';
-            render();
+        function selectDay(d) {
+            selectedDay = d;
+            renderCalendar();
         }
 
-        function removeEvent(id) {
-            const events = getEvents().filter(e => e.id !== id);
-            saveEvents(events);
-            render();
+        function renderDayEvents() {
+            document.getElementById('selected-label').textContent = `Wydarzenia • ${selectedDay} ${monthNames[now.getMonth()]}`;
+            const list = document.getElementById('events-list');
+            const evs = dayEvents[selectedDay] || [];
+            if (!evs.length) {
+                list.innerHTML = '<div style="font-size:13px;color:#8e8e93;">Brak zaplanowanych wydarzeń tego dnia.</div>';
+                return;
+            }
+            list.innerHTML = evs.map(e => `<div class="ev-row"><span>${e.title}</span><span style="width:10px;height:10px;border-radius:50%;background:${e.color};"></span></div>`).join('');
         }
 
-        function render() {
-            const events = getEvents();
-            const box = document.getElementById('list');
-            box.innerHTML = '';
-            events.forEach(ev => {
-                const el = document.createElement('div');
-                el.className = 'ev';
-                el.innerHTML = `<div><div class="ev-title">${esc(ev.title)}</div><div class="ev-date">${esc(ev.date || '')}</div></div><button class="del" onclick="removeEvent(${ev.id})">✕</button>`;
-                box.appendChild(el);
+        function addQuickEvent() {
+            const title = prompt('Nazwa wydarzenia lub przypomnienia:');
+            if (!title || !title.trim()) return;
+            if (!dayEvents[selectedDay]) dayEvents[selectedDay] = [];
+            const colors = ['#ff3b30', '#0a84ff', '#30d158', '#ff9f0a'];
+            dayEvents[selectedDay].push({
+                title: title.trim(),
+                color: colors[dayEvents[selectedDay].length % colors.length]
             });
+            renderCalendar();
         }
 
-        function esc(s) {
-            return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-        }
-
-        render();
+        renderCalendar();
     </script>
 </body>
 </html>
