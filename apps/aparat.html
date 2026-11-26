@@ -5,90 +5,300 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Aparat — ZenOS</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body {
+        :root {
+            --accent: #ffd60a;
+            --rec: #ff453a;
+            --glass-bg: rgba(28, 30, 36, 0.56);
+            --glass-border: rgba(255, 255, 255, 0.24);
+            --blur: 18px;
+            --motion: 0.2s;
+        }
+
+        body.reduced-motion,
+        body.reduced-motion * {
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
             width: 100%;
             height: 100%;
             background: #000000;
             color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+            overflow: hidden;
+        }
+
+        .cam-shell {
+            position: relative;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            overflow: hidden;
+            background: #000000;
         }
-        .top-controls {
-            padding: 46px 14px 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 5;
-        }
-        .pill {
-            background: rgba(24, 24, 28, 0.72);
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            backdrop-filter: blur(16px);
-            color: #ffffff;
-            padding: 6px 12px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .viewfinder {
+
+        /* Wizjer zajmujący większość ekranu */
+        .viewfinder-wrap {
             position: relative;
             flex: 1;
-            margin: 4px 10px;
-            border-radius: 26px;
+            width: 100%;
             overflow: hidden;
-            background: radial-gradient(circle at 60% 35%, #2563eb 0%, #172554 55%, #090d16 100%);
+            background: #050507;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: transform var(--motion) ease, opacity var(--motion) ease;
         }
-        video {
+
+        .viewfinder-wrap.switching {
+            transform: scale(0.96);
+            opacity: 0.35;
+        }
+
+        .viewfinder-wrap.aspect-4-3 video {
+            aspect-ratio: 3 / 4;
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: cover;
+        }
+
+        .viewfinder-wrap.aspect-16-9 video,
+        .viewfinder-wrap.aspect-full video {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.22s ease;
         }
-        .grid-lines {
+
+        video#cam-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform-origin: center center;
+            transition: transform var(--motion) ease, filter var(--motion) ease;
+        }
+
+        video#cam-video.mirrored {
+            transform: scaleX(-1) scale(var(--zoom, 1));
+        }
+
+        video#cam-video:not(.mirrored) {
+            transform: scale(var(--zoom, 1));
+        }
+
+        /* Siatka kadrowania */
+        .grid-overlay {
+            display: none;
             position: absolute;
             inset: 0;
             pointer-events: none;
-            background-image:
-                linear-gradient(to right, rgba(255, 255, 255, 0.16) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.16) 1px, transparent 1px);
-            background-size: 33.33% 33.33%;
+            z-index: 4;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
         }
-        .crosshair {
+
+        .grid-overlay.active {
+            display: grid;
+        }
+
+        .grid-cell {
+            border-right: 1px solid rgba(255, 255, 255, 0.32);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.32);
+        }
+
+        .grid-cell:nth-child(3n) {
+            border-right: none;
+        }
+
+        .grid-cell:nth-child(n+7) {
+            border-bottom: none;
+        }
+
+        /* Wskaźnik ostrości i ekspozycji po dotknięciu */
+        .focus-reticle {
+            display: none;
             position: absolute;
-            width: 22px;
-            height: 22px;
+            width: 72px;
+            height: 72px;
+            margin-left: -36px;
+            margin-top: -36px;
+            border: 1.5px solid var(--accent);
+            border-radius: 14px;
             pointer-events: none;
+            z-index: 6;
+            box-shadow: 0 0 12px rgba(255, 214, 10, 0.35);
         }
-        .crosshair::before, .crosshair::after {
-            content: "";
-            position: absolute;
-            background: #ffd60a;
+
+        .focus-reticle.show {
+            display: block;
+            animation: focusPop 0.35s ease;
         }
-        .crosshair::before { left: 10px; top: 0; width: 1.5px; height: 22px; }
-        .crosshair::after { top: 10px; left: 0; height: 1.5px; width: 22px; }
-        .zoom-bar {
+
+        @keyframes focusPop {
+            0% { transform: scale(1.25); opacity: 0.4; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Delikatny błysk ekranu przy zdjęciu */
+        .screen-flash {
+            position: fixed;
+            inset: 0;
+            background: #ffffff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 50;
+            transition: opacity 0.14s ease;
+        }
+
+        .screen-flash.active {
+            opacity: 0.85;
+        }
+
+        /* Komunikat o braku kamery / uprawnieniach */
+        .cam-status-box {
             position: absolute;
-            bottom: 12px;
-            left: 50%;
-            transform: translateX(-50%);
+            inset: 0;
+            z-index: 5;
+            background: #07080c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px;
+            gap: 12px;
+        }
+
+        .cam-status-box.hidden {
+            display: none;
+        }
+
+        .glass-pill {
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--blur)) saturate(170%);
+            -webkit-backdrop-filter: blur(var(--blur)) saturate(170%);
+            border: 1px solid var(--glass-border);
+            color: #ffffff;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.14s ease, opacity 0.14s ease;
+        }
+
+        .glass-pill:active:not(:disabled) {
+            transform: scale(0.94);
+        }
+
+        .glass-pill:disabled {
+            opacity: 0.38;
+            cursor: not-allowed;
+        }
+
+        .glass-pill.active-opt {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Górny pasek i rozwijane ustawienia */
+        .top-bar {
+            position: absolute;
+            top: 42px;
+            left: 14px;
+            right: 14px;
+            z-index: 12;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .top-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .extra-drawer {
+            display: none;
+            position: absolute;
+            top: 84px;
+            left: 14px;
+            right: 14px;
+            z-index: 15;
+            background: rgba(20, 22, 28, 0.84);
+            backdrop-filter: blur(22px) saturate(175%);
+            -webkit-backdrop-filter: blur(22px) saturate(175%);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            padding: 12px 14px;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .extra-drawer.open {
+            display: flex;
+            animation: drawerSlide var(--motion) ease;
+        }
+
+        @keyframes drawerSlide {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .opt-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            font-size: 12.5px;
+        }
+
+        .opt-line span.lbl {
+            color: rgba(255, 255, 255, 0.75);
+            font-weight: 600;
+        }
+
+        .chip-row {
             display: flex;
             gap: 6px;
-            padding: 4px 8px;
-            border-radius: 999px;
-            background: rgba(15, 16, 20, 0.68);
-            backdrop-filter: blur(14px);
+            flex-wrap: wrap;
         }
+
+        /* Wybór przybliżenia i wskaźnik nagrywania nad migawką */
+        .hud-above-shutter {
+            position: relative;
+            z-index: 12;
+            padding: 8px 16px 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            background: #000000;
+        }
+
+        .zoom-bar {
+            display: inline-flex;
+            gap: 6px;
+            background: rgba(28, 30, 36, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            padding: 4px;
+            border-radius: 999px;
+        }
+
         .zoom-btn {
-            min-width: 32px;
-            height: 32px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             border: none;
             background: transparent;
@@ -97,291 +307,756 @@
             font-weight: 700;
             cursor: pointer;
         }
+
         .zoom-btn.active {
-            background: rgba(255, 255, 255, 0.16);
-            color: #ffd60a;
+            background: rgba(255, 255, 255, 0.22);
+            color: var(--accent);
         }
-        .snap-toast {
-            position: absolute;
-            top: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(16, 185, 129, 0.92);
-            color: #ffffff;
-            font-size: 11.5px;
+
+        .rec-badge {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            font-size: 12.5px;
             font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 999px;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
+            color: var(--rec);
+            font-variant-numeric: tabular-nums;
         }
-        .snap-toast.show { opacity: 1; }
-        .bottom-deck {
-            padding: 10px 18px 34px;
+
+        .rec-badge.active {
+            display: inline-flex;
+        }
+
+        .rec-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--rec);
+        }
+
+        .timer-countdown {
+            display: none;
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            align-items: center;
+            justify-content: center;
+            font-size: 84px;
+            font-weight: 700;
+            color: #ffffff;
+            background: rgba(0, 0, 0, 0.25);
+            pointer-events: none;
+        }
+
+        .timer-countdown.active {
+            display: flex;
+        }
+
+        /* Dolny panel: tryby + migawka + miniatura + przełącznik kamery */
+        .bottom-controls {
+            position: relative;
+            z-index: 12;
+            background: #000000;
+            padding: 6px 18px 34px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 10px;
+            gap: 14px;
         }
-        .modes {
+
+        .modes-strip {
             display: flex;
-            gap: 12px;
-            font-size: 11.5px;
+            justify-content: center;
+            gap: 18px;
+        }
+
+        .mode-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.65);
+            font-size: 12px;
             font-weight: 700;
-        }
-        .mode-item {
-            padding: 4px 10px;
-            border-radius: 999px;
-            color: rgba(255, 255, 255, 0.72);
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
             cursor: pointer;
+            padding: 4px 2px;
         }
-        .mode-item.active {
-            background: rgba(255, 255, 255, 0.14);
-            color: #ffd60a;
+
+        .mode-btn.active {
+            color: var(--accent);
         }
+
         .shutter-row {
-            width: 100%;
-            max-width: 320px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 0 8px;
         }
+
         .thumb-btn {
-            width: 44px;
-            height: 44px;
+            width: 48px;
+            height: 48px;
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.32);
-            background: #1c1c1e;
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.08);
             overflow: hidden;
-            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            cursor: pointer;
         }
+
         .thumb-btn img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        .shutter-ring {
-            width: 66px;
-            height: 66px;
+
+        .shutter-outer {
+            width: 74px;
+            height: 74px;
             border-radius: 50%;
-            border: 4px solid #ffffff;
+            border: 3.5px solid #ffffff;
             padding: 4px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform var(--motion) ease;
+        }
+
+        .shutter-outer:active:not(:disabled) {
+            transform: scale(0.92);
+        }
+
+        .shutter-outer:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .shutter-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #ffffff;
+            transition: background var(--motion) ease, border-radius var(--motion) ease, transform var(--motion) ease;
+        }
+
+        .shutter-outer.video-mode .shutter-inner {
+            background: var(--rec);
+        }
+
+        .shutter-outer.recording .shutter-inner {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            background: var(--rec);
+        }
+
+        .flip-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--blur));
+            border: 1px solid var(--glass-border);
+            color: #ffffff;
+            font-size: 19px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
         }
-        .shutter-core {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: #ffffff;
-            transition: transform 0.14s ease, background 0.2s ease, border-radius 0.2s ease;
-        }
-        .shutter-ring.video .shutter-core { background: #ff3b30; }
-        .shutter-ring.recording .shutter-core { transform: scale(0.54); border-radius: 8px; }
-        .flip-btn {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(255, 255, 255, 0.16);
-            color: #ffffff;
-            font-size: 18px;
-            cursor: pointer;
+
+        .flip-btn:active:not(:disabled) {
+            transform: scale(0.9);
         }
     </style>
 </head>
 <body>
-    <div class="top-controls">
-        <button class="pill" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
-        <button id="flash-pill" class="pill" onclick="toggleFlash()">⚡ Auto</button>
-        <span id="rec-timer" style="font-size:12px;font-weight:700;color:#ff453a;min-width:42px;text-align:right;"></span>
-    </div>
+    <div id="screen-flash" class="screen-flash"></div>
+    <div id="timer-countdown" class="timer-countdown"></div>
 
-    <div class="viewfinder">
-        <video id="cam-video" autoplay playsinline muted></video>
-        <div class="grid-lines"></div>
-        <div class="crosshair"></div>
-        <div id="snap-toast" class="snap-toast">Zapisano w Galerii</div>
-        <div id="zoom-bar" class="zoom-bar"></div>
-    </div>
+    <div class="cam-shell">
+        <div id="viewfinder-wrap" class="viewfinder-wrap aspect-4-3" onclick="handleTapFocus(event)">
+            <video id="cam-video" class="mirrored" autoplay playsinline muted></video>
 
-    <div class="bottom-deck">
-        <div class="modes">
-            <span class="mode-item" onclick="setMode('WIDEO', this)">WIDEO</span>
-            <span class="mode-item active" onclick="setMode('ZDJĘCIE', this)">ZDJĘCIE</span>
-            <span class="mode-item" onclick="setMode('PORTRET', this)">PORTRET</span>
-        </div>
-
-        <div class="shutter-row">
-            <button id="last-thumb" class="thumb-btn" onclick="parent.Kernel?.openApp('galeria')" title="Galeria">🖼️</button>
-            <div id="shutter" class="shutter-ring" onclick="triggerShutter()">
-                <div class="shutter-core"></div>
+            <div id="grid-overlay" class="grid-overlay">
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
             </div>
-            <button class="flip-btn" onclick="flipCamera()" title="Przełącz aparat">🔄</button>
+
+            <div id="focus-reticle" class="focus-reticle"></div>
+
+            <div id="cam-status-box" class="cam-status-box">
+                <div id="cam-status-title" style="font-size:17px;font-weight:700;">Uruchamianie aparatu...</div>
+                <div id="cam-status-desc" style="font-size:13px;color:rgba(255,255,255,0.7);max-width:290px;">
+                    Zezwól na dostęp do kamery w przeglądarce lub systemie.
+                </div>
+                <button id="btn-retry-cam" class="glass-pill" onclick="startCamera()">Spróbuj ponownie</button>
+            </div>
+        </div>
+
+        <!-- Górny pasek: wyjście, lampa, Live, dodatkowe ustawienia -->
+        <div class="top-bar">
+            <div class="top-group">
+                <button class="glass-pill" onclick="goHome()">‹</button>
+                <button id="btn-flash" class="glass-pill" onclick="cycleFlash()" disabled>⚡ Wył.</button>
+                <button id="btn-live" class="glass-pill" onclick="toggleLivePhoto()">◎ Live</button>
+            </div>
+            <div class="top-group">
+                <button id="btn-extra" class="glass-pill" onclick="toggleExtraDrawer()">•••</button>
+            </div>
+        </div>
+
+        <!-- Rozwijane ustawienia aparatu -->
+        <div id="extra-drawer" class="extra-drawer">
+            <div class="opt-line">
+                <span class="lbl">Timer</span>
+                <div class="chip-row">
+                    <button class="glass-pill active-opt" data-timer="0" onclick="setTimer(0)">Wył.</button>
+                    <button class="glass-pill" data-timer="3" onclick="setTimer(3)">3 s</button>
+                    <button class="glass-pill" data-timer="10" onclick="setTimer(10)">10 s</button>
+                </div>
+            </div>
+
+            <div class="opt-line">
+                <span class="lbl">Proporcje</span>
+                <div class="chip-row">
+                    <button class="glass-pill active-opt" data-aspect="4-3" onclick="setAspect('4-3')">4:3</button>
+                    <button class="glass-pill" data-aspect="16-9" onclick="setAspect('16-9')">16:9</button>
+                    <button class="glass-pill" data-aspect="full" onclick="setAspect('full')">Pełny</button>
+                </div>
+            </div>
+
+            <div class="opt-line">
+                <span class="lbl">Siatka</span>
+                <button id="btn-grid" class="glass-pill" onclick="toggleGrid()">Wyłączona</button>
+            </div>
+
+            <div class="opt-line">
+                <span class="lbl">Ekspozycja</span>
+                <input id="rng-exposure" type="range" min="-1.5" max="1.5" step="0.25" value="0" oninput="setExposure(this.value)" style="width:120px;accent-color:var(--accent);">
+            </div>
+
+            <div class="opt-line">
+                <span class="lbl">Jakość wideo</span>
+                <select id="sel-quality" onchange="setVideoQuality(this.value)" style="background:rgba(255,255,255,0.14);color:#fff;border:1px solid var(--glass-border);border-radius:10px;padding:4px 8px;font-size:12px;">
+                    <option value="720p">HD 720p</option>
+                    <option value="1080p">FHD 1080p</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Nad migawką: licznik nagrania + przybliżenie -->
+        <div class="hud-above-shutter">
+            <div id="rec-badge" class="rec-badge">
+                <span class="rec-dot"></span>
+                <span id="rec-timer-txt">00:00</span>
+            </div>
+            <div class="zoom-bar">
+                <button class="zoom-btn" data-zoom="0.7" onclick="setZoom(0.7)">.7</button>
+                <button class="zoom-btn active" data-zoom="1" onclick="setZoom(1)">1×</button>
+                <button class="zoom-btn" data-zoom="1.5" onclick="setZoom(1.5)">1.5</button>
+                <button class="zoom-btn" data-zoom="2" onclick="setZoom(2)">2×</button>
+            </div>
+        </div>
+
+        <!-- Dolny pasek: tryby + miniatura + migawka + przełącznik kamery -->
+        <div class="bottom-controls">
+            <div class="modes-strip">
+                <button class="mode-btn active" data-mode="photo" onclick="setMode('photo')">Zdjęcie</button>
+                <button class="mode-btn" data-mode="video" onclick="setMode('video')">Wideo</button>
+                <button class="mode-btn" data-mode="portrait" onclick="setMode('portrait')">Portret</button>
+                <button class="mode-btn" data-mode="panorama" onclick="setMode('panorama')">Panorama</button>
+            </div>
+
+            <div class="shutter-row">
+                <button class="thumb-btn" onclick="openGallery()" title="Ostatnie zdjęcie w Galerii">
+                    <img id="last-thumb-img" src="" alt="" style="display:none;">
+                    <span id="last-thumb-empty" style="font-size:16px;">🖼️</span>
+                </button>
+
+                <button id="btn-shutter" class="shutter-outer" onclick="triggerShutter()" disabled aria-label="Migawka">
+                    <div class="shutter-inner"></div>
+                </button>
+
+                <button id="btn-flip" class="flip-btn" onclick="flipCamera()" disabled title="Zmień kamerę">🔄</button>
+            </div>
         </div>
     </div>
 
-    <canvas id="snap-canvas" style="display:none;"></canvas>
+    <canvas id="capture-canvas" style="display:none;"></canvas>
 
     <script>
-        let currentMode = 'ZDJĘCIE';
-        let currentZoom = 1;
-        let facingMode = 'environment';
-        let stream = null;
-        let recording = false;
+        const GALLERY_KEY = 'zenos_gallery_v1';
+        const SETTINGS_KEY = 'zenos_settings_v1';
+
+        let currentStream = null;
+        let facingMode = 'environment'; // 'environment' lub 'user'
+        let cameraReady = false;
+        let hasTorch = false;
+        let flashMode = 'off'; // 'off' | 'on'
+        let livePhoto = true;
+        let mode = 'photo'; // 'photo' | 'video' | 'portrait' | 'panorama'
+        let timerSec = 0;
+        let aspectMode = '4-3';
+        let gridEnabled = false;
+        let exposureVal = 0;
+        let videoQuality = '720p';
+        let zoomVal = 1;
+
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
         let recSeconds = 0;
         let recInterval = null;
-        let hasUltraWide = false;
+        let timerRunning = false;
 
-        async function initCamera() {
-            if (stream) stream.getTracks().forEach(t => t.stop());
+        function syncZenOSSettings() {
             try {
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false });
-                    const video = document.getElementById('cam-video');
-                    video.srcObject = stream;
-                    const track = stream.getVideoTracks()[0];
-                    const caps = track?.getCapabilities ? track.getCapabilities() : {};
-                    hasUltraWide = Boolean(caps.zoom && typeof caps.zoom.min === 'number' && caps.zoom.min <= 0.6);
-                } else {
-                    hasUltraWide = false;
+                const raw = localStorage.getItem(SETTINGS_KEY);
+                if (raw) {
+                    const s = JSON.parse(raw);
+                    document.body.classList.toggle('reduced-motion', Boolean(s.reduceMotion));
+                    if (s.accent) document.documentElement.style.setProperty('--accent', s.accent);
                 }
-            } catch {
-                hasUltraWide = false;
-            }
-            renderZoomButtons();
-            loadLastThumb();
-        }
-
-        function renderZoomButtons() {
-            const bar = document.getElementById('zoom-bar');
-            const levels = hasUltraWide ? [0.5, 1, 2] : [1, 2];
-            if (!levels.includes(currentZoom)) currentZoom = 1;
-            bar.innerHTML = levels.map(z => `
-                <button class="zoom-btn ${currentZoom === z ? 'active' : ''}" onclick="setZoom(${z})">${z === 0.5 ? '0,5' : z + 'x'}</button>
-            `).join('');
-        }
-
-        function setZoom(z) {
-            currentZoom = z;
-            const scale = z < 1 ? 1 : z;
-            document.getElementById('cam-video').style.transform = `scale(${scale})`;
-            renderZoomButtons();
-        }
-
-        function setMode(mode, el) {
-            currentMode = mode;
-            document.querySelectorAll('.mode-item').forEach(m => m.classList.remove('active'));
-            el.classList.add('active');
-            document.getElementById('shutter').classList.toggle('video', mode === 'WIDEO');
-        }
-
-        function toggleFlash() {
-            const btn = document.getElementById('flash-pill');
-            btn.textContent = btn.textContent.includes('Auto') ? '⚡ Wł.' : '⚡ Auto';
-        }
-
-        function flipCamera() {
-            facingMode = facingMode === 'environment' ? 'user' : 'environment';
-            initCamera();
-        }
-
-        function readPhotos() {
-            try {
-                const fromParent = parent.StorageManager?.get('gallery_photos', null);
-                if (Array.isArray(fromParent)) return fromParent;
             } catch {}
+        }
+
+        function setStatusBox(show, title = '', desc = '') {
+            const box = document.getElementById('cam-status-box');
+            box.classList.toggle('hidden', !show);
+            if (show) {
+                document.getElementById('cam-status-title').textContent = title;
+                document.getElementById('cam-status-desc').textContent = desc;
+            }
+        }
+
+        async function detectCameraCapabilities() {
+            let videoInputs = 0;
             try {
-                return JSON.parse(localStorage.getItem('zenos_gallery_photos') || '[]');
-            } catch {
-                return [];
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                videoInputs = devices.filter(d => d.kind === 'videoinput').length;
+            } catch {}
+
+            document.getElementById('btn-flip').disabled = !cameraReady || videoInputs < 2;
+
+            let torchSupported = false;
+            try {
+                const track = currentStream?.getVideoTracks?.()[0];
+                const caps = track?.getCapabilities?.();
+                torchSupported = Boolean(caps && 'torch' in caps);
+            } catch {}
+
+            hasTorch = torchSupported;
+            const flashBtn = document.getElementById('btn-flash');
+            flashBtn.disabled = !cameraReady || !hasTorch;
+            if (!hasTorch) {
+                flashMode = 'off';
+                flashBtn.textContent = '⚡ Niedostępna';
+            } else {
+                flashBtn.textContent = flashMode === 'on' ? '⚡ Wł.' : '⚡ Wył.';
             }
         }
 
-        function savePhotos(list) {
-            try { parent.StorageManager?.set('gallery_photos', list); } catch {}
-            try { localStorage.setItem('zenos_gallery_photos', JSON.stringify(list)); } catch {}
+        async function applyTorch(enabled) {
+            if (!hasTorch || !currentStream) return;
+            try {
+                const track = currentStream.getVideoTracks()[0];
+                await track.applyConstraints({ advanced: [{ torch: Boolean(enabled) }] });
+            } catch {}
         }
 
-        function loadLastThumb() {
-            const list = readPhotos();
-            if (list.length && list[0].dataUrl) {
-                document.getElementById('last-thumb').innerHTML = `<img src="${list[0].dataUrl}" alt="Ostatnie">`;
-            }
-        }
+        async function startCamera() {
+            stopStream();
+            cameraReady = false;
+            document.getElementById('btn-shutter').disabled = true;
+            document.getElementById('btn-flip').disabled = true;
+            document.getElementById('btn-flash').disabled = true;
 
-        function showSavedToast() {
-            const t = document.getElementById('snap-toast');
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 1400);
-        }
-
-        function triggerShutter() {
-            if (currentMode === 'WIDEO') {
-                recording = !recording;
-                const ring = document.getElementById('shutter');
-                const timerEl = document.getElementById('rec-timer');
-                ring.classList.toggle('recording', recording);
-                if (recording) {
-                    recSeconds = 0;
-                    timerEl.textContent = '00:00';
-                    recInterval = setInterval(() => {
-                        recSeconds++;
-                        const m = String(Math.floor(recSeconds / 60)).padStart(2, '0');
-                        const s = String(recSeconds % 60).padStart(2, '0');
-                        timerEl.textContent = `${m}:${s}`;
-                    }, 1000);
-                } else {
-                    clearInterval(recInterval);
-                    timerEl.textContent = '';
-                }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                setStatusBox(true, 'Brak obsługi aparatu', 'Przeglądarka nie udostępnia dostępu do kamery (getUserMedia).');
                 return;
             }
 
-            const video = document.getElementById('cam-video');
-            const canvas = document.getElementById('snap-canvas');
-            canvas.width = video.videoWidth || 420;
-            canvas.height = video.videoHeight || 560;
-            const ctx = canvas.getContext('2d');
+            setStatusBox(true, 'Łączenie z kamerą...', 'Sprawdzanie uprawnień aparatu i mikrofonu.');
 
-            if (video.videoWidth > 0 && video.videoHeight > 0) {
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            } else {
-                const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-                grad.addColorStop(0, '#38bdf8');
-                grad.addColorStop(0.55, '#2563eb');
-                grad.addColorStop(1, '#0f172a');
-                ctx.fillStyle = grad;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            const isVideo = mode === 'video';
+            const dims = videoQuality === '1080p'
+                ? { width: { ideal: 1920 }, height: { ideal: 1080 } }
+                : { width: { ideal: 1280 }, height: { ideal: 720 } };
 
-                ctx.fillStyle = 'rgba(255,255,255,0.22)';
-                ctx.beginPath();
-                ctx.arc(canvas.width * 0.68, canvas.height * 0.3, canvas.width * 0.2, 0, Math.PI * 2);
-                ctx.fill();
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: { ideal: facingMode },
+                        ...dims
+                    },
+                    audio: isVideo
+                };
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                const videoEl = document.getElementById('cam-video');
+                videoEl.srcObject = currentStream;
+                videoEl.classList.toggle('mirrored', facingMode === 'user');
+
+                await videoEl.play().catch(() => {});
+                cameraReady = true;
+                setStatusBox(false);
+                document.getElementById('btn-shutter').disabled = false;
+                await detectCameraCapabilities();
+            } catch (err) {
+                // Jeśli mikrofon jest zablokowany w trybie wideo, spróbuj samego obrazu wideo
+                if (isVideo) {
+                    try {
+                        currentStream = await navigator.mediaDevices.getUserMedia({
+                            video: { facingMode: { ideal: facingMode }, ...dims },
+                            audio: false
+                        });
+                        const videoEl = document.getElementById('cam-video');
+                        videoEl.srcObject = currentStream;
+                        videoEl.classList.toggle('mirrored', facingMode === 'user');
+                        await videoEl.play().catch(() => {});
+                        cameraReady = true;
+                        setStatusBox(false);
+                        document.getElementById('btn-shutter').disabled = false;
+                        await detectCameraCapabilities();
+                        return;
+                    } catch {}
+                }
+
+                const denied = err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError');
+                setStatusBox(
+                    true,
+                    denied ? 'Brak uprawnień do kamery' : 'Nie można uruchomić kamery',
+                    denied
+                        ? 'Nadaj uprawnienie do aparatu w ustawieniach przeglądarki lub ZenOS.'
+                        : 'Upewnij się, że żadna inna aplikacja nie blokuje kamery.'
+                );
             }
-
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
-            const existing = readPhotos();
-            const stamp = new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            existing.unshift({
-                id: Date.now(),
-                title: `Zdjęcie ${stamp}`,
-                album: 'Ostatnie',
-                dataUrl
-            });
-            savePhotos(existing.slice(0, 12));
-            loadLastThumb();
-            showSavedToast();
         }
 
-        initCamera();
+        function stopStream() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(t => t.stop());
+                currentStream = null;
+            }
+        }
+
+        async function flipCamera() {
+            if (isRecording) return;
+            const vf = document.getElementById('viewfinder-wrap');
+            vf.classList.add('switching');
+            facingMode = facingMode === 'environment' ? 'user' : 'environment';
+            await startCamera();
+            setTimeout(() => vf.classList.remove('switching'), 160);
+        }
+
+        async function cycleFlash() {
+            if (!hasTorch) return;
+            flashMode = flashMode === 'on' ? 'off' : 'on';
+            document.getElementById('btn-flash').textContent = flashMode === 'on' ? '⚡ Wł.' : '⚡ Wył.';
+            await applyTorch(flashMode === 'on');
+        }
+
+        function toggleLivePhoto() {
+            livePhoto = !livePhoto;
+            document.getElementById('btn-live').classList.toggle('active-opt', livePhoto);
+        }
+
+        function toggleExtraDrawer() {
+            document.getElementById('extra-drawer').classList.toggle('open');
+        }
+
+        function setTimer(sec) {
+            timerSec = sec;
+            document.querySelectorAll('[data-timer]').forEach(b => b.classList.toggle('active-opt', Number(b.dataset.timer) === sec));
+        }
+
+        function setAspect(asp) {
+            aspectMode = asp;
+            const vf = document.getElementById('viewfinder-wrap');
+            vf.classList.remove('aspect-4-3', 'aspect-16-9', 'aspect-full');
+            vf.classList.add(`aspect-${asp}`);
+            document.querySelectorAll('[data-aspect]').forEach(b => b.classList.toggle('active-opt', b.dataset.aspect === asp));
+        }
+
+        function toggleGrid() {
+            gridEnabled = !gridEnabled;
+            document.getElementById('grid-overlay').classList.toggle('active', gridEnabled);
+            const btn = document.getElementById('btn-grid');
+            btn.textContent = gridEnabled ? 'Włączona' : 'Wyłączona';
+            btn.classList.toggle('active-opt', gridEnabled);
+        }
+
+        function setExposure(val) {
+            exposureVal = Number(val);
+            applyFilterStyle();
+        }
+
+        function applyFilterStyle() {
+            const videoEl = document.getElementById('cam-video');
+            const bright = Math.max(0.4, Math.min(1.8, 1 + exposureVal * 0.25));
+            const portraitBlur = mode === 'portrait' ? 'contrast(1.06) saturate(1.08)' : 'none';
+            videoEl.style.filter = `brightness(${bright}) ${portraitBlur}`;
+        }
+
+        function setVideoQuality(q) {
+            videoQuality = q;
+            if (cameraReady && !isRecording) startCamera();
+        }
+
+        function setZoom(z) {
+            zoomVal = Number(z);
+            document.documentElement.style.setProperty('--zoom', String(zoomVal));
+            document.querySelectorAll('[data-zoom]').forEach(b => b.classList.toggle('active', Number(b.dataset.zoom) === zoomVal));
+        }
+
+        function setMode(nextMode) {
+            if (isRecording) return;
+            const prevMode = mode;
+            mode = nextMode;
+            document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === nextMode));
+            const shutter = document.getElementById('btn-shutter');
+            shutter.classList.toggle('video-mode', nextMode === 'video');
+            applyFilterStyle();
+
+            if ((prevMode === 'video') !== (nextMode === 'video')) {
+                startCamera();
+            }
+        }
+
+        function handleTapFocus(e) {
+            if (!cameraReady || e.target.closest('button, select, input')) return;
+            const rect = document.getElementById('viewfinder-wrap').getBoundingClientRect();
+            const reticle = document.getElementById('focus-reticle');
+            reticle.style.left = `${e.clientX - rect.left}px`;
+            reticle.style.top = `${e.clientY - rect.top}px`;
+            reticle.classList.remove('show');
+            void reticle.offsetWidth;
+            reticle.classList.add('show');
+
+            try {
+                const track = currentStream?.getVideoTracks?.()[0];
+                const caps = track?.getCapabilities?.();
+                if (caps?.focusMode?.includes?.('continuous')) {
+                    track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+                }
+            } catch {}
+        }
+
+        async function runCountdownIfNeeded() {
+            if (timerSec <= 0 || timerRunning) return true;
+            timerRunning = true;
+            const el = document.getElementById('timer-countdown');
+            el.classList.add('active');
+            for (let s = timerSec; s >= 1; s--) {
+                el.textContent = String(s);
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            el.classList.remove('active');
+            timerRunning = false;
+            return true;
+        }
+
+        async function triggerShutter() {
+            if (!cameraReady || timerRunning) return;
+            if (mode === 'video') {
+                if (!isRecording) {
+                    await runCountdownIfNeeded();
+                    startVideoRecording();
+                } else {
+                    stopVideoRecording();
+                }
+                return;
+            }
+            await runCountdownIfNeeded();
+            await takePhoto();
+        }
+
+        async function takePhoto() {
+            const videoEl = document.getElementById('cam-video');
+            if (!videoEl.videoWidth || !videoEl.videoHeight) return;
+
+            if (hasTorch && flashMode === 'on') await applyTorch(true);
+
+            const flashEl = document.getElementById('screen-flash');
+            flashEl.classList.add('active');
+            setTimeout(() => flashEl.classList.remove('active'), 140);
+
+            const canvas = document.getElementById('capture-canvas');
+            const vw = videoEl.videoWidth;
+            const vh = videoEl.videoHeight;
+
+            let outW = vw;
+            let outH = vh;
+            if (aspectMode === '4-3') {
+                outH = Math.min(vh, Math.round(vw * (4 / 3)));
+            } else if (aspectMode === '16-9') {
+                outH = Math.min(vh, Math.round(vw * (9 / 16)));
+            }
+
+            canvas.width = outW;
+            canvas.height = outH;
+            const ctx = canvas.getContext('2d');
+            ctx.save();
+
+            const bright = Math.max(0.4, Math.min(1.8, 1 + exposureVal * 0.25));
+            ctx.filter = `brightness(${bright})`;
+
+            if (facingMode === 'user') {
+                ctx.translate(outW, 0);
+                ctx.scale(-1, 1);
+            }
+
+            const srcW = vw / zoomVal;
+            const srcH = (outH / outW) * srcW;
+            const sx = (vw - srcW) / 2;
+            const sy = Math.max(0, (vh - srcH) / 2);
+
+            ctx.drawImage(videoEl, sx, sy, srcW, srcH, 0, 0, outW, outH);
+            ctx.restore();
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            saveMediaToGallery({
+                id: `media-${Date.now()}`,
+                type: 'image',
+                mode,
+                livePhoto: mode === 'photo' && livePhoto,
+                dataUrl,
+                createdAt: new Date().toISOString()
+            });
+
+            if (hasTorch && flashMode === 'on') await applyTorch(false);
+        }
+
+        function startVideoRecording() {
+            if (!currentStream || typeof MediaRecorder === 'undefined') return;
+            recordedChunks = [];
+            try {
+                mediaRecorder = new MediaRecorder(currentStream);
+            } catch {
+                return;
+            }
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+                const reader = new FileReader();
+                reader.onload = () => {
+                    saveMediaToGallery({
+                        id: `vid-${Date.now()}`,
+                        type: 'video',
+                        mode: 'video',
+                        durationSec: recSeconds,
+                        dataUrl: String(reader.result || ''),
+                        createdAt: new Date().toISOString()
+                    });
+                };
+                reader.readAsDataURL(blob);
+            };
+
+            mediaRecorder.start();
+            isRecording = true;
+            recSeconds = 0;
+            document.getElementById('btn-shutter').classList.add('recording');
+            document.getElementById('rec-badge').classList.add('active');
+            updateRecClock();
+            recInterval = setInterval(() => {
+                recSeconds += 1;
+                updateRecClock();
+            }, 1000);
+        }
+
+        function stopVideoRecording() {
+            if (!isRecording) return;
+            isRecording = false;
+            clearInterval(recInterval);
+            document.getElementById('btn-shutter').classList.remove('recording');
+            document.getElementById('rec-badge').classList.remove('active');
+            try { mediaRecorder?.stop(); } catch {}
+        }
+
+        function updateRecClock() {
+            const m = String(Math.floor(recSeconds / 60)).padStart(2, '0');
+            const s = String(recSeconds % 60).padStart(2, '0');
+            document.getElementById('rec-timer-txt').textContent = `${m}:${s}`;
+        }
+
+        function saveMediaToGallery(item) {
+            let list = [];
+            try {
+                const raw = localStorage.getItem(GALLERY_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    list = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.items) ? parsed.items : []);
+                }
+            } catch {}
+
+            list.unshift(item);
+            try {
+                localStorage.setItem(GALLERY_KEY, JSON.stringify(list.slice(0, 60)));
+            } catch {}
+
+            refreshLastThumbnail(list);
+
+            try {
+                parent.postMessage({ type: 'GALLERY_UPDATED', item }, '*');
+                parent.NotificationsManager?.push?.({
+                    app: 'Aparat',
+                    title: item.type === 'video' ? 'Zapisano nagranie wideo' : 'Zapisano zdjęcie',
+                    body: 'Dodano do aplikacji Galeria.'
+                });
+            } catch {}
+        }
+
+        function refreshLastThumbnail(existingList = null) {
+            let list = existingList;
+            if (!list) {
+                try {
+                    const raw = localStorage.getItem(GALLERY_KEY);
+                    const parsed = raw ? JSON.parse(raw) : [];
+                    list = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.items) ? parsed.items : []);
+                } catch {
+                    list = [];
+                }
+            }
+            const first = list[0];
+            const img = document.getElementById('last-thumb-img');
+            const empty = document.getElementById('last-thumb-empty');
+            if (first && first.dataUrl && first.type === 'image') {
+                img.src = first.dataUrl;
+                img.style.display = 'block';
+                empty.style.display = 'none';
+            } else if (first && first.type === 'video') {
+                img.style.display = 'none';
+                empty.style.display = 'block';
+                empty.textContent = '🎬';
+            } else {
+                img.style.display = 'none';
+                empty.style.display = 'block';
+                empty.textContent = '🖼️';
+            }
+        }
+
+        function openGallery() {
+            try { parent.Kernel?.openApp?.('galeria'); } catch {}
+        }
+
+        function goHome() {
+            stopStream();
+            try { parent.Kernel?.goHome?.(); } catch {}
+        }
+
+        window.addEventListener('beforeunload', stopStream);
+
+        syncZenOSSettings();
+        refreshLastThumbnail();
+        startCamera();
     </script>
 </body>
 </html>
