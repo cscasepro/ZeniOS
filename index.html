@@ -8,87 +8,84 @@
     <link id="icon-style-sheet" rel="stylesheet" href="system/icon-styles/liquid.css">
 </head>
 <body data-icon-style="liquid">
-    <!-- Pełnoekranowa tapeta + warstwy efektów -->
     <div id="wallpaper-layer"></div>
     <div id="brightness-veil"></div>
     <div id="torch-veil"></div>
 
-    <!-- Ekran ładowania przy starcie -->
     <iframe id="boot-screen-frame" src="boot/boot-screen.html" class="boot-overlay"></iframe>
 
-    <!-- Zwykły pasek statusu (bez Dynamic Island / wyspy) -->
-    <header id="status-bar" class="priority-top">
-        <div class="status-left">
-            <span id="clock">09:41</span>
-            <span id="focus-badge" style="display:none;" title="Tryb skupienia">🌙</span>
-            <span id="battery-badge" style="display:none;" title="Ochrona baterii">🔋</span>
-            <span id="flashlight-indicator" style="display:none;" title="Latarka">🔦</span>
-        </div>
-        <div class="status-right">
-            <span id="perf-badge" title="Priorytet i tryb pracy">⚡ TOP-1</span>
-            <span title="Zasięg">📶</span>
-            <span title="Wi-Fi">🛜</span>
-            <span id="battery-pct" title="Bateria">100%</span>
-        </div>
-    </header>
-
-    <!-- Ekran główny (widżety + strony ikon + Szukaj + nieruchomy kapsułowy Dock) -->
-    <main id="desktop" class="priority-top">
-        <div class="pages-viewport" id="pages-viewport">
-            <div id="pages-track" class="pages-track">
-                <section class="home-page" data-page="0">
-                    <iframe id="widgets-frame" src="modules/widgets.html" class="widgets-box"></iframe>
-                    <div id="app-grid-1" class="app-grid"></div>
-                </section>
-                <section class="home-page" data-page="1">
-                    <div id="app-grid-2" class="app-grid"></div>
-                </section>
+    <div id="os-shell">
+        <header id="status-bar" class="priority-top">
+            <div class="status-left">
+                <span id="clock">15:19</span>
+                <span id="focus-badge" style="display:none;" title="Tryb skupienia">🌙</span>
+                <span id="battery-badge" style="display:none;" title="Ochrona baterii">🔋</span>
+                <span id="flashlight-indicator" style="display:none;" title="Latarka">🔦</span>
             </div>
-        </div>
+            <div class="status-right">
+                <span id="perf-badge" title="Priorytet i tryb pracy">⚡ TOP-1</span>
+                <span id="charging-icon" style="display:none;" title="Ładowanie">⚡</span>
+                <span id="battery-pct" title="Bateria">100%</span>
+            </div>
+        </header>
 
-        <div class="dock-zone">
-            <div class="page-dots">
-                <button id="dot-1" class="dot-btn active" onclick="Display.goPage(0)" aria-label="Strona 1"></button>
-                <button id="dot-2" class="dot-btn" onclick="Display.goPage(1)" aria-label="Strona 2"></button>
+        <main id="desktop" class="priority-top">
+            <div class="pages-viewport" id="pages-viewport">
+                <div id="pages-track" class="pages-track">
+                    <section class="home-page" data-page="0">
+                        <iframe id="widgets-frame" src="modules/widgets.html" class="widgets-box"></iframe>
+                        <div id="app-grid-1" class="app-grid"></div>
+                    </section>
+                    <section class="home-page" data-page="1">
+                        <div id="app-grid-2" class="app-grid"></div>
+                    </section>
+                </div>
             </div>
 
-            <button class="search-capsule liquid-glass" onclick="Kernel.toggleSearch()">
-                <span>🔍</span><span>Szukaj</span>
-            </button>
+            <div class="dock-zone">
+                <div class="page-dots">
+                    <button id="dot-1" class="dot-btn active" onclick="Display.goPage(0)" aria-label="Strona 1"></button>
+                    <button id="dot-2" class="dot-btn" onclick="Display.goPage(1)" aria-label="Strona 2"></button>
+                </div>
 
-            <nav id="iphone-dock" class="dock-capsule liquid-glass"></nav>
+                <button class="search-capsule liquid-glass" onclick="Kernel.toggleSearch()">
+                    <span>🔍</span><span>Szukaj</span>
+                </button>
+
+                <nav id="iphone-dock" class="dock-capsule liquid-glass"></nav>
+            </div>
+        </main>
+
+        <div id="app-container"></div>
+
+        <iframe id="search-frame" src="modules/search.html" class="system-overlay hidden"></iframe>
+        <iframe id="notifications-frame" src="modules/notifications.html" class="system-overlay hidden"></iframe>
+        <iframe id="control-center-frame" src="modules/control-center.html" class="system-overlay hidden"></iframe>
+        <iframe id="lockscreen-frame" src="modules/lockscreen.html" class="system-overlay"></iframe>
+
+        <div id="recents-view" class="hidden liquid-glass">
+            <h3>Aktywne zakładki w pamięci</h3>
+            <div id="recents-list"></div>
+            <button class="btn-close-all" onclick="PerformanceManager.purgeBackground()">Wyczyść pamięć tła</button>
         </div>
-    </main>
 
-    <!-- Kontener odizolowanych aplikacji (iframe) -->
-    <div id="app-container"></div>
-
-    <!-- Moduły systemowe -->
-    <iframe id="search-frame" src="modules/search.html" class="system-overlay hidden"></iframe>
-    <iframe id="notifications-frame" src="modules/notifications.html" class="system-overlay hidden"></iframe>
-    <iframe id="control-center-frame" src="modules/control-center.html" class="system-overlay hidden"></iframe>
-    <iframe id="lockscreen-frame" src="modules/lockscreen.html" class="system-overlay"></iframe>
-
-    <!-- Pasek systemowy na dole -->
-    <footer id="nav-bar" class="priority-top">
-        <button onclick="Kernel.showRecents()" title="Ostatnie zakładki">▢</button>
-        <button onclick="Kernel.goHome()" title="Ekran główny">●</button>
-        <button onclick="Kernel.toggleNotifications()" title="Powiadomienia">🔔</button>
-        <button onclick="Kernel.toggleControlCenter()" title="Centrum sterowania">☰</button>
-        <button onclick="Kernel.lockDevice()" title="Zablokuj ekran">🔒</button>
-    </footer>
-
-    <!-- Widok ostatnich zakładek -->
-    <div id="recents-view" class="hidden liquid-glass">
-        <h3>Aktywne zakładki w pamięci</h3>
-        <div id="recents-list"></div>
-        <button class="btn-close-all" onclick="PerformanceManager.purgeBackground()">Wyczyść pamięć tła</button>
+        <!-- Home Indicator na dole zamiast ciężkiego paska -->
+        <div id="home-indicator-zone" class="priority-top">
+            <div class="quick-sys-pills">
+                <button onclick="Kernel.goHome()" title="Ekran główny">● Pulpit</button>
+                <button onclick="Kernel.showRecents()" title="Ostatnie">▢ Pamięć</button>
+                <button onclick="Kernel.toggleNotifications()" title="Powiadomienia">🔔</button>
+                <button onclick="Kernel.toggleControlCenter()" title="Centrum sterowania">☰</button>
+                <button onclick="Kernel.lockDevice()" title="Zablokuj">🔒</button>
+            </div>
+            <button id="home-indicator" onclick="Kernel.goHome()" aria-label="Home Indicator"></button>
+        </div>
     </div>
 
-    <!-- Warstwy skryptów -->
     <script src="boot/bootloader.js"></script>
     <script src="system/manifest.js"></script>
     <script src="system/storage.js"></script>
+    <script src="system/device-telemetry.js"></script>
     <script src="system/battery-saver.js"></script>
     <script src="system/performance.js"></script>
     <script src="system/watchdog.js"></script>
