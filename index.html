@@ -15,6 +15,12 @@
             background-position: center;
             background-repeat: no-repeat;
             pointer-events: none;
+            transition: filter 0.25s ease;
+        }
+
+        #wallpaper-layer.blurred {
+            filter: blur(14px) brightness(0.82);
+            transform: scale(1.04);
         }
 
         #wallpaper-picker-modal {
@@ -37,7 +43,7 @@
         .wp-sheet {
             width: 100%;
             max-width: 440px;
-            background: rgba(24, 25, 32, 0.92);
+            background: rgba(24, 25, 32, 0.94);
             color: #ffffff;
             border: 1px solid rgba(255, 255, 255, 0.16);
             border-radius: 26px;
@@ -198,7 +204,6 @@
     <script src="system/battery-saver.js"></script>
     <script src="system/performance.js"></script>
     <script src="system/watchdog.js"></script>
-    <script src="system/supervisor.js"></script>
     <script src="system/notifications.js"></script>
     <script src="system/focus-mode.js"></script>
     <script src="system/icon-theme.js"></script>
@@ -207,6 +212,7 @@
     <script src="system/widgets.js"></script>
     <script src="system/search.js"></script>
     <script src="system/kernel.js"></script>
+    <script src="modules/wallpaper-manager.js"></script>
 
     <script>
         (function initZenOSWallpaperControls() {
@@ -341,7 +347,6 @@
                 e.target.value = '';
             });
 
-            // Przytrzymanie na pustym obszarze ekranu otwiera wybór tapety
             let pressTimer = null;
             let startX = 0;
             let startY = 0;
@@ -355,7 +360,7 @@
 
             const lpTarget = desktop || document.body;
             lpTarget.addEventListener('pointerdown', (e) => {
-                if (e.target.closest('button, a, input, iframe, .app-icon, .widget, .dock-zone, #wp-picker-modal')) return;
+                if (e.target.closest('button, a, input, iframe, .app-icon, .widget, .dock-zone, #wallpaper-picker-modal')) return;
                 startX = e.clientX;
                 startY = e.clientY;
                 cancelPress();
@@ -379,7 +384,6 @@
                 });
             });
 
-            // Komunikacja z Ustawieniami lub innymi ramkami
             window.addEventListener('message', (e) => {
                 const data = e.data;
                 if (!data || !data.type) return;
@@ -405,6 +409,9 @@
                 setCustomWallpaper(dataUrl) {
                     state = { id: 'custom', customUrl: dataUrl };
                     applyWallpaper();
+                },
+                setBlur(enabled) {
+                    layer?.classList.toggle('blurred', Boolean(enabled));
                 },
                 getList() {
                     return WALLPAPERS.slice();
