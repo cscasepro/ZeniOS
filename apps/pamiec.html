@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pamięć ZenOS</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body {
+            min-height: 100vh;
+            background: #f2f2f7;
+            color: #111827;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+            padding: 54px 18px 84px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .back-pill {
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            color: #111827;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 22px;
+            padding: 16px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .summary-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .summary-val {
+            font-size: 14px;
+            font-weight: 600;
+            color: #6b7280;
+        }
+        .free-center {
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+        }
+        .storage-bar {
+            height: 16px;
+            border-radius: 999px;
+            background: #e5e7eb;
+            overflow: hidden;
+            display: flex;
+            gap: 2px;
+        }
+        .seg-apps { background: #ef4444; height: 100%; transition: width 0.3s ease; }
+        .seg-media { background: #f59e0b; height: 100%; transition: width 0.3s ease; }
+        .seg-os { background: #6b7280; height: 100%; transition: width 0.3s ease; }
+        .seg-sys { background: #9ca3af; height: 100%; transition: width 0.3s ease; }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 12px;
+            color: #374151;
+        }
+        .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .rec-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .action-link {
+            background: none;
+            border: none;
+            color: #0a84ff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <button class="back-pill" onclick="parent.Kernel?.goHome()">‹ Wróć</button>
+        <h1 style="font-size:17px;font-weight:700;">Pamięć ZenOS</h1>
+        <span style="width:62px;"></span>
+    </div>
+
+    <div class="card">
+        <div class="summary-head">
+            <strong style="font-size:15px;">ZenOS</strong>
+            <span id="used-summary" class="summary-val">49.54 GB z 256 GB użyte</span>
+        </div>
+
+        <div id="free-summary" class="free-center">206.46 GB wolne</div>
+
+        <div class="storage-bar">
+            <div id="bar-apps" class="seg-apps" style="width:10%;"></div>
+            <div id="bar-media" class="seg-media" style="width:4%;"></div>
+            <div id="bar-os" class="seg-os" style="width:6%;"></div>
+            <div id="bar-sys" class="seg-sys" style="width:3%;"></div>
+        </div>
+
+        <div class="legend">
+            <span><i class="dot" style="background:#ef4444;"></i>Aplikacje</span>
+            <span><i class="dot" style="background:#f59e0b;"></i>Multimedia</span>
+            <span><i class="dot" style="background:#6b7280;"></i>ZenOS</span>
+            <span><i class="dot" style="background:#9ca3af;"></i>Dane systemowe</span>
+        </div>
+    </div>
+
+    <div style="font-size:13px;font-weight:600;color:#6b7280;padding-left:4px;">Rekomendacje</div>
+
+    <div class="card">
+        <div class="rec-row">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:24px;">🧹</span>
+                <div>
+                    <div style="font-size:14px;font-weight:700;">Optymalizacja pamięci tymczasowej</div>
+                    <div id="clean-desc" style="font-size:12.5px;color:#6b7280;margin-top:2px;">Zwolnij do 145.2 MB pamięci podręcznej i plików tymczasowych bez utraty danych.</div>
+                </div>
+            </div>
+            <button id="clean-btn" class="action-link" onclick="runCleanup()">Wyczyść</button>
+        </div>
+    </div>
+
+    <script>
+        let usedGb = 49.54;
+        const totalGb = 256;
+        let cleaned = false;
+
+        function refreshView() {
+            const freeGb = (totalGb - usedGb).toFixed(2);
+            document.getElementById('used-summary').textContent = `${usedGb.toFixed(2)} GB z ${totalGb} GB użyte`;
+            document.getElementById('free-summary').textContent = `${freeGb} GB wolne`;
+            if (cleaned) {
+                document.getElementById('bar-sys').style.width = '1.5%';
+                document.getElementById('clean-btn').textContent = 'Gotowe';
+                document.getElementById('clean-desc').textContent = 'Pamięć tymczasowa została oczyszczona.';
+            }
+        }
+
+        function runCleanup() {
+            if (cleaned) return;
+            usedGb = Math.max(10, Number((usedGb - 0.14).toFixed(2)));
+            cleaned = true;
+            refreshView();
+            parent.postMessage({ type: 'STORAGE_CLEANED', freedMb: 145.2 }, '*');
+        }
+
+        refreshView();
+    </script>
+</body>
+</html>
