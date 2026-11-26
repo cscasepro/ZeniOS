@@ -1,523 +1,76 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>ZeniOS</title>
-  <link rel="stylesheet" href="zenios.css" />
-  <link rel="stylesheet" href="zeni-v3.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZeniOS v1.0.2</title>
+    <link rel="stylesheet" href="system/theme.css">
+    <link id="icon-style-sheet" rel="stylesheet" href="system/icon-styles/color.css">
 </head>
 <body>
-  <div class="phone-screen">
-    <!-- Pasek statusu -->
-    <div class="status-bar-overlay" id="status-bar-overlay" aria-hidden="true">
-      <span class="status-clock" id="status-clock">16:26</span>
-      <span class="status-right">
-        <svg class="status-signal" viewBox="0 0 17 11" fill="currentColor" aria-label="Zasięg">
-          <rect x="0" y="7.5" width="3" height="3.5" rx="0.8"/>
-          <rect x="4.7" y="5" width="3" height="6" rx="0.8"/>
-          <rect x="9.4" y="2.5" width="3" height="8.5" rx="0.8"/>
-          <rect x="14" y="0" width="3" height="11" rx="0.8"/>
-        </svg>
-        <svg class="status-wifi" viewBox="0 0 24 17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-label="Wi-Fi">
-          <path d="M2 6.2a14.5 14.5 0 0 1 20 0"/>
-          <path d="M5.7 10.2a9.2 9.2 0 0 1 12.6 0"/>
-          <path d="M9.3 14a4 4 0 0 1 5.4 0"/>
-        </svg>
-        <span class="status-battery" id="status-battery" data-level="94" role="img" aria-label="Bateria 94%">
-          <svg class="battery-bolt" viewBox="0 0 6 10" aria-hidden="true"><path d="M3.6 0 0 5.6h2.4L2 10 6 4.2H3.5z"/></svg>
-          <span class="battery-body">
-            <span class="battery-fill" id="battery-fill"></span>
-            <span class="battery-pct p-empty" aria-hidden="true">94</span>
-            <span class="battery-pct p-fill" aria-hidden="true">94</span>
-          </span>
-          <span class="battery-cap"></span>
-        </span>
-      </span>
+    <div id="device-frame">
+        <!-- Ekran startowy / ładowania systemu (na wierzchu przy starcie) -->
+        <iframe id="boot-screen-frame" src="boot/boot-screen.html" class="boot-overlay"></iframe>
+
+        <!-- Pasek statusu (TOP 1) -->
+        <header id="status-bar" class="priority-top">
+            <span id="clock">12:00</span>
+            <div class="status-icons">
+                <span id="perf-badge" title="Priorytet i tryb pracy">⚡ TOP-1</span>
+                <span id="battery-badge" style="display:none;" title="Ochrona baterii aktywna">🔋 OSZCZ</span>
+                <span id="focus-badge" style="display:none;" title="Tryb skupienia">🌙</span>
+                <span id="flashlight-indicator" style="display:none;" title="Latarka włączona">🔦</span>
+                <span>100%</span>
+            </div>
+        </header>
+
+        <!-- Pulpit: widżety + siatka ikon z folderu Icons/ (TOP 1) -->
+        <main id="desktop" class="priority-top">
+            <iframe id="widgets-frame" src="modules/widgets.html" class="widgets-box"></iframe>
+            <div id="app-grid"></div>
+        </main>
+
+        <!-- Kontener na odizolowane aplikacje (iframe) -->
+        <div id="app-container"></div>
+
+        <!-- Warstwa modułów systemowych -->
+        <iframe id="search-frame" src="modules/search.html" class="system-overlay hidden"></iframe>
+        <iframe id="notifications-frame" src="modules/notifications.html" class="system-overlay hidden"></iframe>
+        <iframe id="control-center-frame" src="modules/control-center.html" class="system-overlay hidden"></iframe>
+        <iframe id="lockscreen-frame" src="modules/lockscreen.html" class="system-overlay"></iframe>
+
+        <!-- Dolny pasek nawigacji (TOP 1) -->
+        <footer id="nav-bar" class="priority-top">
+            <button onclick="Kernel.showRecents()" title="Ostatnie zakładki">▢</button>
+            <button onclick="Kernel.goHome()" title="Ekran główny">●</button>
+            <button onclick="Kernel.toggleSearch()" title="Szukaj">🔍</button>
+            <button onclick="Kernel.toggleControlCenter()" title="Centrum sterowania">☰</button>
+            <button onclick="Kernel.lockDevice()" title="Zablokuj ekran">🔒</button>
+        </footer>
+
+        <!-- Widok ostatnich zakładek -->
+        <div id="recents-view" class="hidden">
+            <h3>Aktywne zakładki w pamięci</h3>
+            <div id="recents-list"></div>
+            <button class="btn-close-all" onclick="PerformanceManager.purgeBackground()">Wyczyść pamięć tła</button>
+        </div>
     </div>
 
-    <!-- Ekran ładowania -->
-    <section class="layer active" id="still-layer">
-      <img id="loading-still" src="Boot_Loading/Zenios_loading.png" alt="Zenios_loading" />
-    </section>
-
-    <!-- Ekran blokady -->
-    <section class="layer lockscreen-layer" id="lockscreen-layer" aria-label="Ekran blokady ZeniOS">
-      <img id="lock-wallpaper" alt="Tapeta ekranu blokady" />
-      <div class="lock-scrim"></div>
-
-      <div class="lock-top-block">
-        <div class="lock-date" id="lock-date">Niedziela, 22 Lis</div>
-        <div class="lock-clock" id="lock-clock">16:37</div>
-      </div>
-
-      <canvas class="lk-depth" id="lock-depth" aria-hidden="true"></canvas>
-
-      <!-- Panele odblokowania -->
-      <div class="unlock-panel" id="unlock-pin-panel">
-        <div class="unlock-title">Wpisz PIN</div>
-        <div class="pin-dots" id="pin-dots"><span></span><span></span><span></span><span></span></div>
-        <div class="unlock-error" id="pin-error"></div>
-        <div class="pin-keypad" id="pin-keypad">
-          <button type="button" class="pin-key" data-pin="1">1</button>
-          <button type="button" class="pin-key" data-pin="2">2</button>
-          <button type="button" class="pin-key" data-pin="3">3</button>
-          <button type="button" class="pin-key" data-pin="4">4</button>
-          <button type="button" class="pin-key" data-pin="5">5</button>
-          <button type="button" class="pin-key" data-pin="6">6</button>
-          <button type="button" class="pin-key" data-pin="7">7</button>
-          <button type="button" class="pin-key" data-pin="8">8</button>
-          <button type="button" class="pin-key" data-pin="9">9</button>
-          <button type="button" class="pin-key pin-action" id="pin-clear-btn">Wyczyść</button>
-          <button type="button" class="pin-key" data-pin="0">0</button>
-          <button type="button" class="pin-key pin-action" id="pin-cancel-btn">Anuluj</button>
-        </div>
-      </div>
-
-      <div class="unlock-panel" id="unlock-password-panel">
-        <div class="unlock-title">Wpisz hasło</div>
-        <input type="password" class="password-input" id="lock-password-input" placeholder="Hasło" autocomplete="off" />
-        <div class="unlock-error" id="password-error"></div>
-        <div class="unlock-btn-row">
-          <button type="button" class="glass-action-btn" id="password-cancel-btn">Anuluj</button>
-          <button type="button" class="glass-action-btn primary" id="password-submit-btn">Odblokuj</button>
-        </div>
-      </div>
-
-      <div class="unlock-panel" id="unlock-pattern-panel">
-        <div class="unlock-title">Narysuj wzór</div>
-        <div class="pattern-grid" id="pattern-grid">
-          <button type="button" class="pattern-node" data-node="1"><span></span></button>
-          <button type="button" class="pattern-node" data-node="2"><span></span></button>
-          <button type="button" class="pattern-node" data-node="3"><span></span></button>
-          <button type="button" class="pattern-node" data-node="4"><span></span></button>
-          <button type="button" class="pattern-node" data-node="5"><span></span></button>
-          <button type="button" class="pattern-node" data-node="6"><span></span></button>
-          <button type="button" class="pattern-node" data-node="7"><span></span></button>
-          <button type="button" class="pattern-node" data-node="8"><span></span></button>
-          <button type="button" class="pattern-node" data-node="9"><span></span></button>
-        </div>
-        <div class="unlock-error" id="pattern-error"></div>
-        <div class="unlock-btn-row">
-          <button type="button" class="glass-action-btn" id="pattern-reset-btn">Wyczyść</button>
-          <button type="button" class="glass-action-btn" id="pattern-cancel-btn">Anuluj</button>
-        </div>
-      </div>
-
-      <div class="lock-bottom-area" id="lock-bottom-area">
-        <div class="lock-shortcuts-row">
-          <button type="button" class="lock-circle-btn" id="lock-torch-btn" aria-label="Latarka">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M7 3h10l-1.5 4.5v13.5h-7V7.5L7 3z" />
-              <line x1="8.5" y1="7.5" x2="15.5" y2="7.5" />
-              <line x1="12" y1="11" x2="12" y2="14" />
-            </svg>
-          </button>
-
-          <button type="button" class="lock-swipe-prompt" id="lock-swipe-btn">
-            <span id="lock-hint-text">Przeciągnij w górę, aby odblokować</span>
-          </button>
-
-          <button type="button" class="lock-circle-btn" id="lock-camera-btn" aria-label="Aparat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
-          </button>
-        </div>
-        <div class="lock-home-bar"></div>
-      </div>
-    </section>
-
-    <!-- Pulpit -->
-    <section class="layer home-layer" id="wallpaper-layer">
-      <img id="system-wallpaper" alt="ZeniOS Wallpaper" />
-      <div class="home-scrim"></div>
-
-      <div class="home-content" id="home-content">
-        <div class="home-edit-banner" id="home-edit-banner">
-          <button type="button" class="edit-pill-btn primary" id="open-widget-drawer-btn">+ Widżety</button>
-          <span class="edit-hint-label" id="home-edit-status">Przytrzymano — układaj ikony</span>
-          <button type="button" class="edit-pill-btn done" id="done-edit-mode-btn">Gotowe</button>
-        </div>
-
-        <div class="widgets-grid" id="widgets-grid"></div>
-        <div class="home-apps-grid" id="home-apps-grid"></div>
-      </div>
-
-      <div class="widget-picker-sheet" id="widget-picker-sheet" aria-label="Wybór widżetów">
-        <div class="widget-picker-header">
-          <strong>Widżety ZeniOS</strong>
-          <button type="button" class="glass-action-btn" id="close-widget-drawer-btn">Zamknij</button>
-        </div>
-        <div class="widget-picker-list" id="widget-picker-list"></div>
-      </div>
-
-      <aside class="app-search-drawer" id="app-search-drawer" aria-label="Wyszukiwanie zainstalowanych aplikacji">
-        <div class="drawer-top-bar">
-          <button type="button" class="back-btn" id="close-search-drawer-btn">‹ Pulpit</button>
-          <span class="drawer-title">Zainstalowane aplikacje</span>
-          <span class="header-spacer"></span>
-        </div>
-        <div class="search-field drawer-search-box">
-          <svg class="search-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="7" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input id="installed-apps-search" type="search" placeholder="Szukaj zainstalowanej aplikacji..." autocomplete="off" />
-        </div>
-        <div class="installed-apps-list" id="installed-apps-list"></div>
-      </aside>
-
-      <nav class="liquid-dock" id="liquid-dock" aria-label="Pasek zadań">
-        <button class="dock-icon-btn icon-phone" type="button" data-open-app="app-phone" aria-label="Telefon">
-          <img src="Icons/Phone_Icon.png" alt="Phone" />
-        </button>
-        <button class="dock-icon-btn icon-settings" type="button" data-open-app="app-settings" aria-label="Ustawienia">
-          <img src="Icons/Settings_Icon.png" alt="Settings" />
-        </button>
-        <button class="dock-icon-btn icon-gallery" type="button" data-open-app="app-gallery" aria-label="Galeria">
-          <img src="Icons/gallery_icon.png" alt="Gallery" />
-        </button>
-      </nav>
-    </section>
-
-    <!-- Galeria ZeniOS -->
-    <section class="app-view" id="app-gallery" aria-label="Galeria ZeniOS">
-      <header class="app-header">
-        <div class="app-title-row">
-          <h1 class="app-title">Galeria</h1>
-          <div class="header-actions">
-            <button class="icon-circle-btn" id="gallery-search-toggle" type="button" aria-label="Szukaj w galerii">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="7" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div class="gallery-search-wrap" id="gallery-search-wrap">
-          <input id="gallery-search-input" type="search" placeholder="Szukaj w galerii..." autocomplete="off" />
-        </div>
-
-        <div class="segmented-bar" role="tablist">
-          <button class="seg-btn active" type="button" data-gal-view="collections">Wszystkie</button>
-          <button class="seg-btn" type="button" data-gal-view="photos">Obrazy</button>
-          <button class="seg-btn" type="button" data-gal-view="timeline">Oś czasu</button>
-        </div>
-      </header>
-
-      <div class="app-scroll gal-pane active" id="gal-pane-collections">
-        <div class="recent-strip">
-          <div class="recent-thumb">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="16" rx="3" />
-              <circle cx="8.5" cy="9.5" r="1.5" />
-              <path d="M21 15l-5-5L5 20" />
-            </svg>
-          </div>
-          <div class="recent-info">
-            <strong>Ostatnie w ZeniOS</strong>
-            <span id="gallery-recent-count">0 obrazów, 0 klipów</span>
-          </div>
-          <span class="chevron">›</span>
-        </div>
-
-        <div class="section-head">
-          <h2>Albumy</h2>
-          <span class="link-accent">Pokaż wszystko ›</span>
-        </div>
-
-        <div class="albums-row">
-          <div class="album-tile">
-            <div class="album-box">+</div>
-            <div class="album-name">Wszystkie obrazy</div>
-            <div class="album-count">0</div>
-          </div>
-          <div class="album-tile">
-            <div class="album-box">+</div>
-            <div class="album-name">Ulubione</div>
-            <div class="album-count">0</div>
-          </div>
-          <div class="album-tile">
-            <div class="album-box">+</div>
-            <div class="album-name">Klip wideo</div>
-            <div class="album-count">0</div>
-          </div>
-          <div class="album-tile">
-            <div class="album-box">+</div>
-            <div class="album-name">Przechwyty</div>
-            <div class="album-count">0</div>
-          </div>
-        </div>
-
-        <div class="section-head">
-          <h2>Ostatnio dodane</h2>
-          <span class="link-accent">Pokaż wszystko ›</span>
-        </div>
-
-        <!-- Miejsce na zdjęcia -->
-        <div id="gallery-grid" class="gallery-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 0 10px 100px 10px;"></div>
-
-        <div class="empty-state" id="gallery-empty-state">
-          <div class="empty-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="16" rx="3" />
-              <circle cx="8.5" cy="9.5" r="1.5" />
-              <path d="M21 15l-5-5L5 20" />
-            </svg>
-          </div>
-          <div class="empty-label" id="gallery-empty-text">Brak pozycji</div>
-        </div>
-      </div>
-
-      <!-- Oś czasu -->
-      <div class="app-scroll gal-pane" id="gal-pane-timeline">
-        <div class="timeline-group">
-          <div class="timeline-head">
-            <span class="timeline-date">6–15 Maj 2026</span>
-            <div class="timeline-chips">
-              <span class="chip-pill">Wybierz</span>
-              <span class="chip-pill">•••</span>
-            </div>
-          </div>
-          <div class="timeline-grid-3">
-            <div class="media-slot slot-a"><span>Wiadomości</span></div>
-            <div class="media-slot slot-b"><span>Zestaw</span></div>
-            <div class="media-slot slot-c">
-              <span>Biurko</span>
-              <span class="plus-badge">+8</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="timeline-group">
-          <div class="timeline-head">
-            <span class="timeline-date">16–27 Maj 2026</span>
-            <div class="timeline-chips">
-              <span class="chip-pill">•••</span>
-            </div>
-          </div>
-          <div class="timeline-hero">
-            <div class="hero-sky"></div>
-            <div class="hero-city">Panorama ZeniOS</div>
-          </div>
-          <div class="timeline-grid-3">
-            <div class="media-slot slot-d"><span>Kod</span></div>
-            <div class="media-slot slot-e"><span>Noc</span></div>
-            <div class="media-slot slot-f">
-              <span>Korytarz</span>
-              <span class="plus-badge">+3</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="zoom-bar">
-          <button class="zoom-pill" type="button" data-zoom="Lata">Lata</button>
-          <button class="zoom-pill" type="button" data-zoom="Miesiące">Miesiące</button>
-          <button class="zoom-pill active" type="button" data-zoom="Dni">Dni</button>
-          <button class="zoom-pill" type="button" data-zoom="Wszystkie">Wszystkie</button>
-        </div>
-      </div>
-
-      <div class="app-bottom-tabs">
-        <button class="bottom-tab active" type="button" data-gal-nav="collections">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="16" rx="3" />
-            <circle cx="8.5" cy="9.5" r="1.5" />
-            <path d="M21 15l-5-5L5 20" />
-          </svg>
-          <span>Galeria</span>
-        </button>
-        <button class="bottom-tab" type="button" data-gal-nav="timeline">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="16" rx="3" />
-            <polygon points="10 9 16 12 10 15 10 9" fill="currentColor" stroke="none" />
-          </svg>
-          <span>Dla Ciebie</span>
-        </button>
-        <button class="bottom-tab" type="button" data-gal-nav="albums">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
-          </svg>
-          <span>Albumy</span>
-        </button>
-        <button class="bottom-tab" type="button" data-gal-nav="search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="7" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <span>Szukaj</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- Ustawienia -->
-    <section class="app-view" id="app-settings" aria-label="Ustawienia ZeniOS">
-      <!-- (Zawartość ustawień - bez zmian) -->
-    </section>
-
-    <!-- Telefon -->
-    <section class="app-view" id="app-phone" aria-label="Telefon ZeniOS">
-      <header class="app-header">
-        <div class="app-title-row">
-          <h1 class="app-title">Telefon</h1>
-        </div>
-      </header>
-      <div class="app-scroll phone-placeholder">
-        <div class="phone-badge-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-          </svg>
-        </div>
-        <strong>Telefon ZeniOS</strong>
-        <p>Moduł połączeń głosowych jest w przygotowaniu.</p>
-      </div>
-    </section>
-
-    <!-- Wiadomości -->
-    <section class="app-view" id="app-messages" aria-label="Wiadomości ZeniOS">
-      <!-- (Zawartość wiadomości - bez zmian) -->
-    </section>
-
-    <!-- Kalkulator -->
-    <section class="app-view" id="app-calculator" aria-label="Kalkulator ZeniOS">
-      <div class="calc-screen">
-        <div class="calc-display-wrap"><div class="calc-display" id="calc-display">0</div></div>
-        <div class="calc-pad" id="calc-pad">
-          <button type="button" class="calc-btn fn" id="calc-ac" data-calc="C">AC</button>
-          <button type="button" class="calc-btn fn" data-calc="±">+/−</button>
-          <button type="button" class="calc-btn fn" data-calc="%">%</button>
-          <button type="button" class="calc-btn op" data-calc="/">÷</button>
-          <button type="button" class="calc-btn" data-calc="7">7</button>
-          <button type="button" class="calc-btn" data-calc="8">8</button>
-          <button type="button" class="calc-btn" data-calc="9">9</button>
-          <button type="button" class="calc-btn op" data-calc="*">×</button>
-          <button type="button" class="calc-btn" data-calc="4">4</button>
-          <button type="button" class="calc-btn" data-calc="5">5</button>
-          <button type="button" class="calc-btn" data-calc="6">6</button>
-          <button type="button" class="calc-btn op" data-calc="-">−</button>
-          <button type="button" class="calc-btn" data-calc="1">1</button>
-          <button type="button" class="calc-btn" data-calc="2">2</button>
-          <button type="button" class="calc-btn" data-calc="3">3</button>
-          <button type="button" class="calc-btn op" data-calc="+">+</button>
-          <button type="button" class="calc-btn zero" data-calc="0">0</button>
-          <button type="button" class="calc-btn" data-calc=".">,</button>
-          <button type="button" class="calc-btn op" data-calc="=">=</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Kalendarz -->
-    <section class="app-view" id="app-calendar" aria-label="Kalendarz ZeniOS">
-      <!-- (Zawartość kalendarza - bez zmian) -->
-    </section>
-
-    <!-- Zegar -->
-    <section class="app-view" id="app-clock" aria-label="Zegar ZeniOS">
-      <!-- (Zawartość zegara - bez zmian) -->
-    </section>
-
-    <!-- Pliki -->
-    <section class="app-view" id="app-files" aria-label="Pliki ZeniOS">
-      <!-- (Zawartość plików - bez zmian) -->
-    </section>
-
-    <!-- Notatnik -->
-    <section class="app-view" id="app-notebook" aria-label="Notatnik ZeniOS">
-      <!-- (Zawartość notatnika - bez zmian) -->
-    </section>
-
-    <!-- Aparat ZeniOS (pełnoekranowy) -->
-    <div class="camera-layer" id="camera-layer" aria-label="Aparat ZeniOS" aria-hidden="true">
-      <video class="camera-video" id="camera-video" playsinline autoplay muted></video>
-      <div class="camera-scene" id="camera-scene" aria-hidden="true"></div>
-      <div class="camera-nr" aria-hidden="true"></div>
-
-      <div class="camera-grid" id="camera-grid" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-      <div class="camera-flash" id="camera-flash" aria-hidden="true"></div>
-
-      <div class="camera-top">
-        <button type="button" class="cam-top-btn" id="camera-close" aria-label="Zamknij aparat">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-        </button>
-        <div class="cam-top-center">
-          <button type="button" class="cam-pill" id="camera-flash-btn" data-state="auto" aria-label="Lampa błyskowa">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.5H11l-1 8.5L19.5 10H13z" /></svg>
-            <span>Auto</span>
-          </button>
-          <button type="button" class="cam-pill" id="camera-grid-btn" aria-label="Siatka">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5" /><line x1="9.2" y1="3.5" x2="9.2" y2="20.5" /><line x1="14.8" y1="3.5" x2="14.8" y2="20.5" /><line x1="3.5" y1="9.2" x2="20.5" y2="9.2" /><line x1="3.5" y1="14.8" x2="20.5" y2="14.8" /></svg>
-          </button>
-        </div>
-        <button type="button" class="cam-top-btn" id="camera-live" aria-label="Ostatnie zdjęcia">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M4 8.5h3l1.6-2.2h4.8L15 8.5h5a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 20 20.5H4A1.5 1.5 0 0 1 2.5 19V10A1.5 1.5 0 0 1 4 8.5z"/></svg>
-        </button>
-      </div>
-
-      <div class="cam-status" id="camera-status"></div>
-
-      <div class="camera-bottom">
-        <div class="camera-zoom" id="camera-zoom">
-          <button type="button" class="cam-zoom-pill active" data-zoom="1">1×</button>
-          <button type="button" class="cam-zoom-pill" data-zoom="2">2×</button>
-        </div>
-
-        <div class="camera-modes" id="camera-modes">
-          <button type="button" class="cam-mode active" data-mode="photo">Zdjęcie</button>
-          <button type="button" class="cam-mode" data-mode="portrait">Portret</button>
-          <button type="button" class="cam-mode" data-mode="pano">Panorama</button>
-        </div>
-
-        <div class="camera-controls">
-          <button type="button" class="cam-thumb empty" id="camera-thumb" aria-label="Ostatnie zdjęcia"></button>
-          <button type="button" class="cam-shutter" id="camera-shutter" aria-label="Zrób zdjęcie"><span></span></button>
-          <button type="button" class="cam-switch" id="camera-switch" aria-label="Zmień kamerę">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-13.7-5.7L4 7.5"/><path d="M4 4v3.5h3.5"/><path d="M4 13a8 8 0 0 0 13.7 5.7L20 16.5"/><path d="M20 20v-3.5h-3.5"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="camera-roll" id="camera-roll" aria-hidden="true">
-        <div class="camera-roll-panel">
-          <header>
-            <strong>Ostatnie</strong>
-            <button type="button" id="camera-roll-close">Gotowe</button>
-          </header>
-          <div class="camera-roll-grid" id="camera-roll-grid"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Efekty systemowe -->
-    <div id="torch-glow"></div>
-    <div id="dim-overlay"></div>
-    <div class="cc-toast" id="cc-toast"></div>
-
-    <!-- Centrum sterowania -->
-    <div class="cc-hotzone" id="cc-hotzone" aria-hidden="true"></div>
-    <div class="cc-layer" id="cc-layer" aria-label="Centrum sterowania" aria-hidden="true">
-      <!-- (Zawartość centrum sterowania - bez zmian) -->
-    </div>
-
-    <!-- Dolna nawigacja systemowa -->
-    <div class="system-nav-overlay mode-gestures" id="system-nav-overlay">
-      <button type="button" class="gesture-handle" id="gesture-home-btn" aria-label="Pulpit"></button>
-      <div class="sys-buttons-row" id="sys-buttons-row">
-        <button type="button" class="sys-nav-btn" id="sys-btn-back" aria-label="Wstecz">◀</button>
-        <button type="button" class="sys-nav-btn" id="sys-btn-home" aria-label="Pulpit">●</button>
-        <button type="button" class="sys-nav-btn" id="sys-btn-recents" aria-label="Zamknij aplikację">■</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Skrypty systemowe -->
-  <script src="zeni-photo-engine.js"></script>
-  <script src="zeni-camera.js"></script>
-  <script src="loading (5).js"></script>
-  <script src="zeni-system.js"></script>
-  <script src="zeni-lockscreen.js"></script>
-  <script src="zeni-network.js"></script>
+    <!-- Kolejność ładowania warstw: Boot -> System -> Kernel -->
+    <script src="boot/bootloader.js"></script>
+    <script src="system/manifest.js"></script>
+    <script src="system/storage.js"></script>
+    <script src="system/battery-saver.js"></script>
+    <script src="system/performance.js"></script>
+    <script src="system/watchdog.js"></script>
+    <script src="system/supervisor.js"></script>
+    <script src="system/notifications.js"></script>
+    <script src="system/focus-mode.js"></script>
+    <script src="system/icon-theme.js"></script>
+    <script src="system/wallpapers.js"></script>
+    <script src="system/display.js"></script>
+    <script src="system/widgets.js"></script>
+    <script src="system/search.js"></script>
+    <script src="system/kernel.js"></script>
 </body>
 </html>
