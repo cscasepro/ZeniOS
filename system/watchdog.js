@@ -1,40 +1,30 @@
 const Watchdog = {
-    lastTick: performance.now(),
-    lagStrikes: 0,
-    loopId: null,
+    timer: null,
+    heartbeatMap: new Map(),
+    timeoutMs: 8000,
 
-    init() {
-        this.lastTick = performance.now();
-        const monitor = (now) => {
-            const delta = now - this.lastTick;
-            this.lastTick = now;
-
-            // Próg lagów: dłuższa pauza między klatkami niż 650ms (poza ukrytą kartą i boot screenem)
-            const bootFrame = document.getElementById('boot-screen-frame');
-            const isBooting = bootFrame && !bootFrame.classList.contains('hidden');
-
-            if (!document.hidden && !isBooting && delta > 650) {
-                this.lagStrikes += 1;
-                if (typeof Supervisor !== 'undefined') {
-                    Supervisor.log('WARN', `Watchdog wykrył lag (${Math.round(delta)}ms), strike ${this.lagStrikes}/3`);
-                }
-                if (this.lagStrikes >= 3 && typeof Bootloader !== 'undefined') {
-                    Bootloader.triggerErrorBoot('ERR_SYSTEM_OVERLOAD', 'Wykryto powtarzające się przycięcia interfejsu');
-                    return;
-                }
-            } else if (this.lagStrikes > 0) {
-                this.lagStrikes = Math.max(0, this.lagStrikes - 0.15);
-            }
-
-            this.loopId = requestAnimationFrame(monitor);
-        };
-        this.loopId = requestAnimationFrame(monitor);
+    start() {
+        this.stop();
+        this.timer = setInterval(() => this.checkHealth(), 2500);
     },
 
     stop() {
-        if (this.loopId !== null) {
-            cancelAnimationFrame(this.loopId);
-            this.loopId = null;
+        if (this.timer) {
+            clearInterval(this.timer);
+            this.timer = null;
         }
+    },
+
+    ping(sourceId) {
+        this.heartbeatMap.set(sourceId, Date.now());
+    },
+
+    checkHealth() {
+        const now = Date.now();
+        this.heartbeatMap.forEach((ts, id) => {
+            if (now - ts > this.timeoutMs && id === PerformanceManager.activeAppId) {
+                Supervisor.handleAppHang(id, 'Brak odpowiedzi aplikacji (watchdog timeout)');
+            }
+        });
     }
 };
