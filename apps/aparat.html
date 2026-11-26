@@ -2,344 +2,333 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aparat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aparat — ZenOS</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
             height: 100vh;
-            background: #030712;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
+            background: #000000;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 12px 14px 16px;
             overflow: hidden;
         }
-        .top-bar {
+        .top-controls {
+            padding: 50px 18px 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 8px;
+            z-index: 5;
         }
-        .mode-switch {
-            display: flex;
-            background: rgba(30, 41, 59, 0.9);
+        .pill {
+            background: rgba(24, 24, 28, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(18px);
+            color: #ffffff;
+            padding: 7px 14px;
             border-radius: 999px;
-            padding: 3px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-        }
-        .mode-btn {
-            padding: 5px 12px;
-            border-radius: 999px;
-            border: none;
-            background: transparent;
-            color: #cbd5e1;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-        .mode-btn.active {
-            background: #38bdf8;
-            color: #090d16;
-        }
-        .small-btn {
-            padding: 6px 10px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: rgba(15, 23, 42, 0.85);
-            color: #f8fafc;
-            font-size: 11px;
+            font-size: 13px;
+            font-weight: 600;
             cursor: pointer;
         }
         .viewfinder {
             position: relative;
             flex: 1;
-            margin: 10px 0;
-            border-radius: 22px;
+            margin: 4px 10px;
+            border-radius: 28px;
             overflow: hidden;
-            background: #090d16;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: radial-gradient(circle at 50% 45%, #232734 0%, #0d1017 100%);
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        video, canvas#preview-canvas {
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform-origin: center;
+            transition: transform 0.25s ease;
+        }
+        .grid-lines {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(to right, rgba(255, 255, 255, 0.18) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+            background-size: 33.33% 33.33%;
+        }
+        .crosshair {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            pointer-events: none;
+        }
+        .crosshair::before, .crosshair::after {
+            content: "";
+            position: absolute;
+            background: #ffd60a;
+        }
+        .crosshair::before { left: 11px; top: 0; width: 1.5px; height: 24px; }
+        .crosshair::after { top: 11px; left: 0; height: 1.5px; width: 24px; }
+        .zoom-bar {
+            position: absolute;
+            bottom: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            padding: 5px 8px;
+            border-radius: 999px;
+            background: rgba(15, 16, 20, 0.65);
+            backdrop-filter: blur(16px);
+        }
+        .zoom-btn {
+            min-width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .zoom-btn.active {
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffd60a;
+        }
+        .bottom-deck {
+            padding: 12px 22px 58px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        .modes {
+            display: flex;
+            gap: 18px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+        }
+        .mode-item {
+            padding: 5px 12px;
+            border-radius: 999px;
+            color: rgba(255, 255, 255, 0.72);
+            cursor: pointer;
+        }
+        .mode-item.active {
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffd60a;
+        }
+        .shutter-row {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .thumb-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: #1c1c1e;
+            overflow: hidden;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .thumb-btn img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        .standby {
-            font-size: 12px;
-            color: #94a3b8;
-            text-align: center;
-            padding: 16px;
-        }
-        .bottom-bar {
+        .shutter-ring {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            border: 4px solid #ffffff;
+            padding: 4px;
             display: flex;
             align-items: center;
-            justify-content: space-around;
-        }
-        .shutter {
-            width: 64px;
-            height: 64px;
-            border-radius: 999px;
-            border: 4px solid #ffffff;
-            background: rgba(255, 255, 255, 0.25);
+            justify-content: center;
             cursor: pointer;
         }
-        .shutter:active { transform: scale(0.93); }
-        .msg {
-            font-size: 11px;
-            color: #86efac;
-            text-align: center;
-            min-height: 14px;
+        .shutter-core {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #ffffff;
+            transition: transform 0.15s ease, background 0.2s ease, border-radius 0.2s ease;
+        }
+        .shutter-ring.video .shutter-core {
+            background: #ff3b30;
+        }
+        .shutter-ring.recording .shutter-core {
+            transform: scale(0.54);
+            border-radius: 10px;
+        }
+        .flip-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            font-size: 20px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <div class="mode-switch">
-            <button id="btn-hdr" class="mode-btn active" onclick="setMode('HDR')">iPhone HDR</button>
-            <button id="btn-raw" class="mode-btn" onclick="setMode('RAW')">RAW</button>
-        </div>
-        <button class="small-btn" onclick="switchCam()">🔄 Kamera</button>
+    <div class="top-controls">
+        <button class="pill" onclick="parent.Kernel?.goHome()">‹ Pulpit</button>
+        <button id="flash-pill" class="pill" onclick="toggleFlash()">⚡ Auto</button>
+        <span id="rec-timer" style="font-size:12px;font-weight:700;color:#ff453a;min-width:44px;text-align:right;"></span>
     </div>
 
     <div class="viewfinder">
-        <video id="video" autoplay playsinline muted style="display:none;"></video>
-        <canvas id="preview-canvas" style="display:none;"></canvas>
-        <div id="standby" class="standby">Włączam aparat... Jeśli przeglądarka poprosi o dostęp do kamery, zezwól lub użyj trybu testowego.</div>
+        <video id="cam-video" autoplay playsinline muted></video>
+        <div class="grid-lines"></div>
+        <div class="crosshair"></div>
+        <div id="zoom-bar" class="zoom-bar"></div>
     </div>
 
-    <div id="msg" class="msg"></div>
+    <div class="bottom-deck">
+        <div class="modes">
+            <span class="mode-item" onclick="setMode('WIDEO', this)">WIDEO</span>
+            <span class="mode-item active" onclick="setMode('ZDJĘCIE', this)">ZDJĘCIE</span>
+            <span class="mode-item" onclick="setMode('PORTRET', this)">PORTRET</span>
+        </div>
 
-    <div class="bottom-bar">
-        <button class="small-btn" onclick="openGallery()">🖼️ Galeria</button>
-        <button class="shutter" onclick="capturePhoto()" title="Zrób zdjęcie"></button>
-        <button class="small-btn" onclick="captureSynthetic()">✨ Test HDR</button>
+        <div class="shutter-row">
+            <button id="last-thumb" class="thumb-btn" onclick="parent.Kernel?.openApp('galeria')" title="Galeria">🖼️</button>
+            <div id="shutter" class="shutter-ring" onclick="triggerShutter()">
+                <div class="shutter-core"></div>
+            </div>
+            <button class="flip-btn" onclick="flipCamera()" title="Przełącz aparat">🔄</button>
+        </div>
     </div>
 
-    <canvas id="work-canvas" style="display:none;"></canvas>
+    <canvas id="snap-canvas" style="display:none;"></canvas>
 
     <script>
-        let mode = 'HDR';
+        let currentMode = 'ZDJĘCIE';
+        let currentZoom = 1;
         let facingMode = 'environment';
         let stream = null;
-        let isTop1 = true;
+        let recording = false;
+        let recSeconds = 0;
+        let recInterval = null;
+        let hasUltraWide = false;
 
-        function setMode(nextMode) {
-            mode = nextMode;
-            document.getElementById('btn-hdr').classList.toggle('active', mode === 'HDR');
-            document.getElementById('btn-raw').classList.toggle('active', mode === 'RAW');
-            document.getElementById('msg').textContent = mode === 'HDR'
-                ? 'Tryb iPhone HDR: łączenie klatek, żywe kolory i ostrzenie.'
-                : 'Tryb RAW: minimalna ingerencja w barwy.';
-        }
-
-        async function startCamera() {
-            if (!isTop1) return;
-            stopCamera();
+        async function initCamera() {
+            if (stream) stream.getTracks().forEach(t => t.stop());
             try {
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    throw new Error('Brak MediaDevices');
-                }
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
-                    audio: false
-                });
-                const video = document.getElementById('video');
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false });
+                const video = document.getElementById('cam-video');
                 video.srcObject = stream;
-                video.style.display = 'block';
-                document.getElementById('standby').style.display = 'none';
-            } catch (_) {
-                document.getElementById('standby').style.display = 'block';
-                document.getElementById('standby').textContent = 'Kamera niedostępna lub zablokowana — kliknij „Test HDR”, aby wygenerować ujęcie testowe.';
+                const track = stream.getVideoTracks()[0];
+                const caps = track?.getCapabilities ? track.getCapabilities() : {};
+                hasUltraWide = Boolean(caps.zoom && typeof caps.zoom.min === 'number' && caps.zoom.min <= 0.6);
+            } catch {
+                hasUltraWide = false;
             }
+            renderZoomButtons();
+            loadLastThumb();
         }
 
-        function stopCamera() {
-            if (stream) {
-                stream.getTracks().forEach(t => t.stop());
-                stream = null;
-            }
-            const video = document.getElementById('video');
-            video.srcObject = null;
-            video.style.display = 'none';
+        function renderZoomButtons() {
+            const bar = document.getElementById('zoom-bar');
+            const levels = hasUltraWide ? [0.5, 1, 2] : [1, 2];
+            if (!levels.includes(currentZoom)) currentZoom = 1;
+            bar.innerHTML = levels.map(z => `
+                <button class="zoom-btn ${currentZoom === z ? 'active' : ''}" onclick="setZoom(${z})">${z === 0.5 ? '0,5' : z + 'x'}</button>
+            `).join('');
         }
 
-        function switchCam() {
+        function setZoom(z) {
+            currentZoom = z;
+            const scale = z < 1 ? 1 : z;
+            document.getElementById('cam-video').style.transform = `scale(${scale})`;
+            renderZoomButtons();
+        }
+
+        function setMode(mode, el) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-item').forEach(m => m.classList.remove('active'));
+            el.classList.add('active');
+            const ring = document.getElementById('shutter');
+            ring.classList.toggle('video', mode === 'WIDEO');
+        }
+
+        function toggleFlash() {
+            const btn = document.getElementById('flash-pill');
+            btn.textContent = btn.textContent.includes('Auto') ? '⚡ Wł.' : '⚡ Auto';
+        }
+
+        function flipCamera() {
             facingMode = facingMode === 'environment' ? 'user' : 'environment';
-            startCamera();
+            initCamera();
         }
 
-        // Proste przetwarzanie wieloklatkowe (w stylu iPhone HDR) + wyostrzanie i żywe barwy
-        function processFrames(frames, currentMode) {
-            const w = frames[0].width;
-            const h = frames[0].height;
-            const outCanvas = document.getElementById('work-canvas');
-            outCanvas.width = w;
-            outCanvas.height = h;
-            const outCtx = outCanvas.getContext('2d');
-
-            const count = frames.length;
-            const avg = new Float32Array(w * h * 4);
-
-            for (let f = 0; f < count; f++) {
-                const d = frames[f].data;
-                for (let i = 0; i < d.length; i += 4) {
-                    avg[i] += d[i] / count;
-                    avg[i + 1] += d[i + 1] / count;
-                    avg[i + 2] += d[i + 2] / count;
-                    avg[i + 3] = 255;
-                }
+        function loadLastThumb() {
+            const list = parent.StorageManager?.get('gallery_photos', []) || [];
+            if (list.length) {
+                document.getElementById('last-thumb').innerHTML = `<img src="${list[0].dataUrl}" alt="Ostatnie">`;
             }
-
-            const result = outCtx.createImageData(w, h);
-            const rData = result.data;
-
-            for (let i = 0; i < rData.length; i += 4) {
-                let r = avg[i];
-                let g = avg[i + 1];
-                let b = avg[i + 2];
-
-                if (currentMode === 'HDR') {
-                    // Wyciąganie cieni + żywe, wyraziste kolory
-                    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-                    if (lum < 95) {
-                        const lift = (95 - lum) * 0.22;
-                        r += lift;
-                        g += lift;
-                        b += lift;
-                    }
-                    const mean = (r + g + b) / 3;
-                    const sat = 1.24;
-                    const contrast = 1.08;
-                    r = (mean + (r - mean) * sat - 128) * contrast + 128;
-                    g = (mean + (g - mean) * sat - 128) * contrast + 128;
-                    b = (mean + (b - mean) * sat - 128) * contrast + 128;
-                }
-
-                rData[i] = Math.max(0, Math.min(255, r));
-                rData[i + 1] = Math.max(0, Math.min(255, g));
-                rData[i + 2] = Math.max(0, Math.min(255, b));
-                rData[i + 3] = 255;
-            }
-
-            // Lekkie wyostrzanie w trybie HDR
-            if (currentMode === 'HDR') {
-                const copy = new Uint8ClampedArray(rData);
-                for (let y = 1; y < h - 1; y++) {
-                    for (let x = 1; x < w - 1; x++) {
-                        const idx = (y * w + x) * 4;
-                        for (let c = 0; c < 3; c++) {
-                            const center = copy[idx + c];
-                            const neighbors = (
-                                copy[((y - 1) * w + x) * 4 + c] +
-                                copy[((y + 1) * w + x) * 4 + c] +
-                                copy[(y * w + (x - 1)) * 4 + c] +
-                                copy[(y * w + (x + 1)) * 4 + c]
-                            ) / 4;
-                            const sharp = center + (center - neighbors) * 0.45;
-                            rData[idx + c] = Math.max(0, Math.min(255, sharp));
-                        }
-                    }
-                }
-            }
-
-            outCtx.putImageData(result, 0, 0);
-            return outCanvas.toDataURL('image/jpeg', 0.85);
         }
 
-        function capturePhoto() {
-            const video = document.getElementById('video');
-            if (!stream || video.readyState < 2) {
-                captureSynthetic();
+        function triggerShutter() {
+            if (currentMode === 'WIDEO') {
+                recording = !recording;
+                const ring = document.getElementById('shutter');
+                const timerEl = document.getElementById('rec-timer');
+                ring.classList.toggle('recording', recording);
+                if (recording) {
+                    recSeconds = 0;
+                    timerEl.textContent = '00:00';
+                    recInterval = setInterval(() => {
+                        recSeconds++;
+                        const m = String(Math.floor(recSeconds / 60)).padStart(2, '0');
+                        const s = String(recSeconds % 60).padStart(2, '0');
+                        timerEl.textContent = `${m}:${s}`;
+                    }, 1000);
+                } else {
+                    clearInterval(recInterval);
+                    timerEl.textContent = '';
+                }
                 return;
             }
 
-            const w = 360;
-            const h = 270;
-            const temp = document.createElement('canvas');
-            temp.width = w;
-            temp.height = h;
-            const tctx = temp.getContext('2d');
-
-            const burstCount = mode === 'HDR' ? 3 : 1;
-            const frames = [];
-            for (let i = 0; i < burstCount; i++) {
-                tctx.drawImage(video, 0, 0, w, h);
-                frames.push(tctx.getImageData(0, 0, w, h));
-            }
-
-            const dataUrl = processFrames(frames, mode);
-            savePhoto(dataUrl);
-        }
-
-        function captureSynthetic() {
-            const w = 360;
-            const h = 270;
-            const frames = [];
-            for (let f = 0; f < 3; f++) {
-                const c = document.createElement('canvas');
-                c.width = w;
-                c.height = h;
-                const ctx = c.getContext('2d');
-                const grad = ctx.createLinearGradient(0, 0, w, h);
-                grad.addColorStop(0, '#0f172a');
-                grad.addColorStop(0.5, '#2563eb');
-                grad.addColorStop(1, '#a855f7');
-                ctx.fillStyle = grad;
-                ctx.fillRect(0, 0, w, h);
-
-                ctx.fillStyle = 'rgba(255,255,255,0.85)';
-                ctx.font = 'bold 20px sans-serif';
-                ctx.fillText(`ZeniOS ${mode}`, 24, 54);
-                ctx.font = '13px sans-serif';
-                ctx.fillText(`Ujęcie testowe #${f + 1}`, 24, 80);
-
-                frames.push(ctx.getImageData(0, 0, w, h));
-            }
-            const dataUrl = processFrames(frames, mode);
-            savePhoto(dataUrl);
-        }
-
-        function savePhoto(dataUrl) {
-            const p = window.parent;
-            const existing = (p && p.StorageManager && p.StorageManager.get('gallery_photos', [])) || [];
-            existing.unshift({
-                id: 'img_' + Date.now(),
-                mode,
-                date: new Date().toLocaleTimeString().slice(0, 5),
-                dataUrl
-            });
-            if (p && p.StorageManager) {
-                p.StorageManager.set('gallery_photos', existing.slice(0, 20));
-            }
-            if (p && p.Widgets) {
-                p.Widgets.syncData();
-            }
-            document.getElementById('msg').textContent = `Zapisano zdjęcie (${mode}) do Galerii.`;
-        }
-
-        function openGallery() {
-            stopCamera();
-            window.parent.postMessage({ type: 'OPEN_APP', appId: 'galeria' }, '*');
-        }
-
-        window.addEventListener('message', (e) => {
-            const data = e.data;
-            if (!data || data.type !== 'OS_PRIORITY') return;
-            isTop1 = data.level === 'TOP_1';
-            if (isTop1) {
-                startCamera();
+            const video = document.getElementById('cam-video');
+            const canvas = document.getElementById('snap-canvas');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 800;
+            const ctx = canvas.getContext('2d');
+            if (video.videoWidth) {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             } else {
-                stopCamera();
+                const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                grad.addColorStop(0, '#2563eb');
+                grad.addColorStop(1, '#0f172a');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
-        });
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+            const existing = parent.StorageManager?.get('gallery_photos', []) || [];
+            existing.unshift({ id: Date.now(), title: `Zdjęcie ${new Date().toLocaleTimeString('pl-PL')}`, album: 'Ostatnie', dataUrl });
+            parent.StorageManager?.set('gallery_photos', existing.slice(0, 30));
+            loadLastThumb();
+        }
 
-        startCamera();
+        initCamera();
     </script>
 </body>
 </html>
