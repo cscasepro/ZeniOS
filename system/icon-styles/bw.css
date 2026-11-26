@@ -1,0 +1,10 @@
+/* Styl ikon: SZARO-BIAŁY */
+.app-icon-box {
+    background: linear-gradient(160deg, rgba(248, 250, 252, 0.24), rgba(71, 85, 105, 0.35));
+    border: 1px solid rgba(241, 245, 249, 0.35);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+.app-icon-box img {
+    filter: grayscale(100%) contrast(1.25) brightness(1.06);
+}
